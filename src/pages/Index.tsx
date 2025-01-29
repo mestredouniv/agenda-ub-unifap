@@ -2,6 +2,8 @@ import { useState } from "react";
 import { Header } from "@/components/Header";
 import { ProfessionalCard } from "@/components/ProfessionalCard";
 import { AddProfessionalModal } from "@/components/AddProfessionalModal";
+import { AttendingProfessionals } from "@/components/AttendingProfessionals";
+import { DailyAnnouncements } from "@/components/DailyAnnouncements";
 
 interface Professional {
   id: number;
@@ -25,7 +27,6 @@ const Index = () => {
   };
 
   const handleCardClick = (professional: Professional) => {
-    // Will be implemented in next iteration for individual schedules
     console.log("Clicked professional:", professional);
   };
 
@@ -33,8 +34,11 @@ const Index = () => {
     <div className="min-h-screen bg-gray-50">
       <Header onAddClick={() => setIsModalOpen(true)} />
       
-      <div className="container mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="container mx-auto px-4 py-4">
+        <AttendingProfessionals professionals={professionals} />
+        <DailyAnnouncements />
+        
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
           {professionals.map((professional) => (
             <ProfessionalCard
               key={professional.id}
