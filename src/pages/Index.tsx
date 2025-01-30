@@ -5,8 +5,9 @@ import { AddProfessionalModal } from "@/components/AddProfessionalModal";
 import { DailyAnnouncements } from "@/components/DailyAnnouncements";
 import { AttendingProfessionals } from "@/components/AttendingProfessionals";
 import { Header } from "@/components/Header";
-import Dashboard from "@/components/Dashboard";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { Button } from "@/components/ui/button";
+import { BarChart3 } from "lucide-react";
 
 interface Professional {
   id: number;
@@ -63,12 +64,16 @@ const Index = () => {
           <DailyAnnouncements />
         </div>
 
-        <div className="mt-8">
-          <Dashboard professionals={professionals} />
-        </div>
-
         <div className="mt-8 flex items-center justify-between">
           <h2 className="text-xl font-semibold text-gray-800">Profissionais</h2>
+          <Button
+            variant="outline"
+            onClick={() => navigate("/relatorios")}
+            className="flex items-center gap-2"
+          >
+            <BarChart3 className="h-4 w-4" />
+            Relatórios
+          </Button>
         </div>
 
         <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">

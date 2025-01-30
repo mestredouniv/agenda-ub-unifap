@@ -27,7 +27,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Home, Printer, Share2, Plus, Edit2 } from "lucide-react";
+import { Home, Printer, Share2, Plus, Edit2, Trash2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 
 interface Appointment {
@@ -100,12 +100,19 @@ const ProfessionalSchedule = () => {
     });
   };
 
+  const handleDeleteAppointment = (appointmentId: number) => {
+    setAppointments(appointments.filter((app) => app.id !== appointmentId));
+    toast({
+      title: "Consulta removida",
+      description: "A consulta foi removida com sucesso!",
+    });
+  };
+
   const handlePrint = () => {
     window.print();
   };
 
   const handleShare = () => {
-    // Implementar lógica de compartilhamento
     toast({
       title: "Compartilhar agenda",
       description: "Funcionalidade em desenvolvimento",
@@ -159,6 +166,7 @@ const ProfessionalSchedule = () => {
                       selected={selectedDate}
                       onSelect={setSelectedDate}
                       className="rounded-md border"
+                      locale={ptBR}
                     />
                     <AppointmentForm
                       onSubmit={handleAddAppointment}
@@ -225,13 +233,23 @@ const ProfessionalSchedule = () => {
                     </TableCell>
                     <TableCell>{appointment.responsible}</TableCell>
                     <TableCell>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => setEditingAppointment(appointment)}
-                      >
-                        <Edit2 className="h-4 w-4" />
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => setEditingAppointment(appointment)}
+                        >
+                          <Edit2 className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleDeleteAppointment(appointment.id)}
+                          className="text-destructive hover:text-destructive/90"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -255,6 +273,7 @@ const ProfessionalSchedule = () => {
                 setEditingAppointment({ ...editingAppointment, date: date || new Date() })
               }
               className="rounded-md border"
+              locale={ptBR}
             />
             {editingAppointment && (
               <AppointmentForm
