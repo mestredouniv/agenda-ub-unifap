@@ -5,6 +5,7 @@ import { AddProfessionalModal } from "@/components/AddProfessionalModal";
 import { DailyAnnouncements } from "@/components/DailyAnnouncements";
 import { AttendingProfessionals } from "@/components/AttendingProfessionals";
 import { Header } from "@/components/Header";
+import { Dashboard } from "@/components/Dashboard";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 interface Professional {
@@ -60,6 +61,10 @@ const Index = () => {
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
           <AttendingProfessionals professionals={professionals} />
           <DailyAnnouncements />
+        </div>
+
+        <div className="mt-8">
+          <Dashboard professionals={professionals} />
         </div>
 
         <div className="mt-8 flex items-center justify-between">

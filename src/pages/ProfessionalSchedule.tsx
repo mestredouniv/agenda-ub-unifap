@@ -3,6 +3,15 @@ import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
@@ -18,7 +27,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Home, Printer, Share2 } from "lucide-react";
+import { Home, Printer, Share2, Plus, Edit2 } from "lucide-react";
+import { useToast } from "@/components/ui/use-toast";
 
 interface Appointment {
   id: number;
@@ -31,25 +41,23 @@ interface Appointment {
   responsible: string;
 }
 
+interface AppointmentFormData {
+  patientName: string;
+  time: string;
+  appointmentType: string;
+  birthDate: string;
+  hasRecord: boolean;
+  responsible: string;
+}
+
 const ProfessionalSchedule = () => {
   const navigate = useNavigate();
-  const currentMonth = format(new Date(), "MMMM", { locale: ptBR });
+  const { toast } = useToast();
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [selectedMonth, setSelectedMonth] = useState(format(new Date(), "M"));
-
-  // Dados de exemplo - substituir por dados reais posteriormente
-  const appointments: Appointment[] = [
-    {
-      id: 1,
-      date: new Date(),
-      patientName: "João Silva",
-      time: "08:00",
-      appointmentType: "Consulta Regular",
-      birthDate: "1990-05-15",
-      hasRecord: true,
-      responsible: "Dr. André",
-    },
-    // Adicione mais agendamentos conforme necessário
-  ];
+  const [isAddingAppointment, setIsAddingAppointment] = useState(false);
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null);
 
   const months = [
     { value: "1", label: "Janeiro" },
@@ -66,18 +74,46 @@ const ProfessionalSchedule = () => {
     { value: "12", label: "Dezembro" },
   ];
 
+  const handleAddAppointment = (formData: AppointmentFormData) => {
+    const newAppointment: Appointment = {
+      id: appointments.length + 1,
+      date: selectedDate || new Date(),
+      ...formData,
+    };
+    setAppointments([...appointments, newAppointment]);
+    setIsAddingAppointment(false);
+    toast({
+      title: "Consulta agendada",
+      description: "A consulta foi agendada com sucesso!",
+    });
+  };
+
+  const handleEditAppointment = (appointment: Appointment) => {
+    const updatedAppointments = appointments.map((app) =>
+      app.id === appointment.id ? appointment : app
+    );
+    setAppointments(updatedAppointments);
+    setEditingAppointment(null);
+    toast({
+      title: "Consulta atualizada",
+      description: "As alterações foram salvas com sucesso!",
+    });
+  };
+
   const handlePrint = () => {
     window.print();
   };
 
   const handleShare = () => {
     // Implementar lógica de compartilhamento
-    console.log("Compartilhar agenda");
+    toast({
+      title: "Compartilhar agenda",
+      description: "Funcionalidade em desenvolvimento",
+    });
   };
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Cabeçalho fixo */}
       <div className="fixed top-0 left-0 right-0 bg-white shadow-md z-50">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
@@ -96,7 +132,7 @@ const ProfessionalSchedule = () => {
                 onValueChange={(value) => setSelectedMonth(value)}
               >
                 <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder={currentMonth} />
+                  <SelectValue placeholder={format(new Date(), "MMMM", { locale: ptBR })} />
                 </SelectTrigger>
                 <SelectContent>
                   {months.map((month) => (
@@ -106,6 +142,31 @@ const ProfessionalSchedule = () => {
                   ))}
                 </SelectContent>
               </Select>
+
+              <Dialog open={isAddingAppointment} onOpenChange={setIsAddingAppointment}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" size="icon" className="hover:bg-primary/10">
+                    <Plus className="h-5 w-5" />
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[425px]">
+                  <DialogHeader>
+                    <DialogTitle>Agendar Consulta</DialogTitle>
+                  </DialogHeader>
+                  <div className="grid gap-4 py-4">
+                    <Calendar
+                      mode="single"
+                      selected={selectedDate}
+                      onSelect={setSelectedDate}
+                      className="rounded-md border"
+                    />
+                    <AppointmentForm
+                      onSubmit={handleAddAppointment}
+                      initialData={null}
+                    />
+                  </div>
+                </DialogContent>
+              </Dialog>
 
               <Button
                 variant="outline"
@@ -129,7 +190,6 @@ const ProfessionalSchedule = () => {
         </div>
       </div>
 
-      {/* Espaçamento para o cabeçalho fixo */}
       <div className="pt-24">
         <div className="container mx-auto px-4">
           <div className="bg-white rounded-lg shadow-md overflow-hidden">
@@ -144,6 +204,7 @@ const ProfessionalSchedule = () => {
                   <TableHead>Data Nasc.</TableHead>
                   <TableHead>Prontuário</TableHead>
                   <TableHead>Responsável</TableHead>
+                  <TableHead>Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -163,6 +224,15 @@ const ProfessionalSchedule = () => {
                       {appointment.hasRecord ? "Sim" : "Não"}
                     </TableCell>
                     <TableCell>{appointment.responsible}</TableCell>
+                    <TableCell>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setEditingAppointment(appointment)}
+                      >
+                        <Edit2 className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -170,7 +240,111 @@ const ProfessionalSchedule = () => {
           </div>
         </div>
       </div>
+
+      <Dialog open={!!editingAppointment} onOpenChange={() => setEditingAppointment(null)}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Editar Consulta</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <Calendar
+              mode="single"
+              selected={editingAppointment?.date}
+              onSelect={(date) =>
+                editingAppointment &&
+                setEditingAppointment({ ...editingAppointment, date: date || new Date() })
+              }
+              className="rounded-md border"
+            />
+            {editingAppointment && (
+              <AppointmentForm
+                onSubmit={(formData) =>
+                  handleEditAppointment({ ...editingAppointment, ...formData })
+                }
+                initialData={editingAppointment}
+              />
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
+  );
+};
+
+const AppointmentForm = ({
+  onSubmit,
+  initialData,
+}: {
+  onSubmit: (data: AppointmentFormData) => void;
+  initialData: Appointment | null;
+}) => {
+  const [formData, setFormData] = useState<AppointmentFormData>({
+    patientName: initialData?.patientName || "",
+    time: initialData?.time || "",
+    appointmentType: initialData?.appointmentType || "",
+    birthDate: initialData?.birthDate || "",
+    hasRecord: initialData?.hasRecord || false,
+    responsible: initialData?.responsible || "",
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSubmit(formData);
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="grid gap-4">
+        <Input
+          placeholder="Nome do Paciente"
+          value={formData.patientName}
+          onChange={(e) =>
+            setFormData({ ...formData, patientName: e.target.value })
+          }
+        />
+        <Input
+          type="time"
+          value={formData.time}
+          onChange={(e) => setFormData({ ...formData, time: e.target.value })}
+        />
+        <Input
+          placeholder="Tipo de Consulta"
+          value={formData.appointmentType}
+          onChange={(e) =>
+            setFormData({ ...formData, appointmentType: e.target.value })
+          }
+        />
+        <Input
+          type="date"
+          value={formData.birthDate}
+          onChange={(e) => setFormData({ ...formData, birthDate: e.target.value })}
+        />
+        <Select
+          value={formData.hasRecord ? "yes" : "no"}
+          onValueChange={(value) =>
+            setFormData({ ...formData, hasRecord: value === "yes" })
+          }
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Prontuário" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="yes">Sim</SelectItem>
+            <SelectItem value="no">Não</SelectItem>
+          </SelectContent>
+        </Select>
+        <Input
+          placeholder="Responsável"
+          value={formData.responsible}
+          onChange={(e) =>
+            setFormData({ ...formData, responsible: e.target.value })
+          }
+        />
+      </div>
+      <Button type="submit" className="w-full">
+        {initialData ? "Salvar Alterações" : "Agendar Consulta"}
+      </Button>
+    </form>
   );
 };
 
