@@ -9,20 +9,35 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
+import { UserX, UserCog } from "lucide-react";
+
+interface Professional {
+  id: number;
+  name: string;
+  profession: string;
+}
 
 interface AddProfessionalModalProps {
   isOpen: boolean;
   onClose: () => void;
   onAdd: (name: string, profession: string) => void;
+  onEdit?: (id: number, name: string, profession: string) => void;
+  onDelete?: (id: number) => void;
+  professional?: Professional;
+  mode?: "add" | "edit";
 }
 
 export const AddProfessionalModal = ({
   isOpen,
   onClose,
   onAdd,
+  onEdit,
+  onDelete,
+  professional,
+  mode = "add",
 }: AddProfessionalModalProps) => {
-  const [name, setName] = useState("");
-  const [profession, setProfession] = useState("");
+  const [name, setName] = useState(professional?.name || "");
+  const [profession, setProfession] = useState(professional?.profession || "");
   const { toast } = useToast();
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -35,21 +50,44 @@ export const AddProfessionalModal = ({
       });
       return;
     }
-    onAdd(name, profession);
+
+    if (mode === "edit" && professional && onEdit) {
+      onEdit(professional.id, name, profession);
+      toast({
+        title: "Sucesso",
+        description: "Profissional atualizado com sucesso",
+      });
+    } else {
+      onAdd(name, profession);
+      toast({
+        title: "Sucesso",
+        description: "Profissional adicionado com sucesso",
+      });
+    }
+    
     setName("");
     setProfession("");
     onClose();
-    toast({
-      title: "Sucesso",
-      description: "Profissional adicionado com sucesso",
-    });
+  };
+
+  const handleDelete = () => {
+    if (professional && onDelete) {
+      onDelete(professional.id);
+      toast({
+        title: "Sucesso",
+        description: "Profissional removido com sucesso",
+      });
+      onClose();
+    }
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Adicionar Novo Profissional</DialogTitle>
+          <DialogTitle>
+            {mode === "add" ? "Adicionar Novo Profissional" : "Editar Profissional"}
+          </DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 mt-4">
           <div className="space-y-2">
@@ -71,11 +109,29 @@ export const AddProfessionalModal = ({
             />
           </div>
           <div className="flex justify-end gap-2">
+            {mode === "edit" && (
+              <Button
+                type="button"
+                variant="destructive"
+                onClick={handleDelete}
+                className="flex items-center gap-2"
+              >
+                <UserX className="h-4 w-4" />
+                Remover
+              </Button>
+            )}
             <Button variant="outline" type="button" onClick={onClose}>
               Cancelar
             </Button>
-            <Button type="submit" className="bg-primary hover:bg-primary/90">
-              Adicionar
+            <Button type="submit" className="bg-primary hover:bg-primary/90 flex items-center gap-2">
+              {mode === "edit" ? (
+                <>
+                  <UserCog className="h-4 w-4" />
+                  Atualizar
+                </>
+              ) : (
+                "Adicionar"
+              )}
             </Button>
           </div>
         </form>

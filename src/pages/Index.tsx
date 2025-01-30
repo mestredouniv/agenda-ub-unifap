@@ -13,6 +13,10 @@ interface Professional {
   id: number;
   name: string;
   profession: string;
+  schedules?: {
+    date: Date;
+    appointments: number;
+  }[];
 }
 
 const initialProfessionals: Professional[] = [
@@ -39,6 +43,8 @@ const Index = () => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedProfessional, setSelectedProfessional] = useState<Professional | null>(null);
+  const [modalMode, setModalMode] = useState<"add" | "edit">("add");
   const [professionals, setProfessionals] = useState<Professional[]>(initialProfessionals);
 
   const handleProfessionalClick = (professional: Professional) => {
@@ -54,9 +60,29 @@ const Index = () => {
     setProfessionals([...professionals, newProfessional]);
   };
 
+  const handleEditProfessional = (id: number, name: string, profession: string) => {
+    setProfessionals(professionals.map(p => 
+      p.id === id ? { ...p, name, profession } : p
+    ));
+  };
+
+  const handleDeleteProfessional = (id: number) => {
+    setProfessionals(professionals.filter(p => p.id !== id));
+  };
+
+  const handleEditClick = (professional: Professional) => {
+    setSelectedProfessional(professional);
+    setModalMode("edit");
+    setIsModalOpen(true);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header onAddClick={() => setIsModalOpen(true)} />
+      <Header onAddClick={() => {
+        setSelectedProfessional(null);
+        setModalMode("add");
+        setIsModalOpen(true);
+      }} />
       
       <main className="container mx-auto px-4 py-6">
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
@@ -82,6 +108,7 @@ const Index = () => {
               key={professional.id}
               professional={professional}
               onClick={handleProfessionalClick}
+              onEditClick={() => handleEditClick(professional)}
             />
           ))}
         </div>
@@ -91,6 +118,10 @@ const Index = () => {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onAdd={handleAddProfessional}
+        onEdit={handleEditProfessional}
+        onDelete={handleDeleteProfessional}
+        professional={selectedProfessional || undefined}
+        mode={modalMode}
       />
     </div>
   );

@@ -1,4 +1,7 @@
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft } from "lucide-react";
 import {
   LineChart,
   Line,
@@ -13,6 +16,8 @@ import {
 } from "recharts";
 
 const Reports = () => {
+  const navigate = useNavigate();
+  
   // Sample data - replace with real data later
   const monthlyData = [
     { month: "Jan", consultas: 120, faltas: 15 },
@@ -32,7 +37,17 @@ const Reports = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 p-8">
-      <h1 className="text-2xl font-bold mb-6">Relatórios e Estatísticas</h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold">Relatórios e Estatísticas</h1>
+        <Button
+          variant="outline"
+          onClick={() => navigate("/")}
+          className="flex items-center gap-2"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Voltar ao Menu Principal
+        </Button>
+      </div>
       
       <div className="grid gap-6 md:grid-cols-2">
         <Card>
