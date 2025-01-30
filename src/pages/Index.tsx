@@ -2,8 +2,6 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ProfessionalCard } from "@/components/ProfessionalCard";
 import { AddProfessionalModal } from "@/components/AddProfessionalModal";
-import { Button } from "@/components/ui/button";
-import { UserPlus } from "lucide-react";
 import { DailyAnnouncements } from "@/components/DailyAnnouncements";
 import { AttendingProfessionals } from "@/components/AttendingProfessionals";
 import { Header } from "@/components/Header";
@@ -45,31 +43,27 @@ const Index = () => {
     navigate(`/agenda/${professional.id}`);
   };
 
-  const handleAddProfessional = (newProfessional: Omit<Professional, "id">) => {
-    const id = professionals.length + 1;
-    setProfessionals([...professionals, { ...newProfessional, id }]);
-    setIsModalOpen(false);
+  const handleAddProfessional = (name: string, profession: string) => {
+    const newProfessional = {
+      id: professionals.length + 1,
+      name,
+      profession,
+    };
+    setProfessionals([...professionals, newProfessional]);
   };
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header />
+      <Header onAddClick={() => setIsModalOpen(true)} />
       
       <main className="container mx-auto px-4 py-6">
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-          <AttendingProfessionals />
+          <AttendingProfessionals professionals={professionals} />
           <DailyAnnouncements />
         </div>
 
         <div className="mt-8 flex items-center justify-between">
           <h2 className="text-xl font-semibold text-gray-800">Profissionais</h2>
-          <Button
-            onClick={() => setIsModalOpen(true)}
-            className="bg-primary hover:bg-primary/90"
-          >
-            <UserPlus className="mr-2 h-4 w-4" />
-            Adicionar Profissional
-          </Button>
         </div>
 
         <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
@@ -84,9 +78,9 @@ const Index = () => {
       </main>
 
       <AddProfessionalModal
-        open={isModalOpen}
-        onOpenChange={setIsModalOpen}
-        onSubmit={handleAddProfessional}
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onAdd={handleAddProfessional}
       />
     </div>
   );
