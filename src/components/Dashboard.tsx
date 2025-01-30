@@ -15,7 +15,7 @@ interface DashboardProps {
   }>;
 }
 
-const Dashboard = ({ professionals }: DashboardProps) => {
+export default function Dashboard({ professionals }: DashboardProps) {
   // Dados de exemplo - substituir por dados reais posteriormente
   const monthlyData = [
     { month: "Jan", consultas: 120, faltas: 15 },
@@ -93,6 +93,4 @@ const Dashboard = ({ professionals }: DashboardProps) => {
       </Card>
     </div>
   );
-};
-
-export default Dashboard;
+}

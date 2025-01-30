@@ -5,7 +5,7 @@ import { AddProfessionalModal } from "@/components/AddProfessionalModal";
 import { DailyAnnouncements } from "@/components/DailyAnnouncements";
 import { AttendingProfessionals } from "@/components/AttendingProfessionals";
 import { Header } from "@/components/Header";
-import { Dashboard } from "@/components/Dashboard";
+import Dashboard from "@/components/Dashboard";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 interface Professional {
