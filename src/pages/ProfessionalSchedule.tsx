@@ -9,7 +9,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import {
@@ -78,6 +78,16 @@ const ProfessionalSchedule = () => {
   ];
 
   const handleAddAppointment = (formData: AppointmentFormData) => {
+    // Check if the selected date is marked as unavailable
+    if (isDateUnavailable(selectedDate || new Date())) {
+      toast({
+        title: "Data Indisponível",
+        description: "O profissional não está disponível nesta data. Por favor, selecione outra data.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const newAppointment: Appointment = {
       id: appointments.length + 1,
       date: selectedDate || new Date(),
@@ -178,14 +188,12 @@ const ProfessionalSchedule = () => {
               </Select>
 
               <Dialog open={isAddingAppointment} onOpenChange={setIsAddingAppointment}>
-                <DialogTrigger asChild>
-                  <Button variant="outline" size="icon" className="hover:bg-primary/10">
-                    <Plus className="h-5 w-5" />
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-[425px]">
+                <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
                   <DialogHeader>
                     <DialogTitle>Agendar Consulta</DialogTitle>
+                    <DialogDescription>
+                      Preencha os dados para agendar uma nova consulta
+                    </DialogDescription>
                   </DialogHeader>
                   <div className="grid gap-4 py-4">
                     <Calendar
@@ -194,6 +202,7 @@ const ProfessionalSchedule = () => {
                       onSelect={setSelectedDate}
                       className="rounded-md border"
                       locale={ptBR}
+                      disabled={(date) => isDateUnavailable(date)}
                     />
                     <AppointmentForm
                       onSubmit={handleAddAppointment}
@@ -287,9 +296,12 @@ const ProfessionalSchedule = () => {
       </div>
 
       <Dialog open={isSelectingUnavailableDays} onOpenChange={setIsSelectingUnavailableDays}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Marcar Dias de Ausência</DialogTitle>
+            <DialogDescription>
+              Selecione os dias em que não estará disponível para atendimento
+            </DialogDescription>
           </DialogHeader>
           <UnavailableDaysSelector
             selectedDays={unavailableDays}
@@ -299,9 +311,12 @@ const ProfessionalSchedule = () => {
       </Dialog>
 
       <Dialog open={!!editingAppointment} onOpenChange={() => setEditingAppointment(null)}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Editar Consulta</DialogTitle>
+            <DialogDescription>
+              Modifique os dados da consulta
+            </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <Calendar
@@ -313,6 +328,7 @@ const ProfessionalSchedule = () => {
               }
               className="rounded-md border"
               locale={ptBR}
+              disabled={(date) => isDateUnavailable(date)}
             />
             {editingAppointment && (
               <AppointmentForm
