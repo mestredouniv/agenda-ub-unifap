@@ -26,12 +26,12 @@ export const DailyAnnouncements = () => {
     setAnnouncements([announcement, ...announcements]);
     setNewAnnouncement("");
 
-    // Remove announcement after 24 hours
+    // Remove announcement after 12 hours
     setTimeout(() => {
       setAnnouncements(current => 
         current.filter(a => a.id !== announcement.id)
       );
-    }, 24 * 60 * 60 * 1000);
+    }, 12 * 60 * 60 * 1000); // 12 hours in milliseconds
   };
 
   return (

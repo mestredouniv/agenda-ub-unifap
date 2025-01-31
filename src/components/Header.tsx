@@ -1,12 +1,12 @@
-import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
 import { format } from "date-fns";
+import { NavigationBar } from "./NavigationBar";
 
 interface HeaderProps {
   onAddClick: () => void;
+  onRemoveClick: () => void;
 }
 
-export const Header = ({ onAddClick }: HeaderProps) => {
+export const Header = ({ onAddClick, onRemoveClick }: HeaderProps) => {
   const today = new Date();
 
   return (
@@ -20,13 +20,10 @@ export const Header = ({ onAddClick }: HeaderProps) => {
       <p className="text-gray-600 mb-4 text-center">
         Sistema de Agendamento de Consultas
       </p>
-      <Button
-        onClick={onAddClick}
-        className="bg-primary hover:bg-primary/90 text-white flex items-center gap-2"
-      >
-        <Plus className="h-4 w-4" />
-        Adicionar Profissional
-      </Button>
+      <NavigationBar 
+        onAddProfessional={onAddClick}
+        onRemoveProfessional={onRemoveClick}
+      />
     </div>
   );
 };

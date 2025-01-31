@@ -17,6 +17,7 @@ interface Professional {
 interface ProfessionalCardProps {
   professional: Professional;
   onClick: (professional: Professional) => void;
+  onEditClick?: () => void;
 }
 
 const getProfessionIcon = (profession: string) => {
@@ -29,7 +30,7 @@ const getProfessionIcon = (profession: string) => {
   return UserRound;
 };
 
-export const ProfessionalCard = ({ professional, onClick }: ProfessionalCardProps) => {
+export const ProfessionalCard = ({ professional, onClick, onEditClick }: ProfessionalCardProps) => {
   const Icon = getProfessionIcon(professional.profession);
   
   return (
