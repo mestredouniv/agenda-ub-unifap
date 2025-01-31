@@ -27,8 +27,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Home, Printer, Share2, Plus, Edit2, Trash2 } from "lucide-react";
+import { Home, Printer, Share2, Plus, Edit2, Trash2, Calendar as CalendarIcon } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import { UnavailableDaysSelector } from "@/components/UnavailableDaysSelector";
 
 interface Appointment {
   id: number;
@@ -58,6 +59,8 @@ const ProfessionalSchedule = () => {
   const [isAddingAppointment, setIsAddingAppointment] = useState(false);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null);
+  const [unavailableDays, setUnavailableDays] = useState<Date[]>([]);
+  const [isSelectingUnavailableDays, setIsSelectingUnavailableDays] = useState(false);
 
   const months = [
     { value: "1", label: "Janeiro" },
@@ -119,6 +122,21 @@ const ProfessionalSchedule = () => {
     });
   };
 
+  const handleUnavailableDaysChange = (days: Date[]) => {
+    setUnavailableDays(days);
+    toast({
+      title: "Dias indisponíveis atualizados",
+      description: "O calendário foi atualizado com os dias de ausência.",
+    });
+  };
+
+  const isDateUnavailable = (date: Date) => {
+    return unavailableDays.some(
+      (unavailableDate) =>
+        format(unavailableDate, "yyyy-MM-dd") === format(date, "yyyy-MM-dd")
+    );
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="fixed top-0 left-0 right-0 bg-white shadow-md z-50">
@@ -134,6 +152,15 @@ const ProfessionalSchedule = () => {
             </Button>
 
             <div className="flex items-center gap-4">
+              <Button
+                variant="outline"
+                onClick={() => setIsSelectingUnavailableDays(true)}
+                className="flex items-center gap-2"
+              >
+                <CalendarIcon className="h-4 w-4" />
+                Marcar Ausências
+              </Button>
+
               <Select
                 value={selectedMonth}
                 onValueChange={(value) => setSelectedMonth(value)}
@@ -259,6 +286,18 @@ const ProfessionalSchedule = () => {
         </div>
       </div>
 
+      <Dialog open={isSelectingUnavailableDays} onOpenChange={setIsSelectingUnavailableDays}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Marcar Dias de Ausência</DialogTitle>
+          </DialogHeader>
+          <UnavailableDaysSelector
+            selectedDays={unavailableDays}
+            onChange={handleUnavailableDaysChange}
+          />
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={!!editingAppointment} onOpenChange={() => setEditingAppointment(null)}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
@@ -338,20 +377,23 @@ const AppointmentForm = ({
           value={formData.birthDate}
           onChange={(e) => setFormData({ ...formData, birthDate: e.target.value })}
         />
-        <Select
-          value={formData.hasRecord ? "yes" : "no"}
-          onValueChange={(value) =>
-            setFormData({ ...formData, hasRecord: value === "yes" })
-          }
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Prontuário" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="yes">Sim</SelectItem>
-            <SelectItem value="no">Não</SelectItem>
-          </SelectContent>
-        </Select>
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Prontuário</label>
+          <Select
+            value={formData.hasRecord ? "yes" : "no"}
+            onValueChange={(value) =>
+              setFormData({ ...formData, hasRecord: value === "yes" })
+            }
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Possui prontuário?" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="yes">Sim</SelectItem>
+              <SelectItem value="no">Não</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
         <Input
           placeholder="Responsável"
           value={formData.responsible}
