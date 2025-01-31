@@ -10,6 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
+  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import {
@@ -171,6 +172,19 @@ const ProfessionalSchedule = () => {
                 Marcar Ausências
               </Button>
 
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="flex items-center gap-2"
+                    onClick={() => setIsAddingAppointment(true)}
+                  >
+                    <Plus className="h-4 w-4" />
+                    Agendar Consulta
+                  </Button>
+                </DialogTrigger>
+              </Dialog>
+
               <Select
                 value={selectedMonth}
                 onValueChange={(value) => setSelectedMonth(value)}
@@ -186,31 +200,6 @@ const ProfessionalSchedule = () => {
                   ))}
                 </SelectContent>
               </Select>
-
-              <Dialog open={isAddingAppointment} onOpenChange={setIsAddingAppointment}>
-                <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
-                  <DialogHeader>
-                    <DialogTitle>Agendar Consulta</DialogTitle>
-                    <DialogDescription>
-                      Preencha os dados para agendar uma nova consulta
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="grid gap-4 py-4">
-                    <Calendar
-                      mode="single"
-                      selected={selectedDate}
-                      onSelect={setSelectedDate}
-                      className="rounded-md border"
-                      locale={ptBR}
-                      disabled={(date) => isDateUnavailable(date)}
-                    />
-                    <AppointmentForm
-                      onSubmit={handleAddAppointment}
-                      initialData={null}
-                    />
-                  </div>
-                </DialogContent>
-              </Dialog>
 
               <Button
                 variant="outline"
@@ -294,6 +283,31 @@ const ProfessionalSchedule = () => {
           </div>
         </div>
       </div>
+
+      <Dialog open={isAddingAppointment} onOpenChange={setIsAddingAppointment}>
+        <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Agendar Consulta</DialogTitle>
+            <DialogDescription>
+              Preencha os dados para agendar uma nova consulta
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <Calendar
+              mode="single"
+              selected={selectedDate}
+              onSelect={setSelectedDate}
+              className="rounded-md border"
+              locale={ptBR}
+              disabled={(date) => isDateUnavailable(date)}
+            />
+            <AppointmentForm
+              onSubmit={handleAddAppointment}
+              initialData={null}
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={isSelectingUnavailableDays} onOpenChange={setIsSelectingUnavailableDays}>
         <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
