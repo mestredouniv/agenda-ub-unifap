@@ -1,4 +1,3 @@
-import { format } from "date-fns";
 import { NavigationBar } from "./NavigationBar";
 
 interface HeaderProps {
@@ -7,19 +6,26 @@ interface HeaderProps {
 }
 
 export const Header = ({ onAddClick, onRemoveClick }: HeaderProps) => {
-  const today = new Date();
-
   return (
-    <div className="w-full flex flex-col items-center justify-center py-6 px-4 animate-fade-in relative">
-      <div className="absolute right-4 top-4 text-gray-600">
-        {format(today, "dd/MM/yyyy")}
+    <div className="w-full flex flex-col items-center justify-center py-6 px-4 animate-fade-in">
+      <div className="flex flex-col items-center gap-4 mb-6">
+        <img 
+          src="/unifap-logo.png" 
+          alt="UNIFAP Logo" 
+          className="h-24 w-auto"
+        />
+        <div className="text-center">
+          <h1 className="text-xl font-bold text-gray-900 mb-1">
+            UNIVERSIDADE FEDERAL DO AMAPÁ
+          </h1>
+          <h2 className="text-lg font-semibold text-gray-800 mb-1">
+            UNIDADE BÁSICA DE SAÚDE
+          </h2>
+          <h3 className="text-lg font-medium text-gray-700">
+            AGENDA UBS UNIFAP
+          </h3>
+        </div>
       </div>
-      <h1 className="text-3xl font-bold text-gray-900 mb-2 text-center">
-        Agenda UBS UNIFAP
-      </h1>
-      <p className="text-gray-600 mb-4 text-center">
-        Sistema de Agendamento de Consultas
-      </p>
       <NavigationBar 
         onAddProfessional={onAddClick}
         onRemoveProfessional={onRemoveClick}
