@@ -36,19 +36,13 @@ export const AppointmentTicket = ({
             maxLength={6}
             readOnly
             disabled
-            render={({ slots }) => (
-              <InputOTPGroup className="gap-2">
-                {slots.map((slot, index) => (
-                  <InputOTPSlot
-                    key={index}
-                    {...slot}
-                    index={index}
-                    className="w-12 h-12 text-2xl"
-                  />
-                ))}
-              </InputOTPGroup>
-            )}
-          />
+          >
+            <InputOTPGroup>
+              {Array.from({ length: 6 }).map((_, index) => (
+                <InputOTPSlot key={index} index={index} />
+              ))}
+            </InputOTPGroup>
+          </InputOTP>
         </div>
 
         {appointmentDate && appointmentTime && (
