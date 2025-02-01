@@ -1,77 +1,94 @@
-import { useState } from "react";
-import { Search } from "lucide-react";
-import { Input } from "@/components/ui/input";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
-interface Request {
+interface AppointmentRequest {
   id: string;
+  professionalId: string;
   patientName: string;
-  phone: string;
   preferredDate: string;
   preferredTime: string;
+  status: "pending" | "approved" | "rejected" | "rescheduled" | "direct_visit";
+  message?: string;
 }
 
 export const ConsultaRequestsList = () => {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [requests, setRequests] = useState(() => {
-    const stored = localStorage.getItem("appointments");
-    return stored ? JSON.parse(stored) : [];
-  });
+  const [requests, setRequests] = useState<AppointmentRequest[]>([]);
 
-  const filteredRequests = requests.filter(
-    (request: Request) =>
-      request.patientName.toLowerCase().includes(searchTerm.toLowerCase()) &&
-      new Date(request.preferredDate) >= new Date()
-  );
+  useEffect(() => {
+    const loadRequests = () => {
+      const storedRequests = JSON.parse(localStorage.getItem("appointments") || "[]");
+      setRequests(storedRequests);
+    };
 
-  const formatPhone = (phone: string) => {
-    return phone.slice(0, 4) + "****" + phone.slice(-4);
+    loadRequests();
+    window.addEventListener("storage", loadRequests);
+    return () => window.removeEventListener("storage", loadRequests);
+  }, []);
+
+  const getStatusBadge = (status: AppointmentRequest["status"]) => {
+    switch (status) {
+      case "pending":
+        return <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">Aguardando</Badge>;
+      case "approved":
+        return <Badge variant="secondary" className="bg-green-100 text-green-800">Aprovada</Badge>;
+      case "rejected":
+        return <Badge variant="secondary" className="bg-red-100 text-red-800">Rejeitada</Badge>;
+      case "rescheduled":
+        return <Badge variant="secondary" className="bg-blue-100 text-blue-800">Remarcada</Badge>;
+      case "direct_visit":
+        return <Badge variant="secondary" className="bg-purple-100 text-purple-800">Visita Direta</Badge>;
+      default:
+        return null;
+    }
   };
+
+  if (requests.length === 0) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Lista de Solicitações</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-center text-muted-foreground">
+            Não há solicitações de consulta no momento
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>
       <CardHeader>
         <CardTitle>Lista de Solicitações</CardTitle>
-        <div className="relative">
-          <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Buscar solicitação..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
-          />
-        </div>
       </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          {filteredRequests.map((request: Request) => (
-            <div
-              key={request.id}
-              className="flex justify-between items-center p-4 border rounded-lg hover:bg-primary/5 transition-colors"
-            >
-              <div>
-                <p className="font-medium">
-                  {request.patientName.split(" ")[0]}
+      <CardContent className="space-y-4">
+        {requests.map((request) => (
+          <div
+            key={request.id}
+            className="flex justify-between items-center p-4 border rounded-lg hover:bg-gray-50"
+          >
+            <div>
+              <p className="font-medium">{request.patientName}</p>
+              <p className="text-sm text-muted-foreground">
+                {format(new Date(request.preferredDate), "dd 'de' MMMM 'de' yyyy", {
+                  locale: ptBR,
+                })}
+                {" - "}
+                {request.preferredTime}
+              </p>
+              {request.message && (
+                <p className="text-sm text-muted-foreground mt-1">
+                  {request.message}
                 </p>
-                <p className="text-sm text-muted-foreground">
-                  Tel: {formatPhone(request.phone)}
-                </p>
-              </div>
-              <div className="text-right space-y-1">
-                <p className="text-sm">
-                  {new Date(request.preferredDate).toLocaleDateString()}
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  {request.preferredTime}
-                </p>
-                <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
-                  Aguardando Aprovação
-                </Badge>
-              </div>
+              )}
             </div>
-          ))}
-        </div>
+            <div>{getStatusBadge(request.status)}</div>
+          </div>
+        ))}
       </CardContent>
     </Card>
   );

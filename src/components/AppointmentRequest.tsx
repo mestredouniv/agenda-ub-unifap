@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -9,15 +9,16 @@ import {
 } from "@/components/ui/card";
 import { Info } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { AppointmentTicket } from "@/components/AppointmentTicket";
 import { PersonalDataForm } from "@/components/PersonalDataForm";
 import { AppointmentSelection } from "@/components/AppointmentSelection";
-import { AppointmentRequestsReport } from "./AppointmentRequestsReport";
-
-interface Professional {
-  id: string;
-  name: string;
-  profession: string;
-}
 
 interface AppointmentRequest {
   id: string;
@@ -32,8 +33,27 @@ interface AppointmentRequest {
   responsible?: string;
   status: "pending" | "approved" | "rejected" | "rescheduled" | "direct_visit";
   message?: string;
-  createdAt: string;
 }
+
+const professionals = [
+  { id: "1", name: "Luciana", profession: "Psicóloga" },
+  { id: "2", name: "Janaína", profession: "Psicóloga" },
+  { id: "3", name: "Anna", profession: "Fisioterapeuta" },
+  { id: "4", name: "Anderson", profession: "Médico" },
+  { id: "5", name: "Anna", profession: "Auriculoterapeuta" },
+  { id: "6", name: "Wandervan", profession: "Enfermeiro" },
+  { id: "7", name: "Patrícia", profession: "Enfermeira" },
+  { id: "8", name: "Liliany", profession: "Médica" },
+  { id: "9", name: "Janaína", profession: "Enfermeira" },
+  { id: "10", name: "Equipe", profession: "Curativo" },
+  { id: "11", name: "André", profession: "Médico" },
+  { id: "12", name: "Ananda", profession: "Enfermeira" },
+  { id: "13", name: "Nely", profession: "Enfermeira" },
+  { id: "14", name: "Luciana", profession: "Psicóloga" },
+  { id: "15", name: "Janaína", profession: "Psicóloga" },
+  { id: "16", name: "Equipe", profession: "Laboratório" },
+  { id: "17", name: "Equipe", profession: "Gestante" },
+];
 
 const generateId = () => {
   return Math.random().toString(36).substring(2, 15);
@@ -41,8 +61,9 @@ const generateId = () => {
 
 const AppointmentRequest = () => {
   const { toast } = useToast();
-  const [professionals, setProfessionals] = useState<Professional[]>([]);
-  const [formData, setFormData] = useState<Omit<AppointmentRequest, "id" | "status" | "createdAt">>({
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [ticketNumber, setTicketNumber] = useState<string>("");
+  const [formData, setFormData] = useState<Omit<AppointmentRequest, "id" | "status" | "message">>({
     professionalId: "",
     patientName: "",
     cpf: "",
@@ -53,45 +74,28 @@ const AppointmentRequest = () => {
     preferredTime: "",
   });
 
-  useEffect(() => {
-    // Carregar profissionais do localStorage
-    const storedProfessionals = localStorage.getItem("professionals");
-    if (storedProfessionals) {
-      setProfessionals(JSON.parse(storedProfessionals));
-      console.log("Profissionais carregados:", JSON.parse(storedProfessionals));
-    }
-  }, []);
-
   const handleFormChange = (field: string, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const newTicketNumber = generateId();
+    setTicketNumber(newTicketNumber);
     
-    // Validar se todos os campos obrigatórios estão preenchidos
-    if (!formData.professionalId || !formData.preferredDate || !formData.preferredTime) {
-      toast({
-        title: "Erro",
-        description: "Por favor, preencha todos os campos obrigatórios.",
-        variant: "destructive",
-      });
-      return;
-    }
-
     const appointment: AppointmentRequest = {
-      id: generateId(),
+      id: newTicketNumber,
       ...formData,
       status: "pending",
-      createdAt: new Date().toISOString(),
+      preferredDate: formData.preferredDate,
     };
     
-    // Salvar no localStorage
+    // Salvar na lista geral de agendamentos
     const appointments = JSON.parse(localStorage.getItem("appointments") || "[]");
     appointments.push(appointment);
     localStorage.setItem("appointments", JSON.stringify(appointments));
 
-    // Adicionar à agenda do profissional
+    // Adicionar à agenda do profissional específico
     const professionalSchedule = JSON.parse(
       localStorage.getItem(`schedule-${formData.professionalId}`) || "[]"
     );
@@ -101,21 +105,10 @@ const AppointmentRequest = () => {
       JSON.stringify(professionalSchedule)
     );
 
+    setShowConfirmation(true);
     toast({
       title: "Solicitação enviada",
       description: "Sua solicitação foi enviada e está aguardando aprovação do profissional.",
-    });
-
-    // Resetar formulário
-    setFormData({
-      professionalId: "",
-      patientName: "",
-      cpf: "",
-      sus: "",
-      age: "",
-      phone: "",
-      preferredDate: undefined,
-      preferredTime: "",
     });
   };
 
@@ -167,11 +160,31 @@ const AppointmentRequest = () => {
             </form>
           </CardContent>
         </Card>
-
-        <div className="mt-8">
-          <AppointmentRequestsReport />
-        </div>
       </div>
+
+      <Dialog open={showConfirmation} onOpenChange={setShowConfirmation}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Status da Solicitação</DialogTitle>
+            <DialogDescription>
+              Guarde seu número de protocolo para consultar o status do agendamento
+            </DialogDescription>
+          </DialogHeader>
+          
+          <AppointmentTicket
+            ticketNumber={ticketNumber}
+            appointmentDate={formData.preferredDate}
+            appointmentTime={formData.preferredTime}
+          />
+          
+          <Button 
+            onClick={() => window.location.href = "/consultar-agendamento"} 
+            className="w-full mt-4"
+          >
+            Consultar Status do Agendamento
+          </Button>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
