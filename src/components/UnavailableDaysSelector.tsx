@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
 import { Card } from "@/components/ui/card";
 import { useAvailableSlots } from "@/hooks/useAvailableSlots";
+import { useState, useEffect } from "react";
 
 interface TimeSlot {
   time: string;
@@ -29,6 +30,11 @@ export const UnavailableDaysSelector = ({
 }: UnavailableDaysSelectorProps) => {
   const { toast } = useToast();
   const { slots: availableSlots, updateSlots, updateUnavailableDays } = useAvailableSlots(professionalId, undefined);
+  const [localSlots, setLocalSlots] = useState<TimeSlot[]>(availableSlots);
+
+  useEffect(() => {
+    setLocalSlots(availableSlots);
+  }, [availableSlots]);
 
   const handleSelect = (date: Date | undefined) => {
     if (!date) return;
@@ -50,11 +56,13 @@ export const UnavailableDaysSelector = ({
   };
 
   const handleTimeSlotChange = (time: string, checked: boolean) => {
-    const updatedSlots = availableSlots.map((slot) =>
+    const updatedSlots = localSlots.map((slot) =>
       slot.time === time ? { ...slot, available: checked } : slot
     );
     
+    setLocalSlots(updatedSlots);
     updateSlots(updatedSlots);
+    
     if (onTimeSlotsChange) {
       onTimeSlotsChange(updatedSlots);
     }
@@ -84,7 +92,7 @@ export const UnavailableDaysSelector = ({
       <Card className="p-4">
         <h3 className="font-medium text-sm mb-4">Horários disponíveis para atendimento:</h3>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-          {availableSlots.map((slot) => (
+          {localSlots.map((slot) => (
             <div
               key={slot.time}
               className="flex items-center space-x-2 bg-white rounded-lg p-3 shadow-sm border"

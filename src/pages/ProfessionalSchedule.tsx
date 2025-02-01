@@ -320,6 +320,7 @@ const ProfessionalSchedule = () => {
             </DialogDescription>
           </DialogHeader>
           <UnavailableDaysSelector
+            professionalId="1" // Você pode ajustar isso para usar o ID do profissional atual
             selectedDays={unavailableDays}
             onChange={handleUnavailableDaysChange}
           />
