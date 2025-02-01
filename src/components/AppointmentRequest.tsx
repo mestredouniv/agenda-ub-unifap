@@ -53,14 +53,12 @@ const AppointmentRequest = () => {
   });
 
   useEffect(() => {
-    const loadProfessionals = () => {
-      const storedProfessionals = JSON.parse(localStorage.getItem("professionals") || "[]");
-      setProfessionals(storedProfessionals);
-    };
-
-    loadProfessionals();
-    window.addEventListener("storage", loadProfessionals);
-    return () => window.removeEventListener("storage", loadProfessionals);
+    // Load professionals from localStorage
+    const storedProfessionals = localStorage.getItem("professionals");
+    if (storedProfessionals) {
+      setProfessionals(JSON.parse(storedProfessionals));
+      console.log("Loaded professionals:", JSON.parse(storedProfessionals));
+    }
   }, []);
 
   const handleFormChange = (field: string, value: any) => {
