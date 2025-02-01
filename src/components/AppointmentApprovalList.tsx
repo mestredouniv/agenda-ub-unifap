@@ -21,7 +21,6 @@ interface Appointment {
   patientName: string;
   preferredDate: string;
   preferredTime: string;
-  responsible?: string;
   status: "pending" | "approved" | "rejected" | "rescheduled" | "direct_visit";
   professionalId: string;
   suggestedDate?: string;
@@ -46,6 +45,10 @@ export const AppointmentApprovalList = ({ professionalId }: AppointmentApprovalL
   useEffect(() => {
     const loadAppointments = () => {
       const allAppointments = JSON.parse(localStorage.getItem("appointments") || "[]");
+      const professionalSchedule = JSON.parse(
+        localStorage.getItem(`schedule-${professionalId}`) || "[]"
+      );
+      
       const currentDate = new Date();
       const filteredAppointments = allAppointments.filter((app: Appointment) => {
         const appointmentDate = new Date(app.preferredDate);
@@ -55,6 +58,7 @@ export const AppointmentApprovalList = ({ professionalId }: AppointmentApprovalL
           appointmentDate >= currentDate
         );
       });
+      
       setAppointments(filteredAppointments);
     };
 
@@ -183,16 +187,12 @@ export const AppointmentApprovalList = ({ professionalId }: AppointmentApprovalL
 
   return (
     <div className="space-y-4">
+      <h3 className="text-lg font-medium">Solicitações Pendentes</h3>
       {appointments.map((appointment) => (
         <Card key={appointment.id} className="p-4">
           <div className="flex items-center justify-between">
-            <div className="space-y-2">
+            <div>
               <p className="font-medium">{appointment.patientName}</p>
-              {appointment.responsible && (
-                <p className="text-sm text-muted-foreground">
-                  Responsável: {appointment.responsible}
-                </p>
-              )}
               <p className="text-sm text-muted-foreground">
                 {format(new Date(appointment.preferredDate), "dd 'de' MMMM 'de' yyyy", {
                   locale: ptBR,
