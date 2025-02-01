@@ -93,9 +93,9 @@ const Consultas = () => {
   const getStatusBadge = (status: Patient['status']) => {
     const statusConfig = {
       waiting: { label: 'Aguardando', variant: 'secondary' as const },
-      triage: { label: 'Em Triagem', variant: 'warning' as const },
-      in_progress: { label: 'Em Atendimento', variant: 'primary' as const },
-      completed: { label: 'Finalizado', variant: 'success' as const },
+      triage: { label: 'Em Triagem', variant: 'outline' as const },
+      in_progress: { label: 'Em Atendimento', variant: 'default' as const },
+      completed: { label: 'Finalizado', variant: 'secondary' as const },
     };
 
     const config = statusConfig[status];
