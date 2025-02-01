@@ -78,11 +78,17 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header onAddClick={() => {
-        setSelectedProfessional(null);
-        setModalMode("add");
-        setIsModalOpen(true);
-      }} />
+      <Header 
+        onAddClick={() => {
+          setSelectedProfessional(null);
+          setModalMode("add");
+          setIsModalOpen(true);
+        }}
+        onRemoveClick={() => {
+          // This will be implemented later when needed
+          console.log("Remove functionality to be implemented");
+        }}
+      />
       
       <main className="container mx-auto px-4 py-6">
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
