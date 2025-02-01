@@ -18,22 +18,48 @@ export const useAvailableSlots = (professionalId: string, date: Date | undefined
   const queryClient = useQueryClient();
 
   const slotsQuery = useQuery({
-    queryKey: ['availableSlots', professionalId, date],
+    queryKey: ['availableSlots', professionalId, date?.toISOString()],
     queryFn: async () => {
+      if (!professionalId || !date) return DEFAULT_TIME_SLOTS;
+
       // Busca os slots do localStorage
       const storedSlots = localStorage.getItem(`slots-${professionalId}`);
       const slots = storedSlots ? JSON.parse(storedSlots) : DEFAULT_TIME_SLOTS;
       
-      // Retorna apenas os slots disponíveis
-      return slots.filter((slot: TimeSlot) => slot.available);
+      // Busca os dias indisponíveis do profissional
+      const unavailableDays = JSON.parse(localStorage.getItem(`unavailableDays-${professionalId}`) || '[]');
+      
+      // Verifica se a data selecionada está nos dias indisponíveis
+      const isDateUnavailable = unavailableDays.some((unavailableDate: string) => 
+        new Date(unavailableDate).toDateString() === date.toDateString()
+      );
+
+      // Se a data estiver indisponível, retorna todos os slots como indisponíveis
+      if (isDateUnavailable) {
+        return slots.map((slot: TimeSlot) => ({ ...slot, available: false }));
+      }
+
+      return slots;
     },
-    enabled: !!professionalId && !!date,
+    enabled: !!professionalId,
   });
 
   const updateSlotsMutation = useMutation({
     mutationFn: async (newSlots: TimeSlot[]) => {
+      if (!professionalId) return;
       localStorage.setItem(`slots-${professionalId}`, JSON.stringify(newSlots));
       return newSlots;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['availableSlots', professionalId] });
+    },
+  });
+
+  const updateUnavailableDays = useMutation({
+    mutationFn: async (days: Date[]) => {
+      if (!professionalId) return;
+      localStorage.setItem(`unavailableDays-${professionalId}`, JSON.stringify(days.map(d => d.toISOString())));
+      return days;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['availableSlots', professionalId] });
@@ -44,5 +70,6 @@ export const useAvailableSlots = (professionalId: string, date: Date | undefined
     slots: slotsQuery.data || DEFAULT_TIME_SLOTS,
     isLoading: slotsQuery.isLoading,
     updateSlots: updateSlotsMutation.mutate,
+    updateUnavailableDays: updateUnavailableDays.mutate,
   };
 };

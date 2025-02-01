@@ -5,6 +5,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
 import { Card } from "@/components/ui/card";
+import { useAvailableSlots } from "@/hooks/useAvailableSlots";
 
 interface TimeSlot {
   time: string;
@@ -12,28 +13,22 @@ interface TimeSlot {
 }
 
 interface UnavailableDaysSelectorProps {
+  professionalId: string;
   selectedDays: Date[];
   onChange: (days: Date[]) => void;
   timeSlots?: TimeSlot[];
   onTimeSlotsChange?: (slots: TimeSlot[]) => void;
 }
 
-const DEFAULT_TIME_SLOTS = [
-  { time: "08:00", available: true },
-  { time: "09:00", available: true },
-  { time: "10:00", available: true },
-  { time: "11:00", available: true },
-  { time: "14:00", available: true },
-  { time: "15:00", available: true },
-];
-
 export const UnavailableDaysSelector = ({
+  professionalId,
   selectedDays,
   onChange,
-  timeSlots = DEFAULT_TIME_SLOTS,
+  timeSlots,
   onTimeSlotsChange,
 }: UnavailableDaysSelectorProps) => {
   const { toast } = useToast();
+  const { slots: availableSlots, updateSlots, updateUnavailableDays } = useAvailableSlots(professionalId, undefined);
 
   const handleSelect = (date: Date | undefined) => {
     if (!date) return;
@@ -43,30 +38,31 @@ export const UnavailableDaysSelector = ({
         selectedDate.toISOString().split("T")[0] === date.toISOString().split("T")[0]
     );
 
-    if (isAlreadySelected) {
-      onChange(
-        selectedDays.filter(
+    const newSelectedDays = isAlreadySelected
+      ? selectedDays.filter(
           (selectedDate) =>
             selectedDate.toISOString().split("T")[0] !== date.toISOString().split("T")[0]
         )
-      );
-    } else {
-      onChange([...selectedDays, date]);
-    }
+      : [...selectedDays, date];
+
+    onChange(newSelectedDays);
+    updateUnavailableDays(newSelectedDays);
   };
 
   const handleTimeSlotChange = (time: string, checked: boolean) => {
+    const updatedSlots = availableSlots.map((slot) =>
+      slot.time === time ? { ...slot, available: checked } : slot
+    );
+    
+    updateSlots(updatedSlots);
     if (onTimeSlotsChange) {
-      const updatedSlots = timeSlots.map((slot) =>
-        slot.time === time ? { ...slot, available: checked } : slot
-      );
       onTimeSlotsChange(updatedSlots);
-      
-      toast({
-        title: "Horários atualizados",
-        description: "Os horários de atendimento foram atualizados com sucesso.",
-      });
     }
+    
+    toast({
+      title: "Horários atualizados",
+      description: "Os horários de atendimento foram atualizados com sucesso.",
+    });
   };
 
   return (
@@ -88,7 +84,7 @@ export const UnavailableDaysSelector = ({
       <Card className="p-4">
         <h3 className="font-medium text-sm mb-4">Horários disponíveis para atendimento:</h3>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-          {timeSlots.map((slot) => (
+          {availableSlots.map((slot) => (
             <div
               key={slot.time}
               className="flex items-center space-x-2 bg-white rounded-lg p-3 shadow-sm border"

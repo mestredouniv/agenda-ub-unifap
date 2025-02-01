@@ -37,13 +37,19 @@ export const AppointmentSelection = ({
     formData.preferredDate
   );
 
+  // Filtra apenas os slots disponíveis
+  const availableTimeSlots = availableSlots.filter(slot => slot.available);
+
   return (
     <div className="space-y-4">
       <div>
         <Label htmlFor="professional">Profissional</Label>
         <Select
           value={formData.professionalId}
-          onValueChange={(value) => onChange("professionalId", value)}
+          onValueChange={(value) => {
+            onChange("professionalId", value);
+            onChange("preferredTime", ""); // Reseta o horário ao trocar de profissional
+          }}
         >
           <SelectTrigger>
             <SelectValue placeholder="Selecione o profissional" />
@@ -64,10 +70,27 @@ export const AppointmentSelection = ({
           <Calendar
             mode="single"
             selected={formData.preferredDate}
-            onSelect={(date) => onChange("preferredDate", date)}
+            onSelect={(date) => {
+              onChange("preferredDate", date);
+              onChange("preferredTime", ""); // Reseta o horário ao trocar a data
+            }}
             className="rounded-md border"
             locale={ptBR}
-            disabled={(date) => date < new Date()}
+            disabled={(date) => {
+              // Verifica se a data é anterior a hoje
+              const isBeforeToday = date < new Date(new Date().setHours(0, 0, 0, 0));
+              
+              // Verifica se a data está nos dias indisponíveis do profissional
+              const unavailableDays = JSON.parse(
+                localStorage.getItem(`unavailableDays-${formData.professionalId}`) || '[]'
+              );
+              const isUnavailable = unavailableDays.some(
+                (unavailableDate: string) =>
+                  new Date(unavailableDate).toDateString() === date.toDateString()
+              );
+              
+              return isBeforeToday || isUnavailable;
+            }}
           />
         </div>
 
@@ -76,18 +99,14 @@ export const AppointmentSelection = ({
           <Select
             value={formData.preferredTime}
             onValueChange={(value) => onChange("preferredTime", value)}
-            disabled={!formData.preferredDate || !availableSlots}
+            disabled={!formData.preferredDate || !availableTimeSlots.length}
           >
             <SelectTrigger>
               <SelectValue placeholder="Selecione um horário disponível" />
             </SelectTrigger>
             <SelectContent>
-              {availableSlots?.map((slot) => (
-                <SelectItem
-                  key={slot.time}
-                  value={slot.time}
-                  disabled={!slot.available}
-                >
+              {availableTimeSlots.map((slot) => (
+                <SelectItem key={slot.time} value={slot.time}>
                   {slot.time}
                 </SelectItem>
               ))}
@@ -96,6 +115,11 @@ export const AppointmentSelection = ({
           {isLoading && (
             <p className="text-sm text-muted-foreground mt-1">
               Carregando horários disponíveis...
+            </p>
+          )}
+          {!isLoading && !availableTimeSlots.length && formData.preferredDate && (
+            <p className="text-sm text-muted-foreground mt-1">
+              Não há horários disponíveis para esta data
             </p>
           )}
         </div>
