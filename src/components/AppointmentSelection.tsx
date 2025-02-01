@@ -42,8 +42,6 @@ export const AppointmentSelection = ({
     (!slot.currentAppointments || slot.currentAppointments < (slot.maxAppointments || 10))
   );
 
-  console.log("Available professionals:", professionals);
-
   return (
     <div className="space-y-4">
       <div>
@@ -60,7 +58,7 @@ export const AppointmentSelection = ({
           </SelectTrigger>
           <SelectContent>
             {professionals.map((prof) => (
-              <SelectItem key={prof.id} value={prof.id.toString()}>
+              <SelectItem key={prof.id} value={prof.id}>
                 {prof.name} - {prof.profession}
               </SelectItem>
             ))}
