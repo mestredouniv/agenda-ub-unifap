@@ -12,7 +12,7 @@ import { ptBR } from "date-fns/locale";
 import { useAvailableSlots } from "@/hooks/useAvailableSlots";
 
 interface Professional {
-  id: number;
+  id: string;
   name: string;
   profession: string;
 }
