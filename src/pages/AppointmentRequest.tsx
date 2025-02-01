@@ -99,6 +99,14 @@ const AppointmentRequest = () => {
     <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
       <BackToHomeButton />
       <div className="max-w-3xl mx-auto">
+        <div className="text-center mb-8">
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">
+            UNIVERSIDADE FEDERAL DO AMAPÁ
+          </h1>
+          <h2 className="text-xl font-semibold text-gray-800">
+            UNIDADE BÁSICA DE SAÚDE
+          </h2>
+        </div>
         <Card className="shadow-lg">
           <CardHeader>
             <CardTitle className="text-2xl font-bold text-center">

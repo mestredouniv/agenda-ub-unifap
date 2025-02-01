@@ -171,7 +171,7 @@ const ProfessionalSchedule = () => {
                 className="flex items-center gap-2"
               >
                 <CalendarIcon className="h-4 w-4" />
-                Organizar
+                Organizar Meu Horário
               </Button>
 
               <Dialog>
@@ -314,9 +314,9 @@ const ProfessionalSchedule = () => {
       <Dialog open={isSelectingUnavailableDays} onOpenChange={setIsSelectingUnavailableDays}>
         <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Marcar Dias de Ausência</DialogTitle>
+            <DialogTitle>Organizar Meu Horário</DialogTitle>
             <DialogDescription>
-              Selecione os dias em que não estará disponível para atendimento
+              Selecione os dias em que não estará disponível e configure seus horários de atendimento
             </DialogDescription>
           </DialogHeader>
           <UnavailableDaysSelector

@@ -23,7 +23,6 @@ const DEFAULT_TIME_SLOTS = [
   { time: "11:00", available: true },
   { time: "14:00", available: true },
   { time: "15:00", available: true },
-  { time: "16:00", available: true },
 ];
 
 export const UnavailableDaysSelector = ({
