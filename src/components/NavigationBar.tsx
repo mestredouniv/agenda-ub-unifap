@@ -38,13 +38,15 @@ export const NavigationBar = ({
                 <Trash2 className="h-4 w-4" />
                 Remover Profissional
               </button>
-              <Link
-                to="/display"
+              <a
+                href="/display"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-accent"
               >
                 <Volume2 className="h-4 w-4" />
                 Display
-              </Link>
+              </a>
             </div>
           </NavigationMenuContent>
         </NavigationMenuItem>
@@ -53,13 +55,6 @@ export const NavigationBar = ({
           <NavigationMenuTrigger>Páginas</NavigationMenuTrigger>
           <NavigationMenuContent>
             <div className="w-48 p-2 space-y-2">
-              <Link
-                to="/solicitar-agendamento"
-                className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-accent"
-              >
-                <Calendar className="h-4 w-4" />
-                Solicitar Agendamento
-              </Link>
               <Link
                 to="/relatorios"
                 className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-accent"
