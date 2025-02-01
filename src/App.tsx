@@ -14,8 +14,6 @@ import Hanseniase from "./pages/Hanseniase";
 import PreNatal from "./pages/PreNatal";
 import Tuberculose from "./pages/Tuberculose";
 import Prep from "./pages/Prep";
-import DoencasCronicas from "./pages/DoencasCronicas";
-import AleitamentoTriagens from "./pages/AleitamentoTriagens";
 
 const queryClient = new QueryClient();
 
@@ -36,8 +34,6 @@ const App = () => (
           <Route path="/pre-natal" element={<PreNatal />} />
           <Route path="/tuberculose" element={<Tuberculose />} />
           <Route path="/prep" element={<Prep />} />
-          <Route path="/doencas-cronicas" element={<DoencasCronicas />} />
-          <Route path="/aleitamento-triagens" element={<AleitamentoTriagens />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
