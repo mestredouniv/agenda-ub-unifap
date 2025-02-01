@@ -20,27 +20,28 @@ export const useAvailableSlots = (professionalId: string, date: Date | undefined
   const slotsQuery = useQuery({
     queryKey: ['availableSlots', professionalId, date],
     queryFn: async () => {
-      // Aqui você pode integrar com sua API real
-      // Por enquanto, retornamos dados de exemplo
+      // Busca os slots do localStorage
       const storedSlots = localStorage.getItem(`slots-${professionalId}`);
-      return storedSlots ? JSON.parse(storedSlots) : DEFAULT_TIME_SLOTS;
+      const slots = storedSlots ? JSON.parse(storedSlots) : DEFAULT_TIME_SLOTS;
+      
+      // Retorna apenas os slots disponíveis
+      return slots.filter((slot: TimeSlot) => slot.available);
     },
     enabled: !!professionalId && !!date,
   });
 
   const updateSlotsMutation = useMutation({
     mutationFn: async (newSlots: TimeSlot[]) => {
-      // Aqui você pode integrar com sua API real
       localStorage.setItem(`slots-${professionalId}`, JSON.stringify(newSlots));
       return newSlots;
     },
-    onSuccess: (newSlots) => {
-      queryClient.setQueryData(['availableSlots', professionalId, date], newSlots);
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['availableSlots', professionalId] });
     },
   });
 
   return {
-    slots: slotsQuery.data,
+    slots: slotsQuery.data || DEFAULT_TIME_SLOTS,
     isLoading: slotsQuery.isLoading,
     updateSlots: updateSlotsMutation.mutate,
   };
