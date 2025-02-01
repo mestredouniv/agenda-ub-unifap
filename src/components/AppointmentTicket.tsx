@@ -19,6 +19,9 @@ export const AppointmentTicket = ({
   appointmentDate,
   appointmentTime,
 }: AppointmentTicketProps) => {
+  // Ensure ticketNumber is exactly 6 digits
+  const formattedTicketNumber = ticketNumber.padStart(6, '0').slice(0, 6);
+
   return (
     <Card className="w-full max-w-md mx-auto animate-fade-in">
       <CardHeader>
@@ -29,16 +32,16 @@ export const AppointmentTicket = ({
       <CardContent className="space-y-6">
         <div className="flex justify-center">
           <InputOTP
-            value={ticketNumber}
+            value={formattedTicketNumber}
             maxLength={6}
             readOnly
+            disabled
             render={({ slots }) => (
               <InputOTPGroup className="gap-2">
                 {slots.map((slot, i) => (
                   <InputOTPSlot
                     key={i}
                     {...slot}
-                    index={i}
                     className="w-12 h-12 text-2xl"
                   />
                 ))}
