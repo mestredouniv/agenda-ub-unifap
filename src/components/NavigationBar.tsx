@@ -5,7 +5,7 @@ import {
   NavigationMenuTrigger,
   NavigationMenuContent,
 } from "@/components/ui/navigation-menu";
-import { Plus, Trash2, Calendar, FileText, Volume2, Stethoscope, FileSignature } from "lucide-react";
+import { Plus, Trash2, Calendar, FileText, Volume2, Stethoscope, FileSignature, Heart } from "lucide-react";
 import { Link } from "react-router-dom";
 
 interface NavigationBarProps {
@@ -68,6 +68,42 @@ export const NavigationBar = ({
               >
                 <FileSignature className="h-4 w-4" />
                 Solicitações
+              </Link>
+            </div>
+          </NavigationMenuContent>
+        </NavigationMenuItem>
+
+        <NavigationMenuItem>
+          <NavigationMenuTrigger>Saúde</NavigationMenuTrigger>
+          <NavigationMenuContent>
+            <div className="w-48 p-2 space-y-2">
+              <Link
+                to="/hanseniase"
+                className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-accent"
+              >
+                <Heart className="h-4 w-4" />
+                Hanseníase
+              </Link>
+              <Link
+                to="/pre-natal"
+                className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-accent"
+              >
+                <Heart className="h-4 w-4" />
+                Pré-Natal
+              </Link>
+              <Link
+                to="/tuberculose"
+                className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-accent"
+              >
+                <Heart className="h-4 w-4" />
+                Tuberculose
+              </Link>
+              <Link
+                to="/prep"
+                className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-accent"
+              >
+                <Heart className="h-4 w-4" />
+                PREP
               </Link>
             </div>
           </NavigationMenuContent>

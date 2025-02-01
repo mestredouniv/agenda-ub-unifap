@@ -10,6 +10,10 @@ import Reports from "./pages/Reports";
 import Consultas from "./pages/Consultas";
 import Display from "./pages/Display";
 import SolicitarConsulta from "./pages/SolicitarConsulta";
+import Hanseniase from "./pages/Hanseniase";
+import PreNatal from "./pages/PreNatal";
+import Tuberculose from "./pages/Tuberculose";
+import Prep from "./pages/Prep";
 
 const queryClient = new QueryClient();
 
@@ -26,6 +30,10 @@ const App = () => (
           <Route path="/consultas" element={<Consultas />} />
           <Route path="/display" element={<Display />} />
           <Route path="/solicitar" element={<SolicitarConsulta />} />
+          <Route path="/hanseniase" element={<Hanseniase />} />
+          <Route path="/pre-natal" element={<PreNatal />} />
+          <Route path="/tuberculose" element={<Tuberculose />} />
+          <Route path="/prep" element={<Prep />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
