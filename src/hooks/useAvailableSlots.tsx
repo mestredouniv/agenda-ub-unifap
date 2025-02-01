@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 interface TimeSlot {
   time: string;
@@ -15,13 +15,33 @@ const DEFAULT_TIME_SLOTS = [
 ];
 
 export const useAvailableSlots = (professionalId: string, date: Date | undefined) => {
-  return useQuery({
+  const queryClient = useQueryClient();
+
+  const slotsQuery = useQuery({
     queryKey: ['availableSlots', professionalId, date],
     queryFn: async () => {
       // Aqui você pode integrar com sua API real
       // Por enquanto, retornamos dados de exemplo
-      return DEFAULT_TIME_SLOTS;
+      const storedSlots = localStorage.getItem(`slots-${professionalId}`);
+      return storedSlots ? JSON.parse(storedSlots) : DEFAULT_TIME_SLOTS;
     },
     enabled: !!professionalId && !!date,
   });
+
+  const updateSlotsMutation = useMutation({
+    mutationFn: async (newSlots: TimeSlot[]) => {
+      // Aqui você pode integrar com sua API real
+      localStorage.setItem(`slots-${professionalId}`, JSON.stringify(newSlots));
+      return newSlots;
+    },
+    onSuccess: (newSlots) => {
+      queryClient.setQueryData(['availableSlots', professionalId, date], newSlots);
+    },
+  });
+
+  return {
+    slots: slotsQuery.data,
+    isLoading: slotsQuery.isLoading,
+    updateSlots: updateSlotsMutation.mutate,
+  };
 };

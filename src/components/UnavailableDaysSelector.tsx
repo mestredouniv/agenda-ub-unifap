@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { ptBR } from "date-fns/locale";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
+import { useToast } from "@/components/ui/use-toast";
 
 interface TimeSlot {
   time: string;
@@ -31,6 +32,8 @@ export const UnavailableDaysSelector = ({
   timeSlots = DEFAULT_TIME_SLOTS,
   onTimeSlotsChange,
 }: UnavailableDaysSelectorProps) => {
+  const { toast } = useToast();
+
   const handleSelect = (date: Date | undefined) => {
     if (!date) return;
 
@@ -57,6 +60,11 @@ export const UnavailableDaysSelector = ({
         slot.time === time ? { ...slot, available: checked } : slot
       );
       onTimeSlotsChange(updatedSlots);
+      
+      toast({
+        title: "Horários atualizados",
+        description: "Os horários de atendimento foram atualizados com sucesso.",
+      });
     }
   };
 
