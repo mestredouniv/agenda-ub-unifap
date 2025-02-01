@@ -7,12 +7,13 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { useToast } from "@/components/ui/use-toast";
-import { Bold, Italic, Underline, Image as ImageIcon, Youtube, Eye, Send } from "lucide-react";
+import { Bold, Italic, Underline, Image as ImageIcon, Youtube, Eye, Send, Plus } from "lucide-react";
 
 interface Patient {
   password: string;
@@ -35,11 +36,26 @@ const Display = () => {
   const [newAnnouncement, setNewAnnouncement] = useState("");
   const [youtubeUrl, setYoutubeUrl] = useState("");
   const [previewContent, setPreviewContent] = useState<Announcement | null>(null);
+  const [currentAnnouncementIndex, setCurrentAnnouncementIndex] = useState(0);
   const { toast } = useToast();
+
+  // Function to handle preview generation
+  const handlePreview = () => {
+    const activeTab = document.querySelector('[role="tab"][data-state="active"]')?.getAttribute('value');
+    const newContent: Announcement = {
+      id: Date.now().toString(),
+      type: activeTab === 'youtube' ? 'youtube' : 'text',
+      content: activeTab === 'youtube' ? '' : newAnnouncement,
+      youtubeUrl: activeTab === 'youtube' ? youtubeUrl : undefined,
+    };
+    setPreviewContent(newContent);
+  };
 
   const handlePublish = () => {
     if (previewContent) {
       setAnnouncements([...announcements, previewContent]);
+      setNewAnnouncement("");
+      setYoutubeUrl("");
       setPreviewContent(null);
       toast({
         title: "Publicado com sucesso!",
@@ -48,7 +64,19 @@ const Display = () => {
     }
   };
 
-  // Simulated patient data - in a real app, this would come from an API
+  // Rotate through announcements every 10 seconds if not in edit mode
+  useEffect(() => {
+    if (!isEditMode && announcements.length > 0) {
+      const interval = setInterval(() => {
+        setCurrentAnnouncementIndex((prev) => 
+          prev === announcements.length - 1 ? 0 : prev + 1
+        );
+      }, 10000);
+      return () => clearInterval(interval);
+    }
+  }, [isEditMode, announcements.length]);
+
+  // Simulated patient data
   useEffect(() => {
     const mockPatient = {
       password: "A123",
@@ -61,57 +89,55 @@ const Display = () => {
 
   if (!isEditMode) {
     return (
-      <div className="min-h-screen bg-gray-100">
-        <div className="container mx-auto p-4">
+      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
+        <div className="container mx-auto p-8">
           {currentPatient && (
-            <Card className="mb-8 p-6 bg-white shadow-lg">
-              <div className="grid grid-cols-2 gap-4 text-center">
-                <div className="space-y-2">
+            <Card className="mb-8 p-8 bg-white shadow-lg rounded-xl border-2 border-primary/20">
+              <div className="grid grid-cols-2 gap-8 text-center">
+                <div className="space-y-3">
                   <h3 className="text-2xl font-bold text-primary">SENHA</h3>
-                  <p className="text-4xl font-bold">{currentPatient.password}</p>
+                  <p className="text-5xl font-bold text-gray-800">{currentPatient.password}</p>
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-3">
                   <h3 className="text-2xl font-bold text-primary">SALA</h3>
-                  <p className="text-4xl">{currentPatient.room}</p>
+                  <p className="text-5xl text-gray-800">{currentPatient.room}</p>
                 </div>
-                <div className="col-span-2 mt-4">
+                <div className="col-span-2 mt-6">
                   <h3 className="text-2xl font-bold text-primary">PACIENTE</h3>
-                  <p className="text-3xl mt-2">{currentPatient.name}</p>
+                  <p className="text-4xl mt-3 text-gray-800">{currentPatient.name}</p>
                 </div>
                 <div className="col-span-2">
                   <h3 className="text-2xl font-bold text-primary">PROFISSIONAL</h3>
-                  <p className="text-3xl mt-2">{currentPatient.professional}</p>
+                  <p className="text-4xl mt-3 text-gray-800">{currentPatient.professional}</p>
                 </div>
               </div>
             </Card>
           )}
 
-          <div className="space-y-4">
-            {announcements.map((announcement) => (
-              <Card key={announcement.id} className="p-4">
-                {announcement.type === "youtube" ? (
-                  <iframe
-                    width="100%"
-                    height="315"
-                    src={announcement.youtubeUrl}
-                    title="YouTube video player"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                    className="rounded-lg"
-                  />
-                ) : (
-                  <div
-                    className="prose max-w-none"
-                    dangerouslySetInnerHTML={{ __html: announcement.content }}
-                  />
-                )}
-              </Card>
-            ))}
-          </div>
+          {announcements.length > 0 && (
+            <Card className="p-8 bg-white shadow-lg rounded-xl animate-fade-in">
+              {announcements[currentAnnouncementIndex].type === "youtube" ? (
+                <iframe
+                  width="100%"
+                  height="480"
+                  src={announcements[currentAnnouncementIndex].youtubeUrl}
+                  title="YouTube video player"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                  className="rounded-lg"
+                />
+              ) : (
+                <div
+                  className="prose max-w-none text-2xl"
+                  dangerouslySetInnerHTML={{ __html: announcements[currentAnnouncementIndex].content }}
+                />
+              )}
+            </Card>
+          )}
         </div>
 
         <Button
-          className="fixed bottom-4 right-4"
+          className="fixed bottom-4 right-4 shadow-lg"
           variant="outline"
           onClick={() => setIsEditMode(true)}
         >
@@ -122,9 +148,9 @@ const Display = () => {
   }
 
   return (
-    <div className="container mx-auto p-4">
+    <div className="container mx-auto p-8">
       <Button
-        className="mb-4"
+        className="mb-8"
         variant="outline"
         onClick={() => setIsEditMode(false)}
       >
@@ -132,13 +158,13 @@ const Display = () => {
       </Button>
 
       <Tabs defaultValue="text" className="w-full">
-        <TabsList>
+        <TabsList className="mb-4">
           <TabsTrigger value="text">Texto</TabsTrigger>
           <TabsTrigger value="youtube">YouTube</TabsTrigger>
         </TabsList>
 
         <TabsContent value="text">
-          <Card className="p-4">
+          <Card className="p-6">
             <div className="space-y-4">
               <div className="flex gap-2">
                 <Button variant="outline" size="icon">
@@ -153,6 +179,10 @@ const Display = () => {
                 <Button variant="outline" size="icon">
                   <ImageIcon className="h-4 w-4" />
                 </Button>
+                <Button variant="secondary" onClick={() => setNewAnnouncement(prev => prev + '\n')}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Adicionar Texto
+                </Button>
               </div>
               <Textarea
                 value={newAnnouncement}
@@ -165,7 +195,7 @@ const Display = () => {
         </TabsContent>
 
         <TabsContent value="youtube">
-          <Card className="p-4">
+          <Card className="p-6">
             <div className="space-y-4">
               <Input
                 value={youtubeUrl}
@@ -178,10 +208,10 @@ const Display = () => {
         </TabsContent>
       </Tabs>
 
-      <div className="mt-4 flex justify-end gap-2">
+      <div className="mt-8 flex justify-end gap-4">
         <Dialog>
           <DialogTrigger asChild>
-            <Button variant="outline">
+            <Button variant="outline" onClick={handlePreview}>
               <Eye className="mr-2 h-4 w-4" />
               Prévia
             </Button>
@@ -189,6 +219,9 @@ const Display = () => {
           <DialogContent className="max-w-3xl">
             <DialogHeader>
               <DialogTitle>Prévia do Conteúdo</DialogTitle>
+              <DialogDescription>
+                Verifique como o conteúdo será exibido antes de publicar.
+              </DialogDescription>
             </DialogHeader>
             <div className="mt-4">
               {previewContent && (
