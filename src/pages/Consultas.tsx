@@ -36,6 +36,7 @@ interface Patient {
   triageStatus: "waiting" | "in_progress" | "completed";
   consultationStatus: "waiting" | "in_progress" | "completed";
   triageTime?: string;
+  professionalId?: number;
 }
 
 interface Professional {
@@ -53,7 +54,8 @@ const initialPatients: Patient[] = [
     priority: true,
     triageStatus: "completed",
     consultationStatus: "waiting",
-    triageTime: "09:30"
+    triageTime: "09:30",
+    professionalId: 1
   },
   {
     id: 2,
@@ -62,7 +64,8 @@ const initialPatients: Patient[] = [
     password: "A002",
     priority: false,
     triageStatus: "in_progress",
-    consultationStatus: "waiting"
+    consultationStatus: "waiting",
+    professionalId: 2
   }
 ];
 
@@ -70,7 +73,17 @@ const professionals: Professional[] = [
   { id: 1, name: "Dr. Anderson", profession: "Médico" },
   { id: 2, name: "Dra. Liliany", profession: "Médica" },
   { id: 3, name: "Dr. André", profession: "Médico" },
-  { id: 4, name: "Dra. Anna", profession: "Fisioterapeuta" }
+  { id: 4, name: "Dra. Anna", profession: "Fisioterapeuta" },
+  { id: 5, name: "Luciana", profession: "Psicóloga" },
+  { id: 6, name: "Janaína", profession: "Psicóloga" },
+  { id: 7, name: "Wandervan", profession: "Enfermeiro" },
+  { id: 8, name: "Patrícia", profession: "Enfermeira" },
+  { id: 9, name: "Janaína", profession: "Enfermeira" },
+  { id: 10, name: "Equipe", profession: "Curativo" },
+  { id: 11, name: "Ananda", profession: "Enfermeira" },
+  { id: 12, name: "Nely", profession: "Enfermeira" },
+  { id: 13, name: "Equipe", profession: "Laboratório" },
+  { id: 14, name: "Equipe", profession: "Gestante" }
 ];
 
 const Consultas = () => {
@@ -124,6 +137,10 @@ const Consultas = () => {
     return differenceInYears(new Date(), new Date(birthDate));
   };
 
+  const filteredPatients = selectedProfessional === "all" 
+    ? patients 
+    : patients.filter(patient => patient.professionalId === Number(selectedProfessional));
+
   return (
     <div className="container mx-auto px-4 py-8">
       <BackToHomeButton />
@@ -163,7 +180,7 @@ const Consultas = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {patients.map((patient) => (
+            {filteredPatients.map((patient) => (
               <TableRow key={patient.id}>
                 <TableCell>
                   <span className="flex items-center gap-2">
@@ -242,7 +259,7 @@ const Consultas = () => {
             <p className="mb-4">Deseja chamar o próximo paciente?</p>
             <div className="space-y-4">
               <h4 className="font-medium">Pacientes triados:</h4>
-              {patients
+              {filteredPatients
                 .filter(p => p.triageStatus === "completed" && p.consultationStatus === "waiting")
                 .map(patient => (
                   <div
