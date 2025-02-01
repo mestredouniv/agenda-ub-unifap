@@ -1,14 +1,17 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { BackToHomeButton } from "@/components/BackToHomeButton";
 
 const Hanseniase = () => {
   return (
     <div className="container mx-auto p-6">
-      <Card>
+      <BackToHomeButton />
+      
+      <Card className="mt-6">
         <CardHeader>
           <CardTitle>Hanseníase</CardTitle>
         </CardHeader>
         <CardContent>
-          <p>Conteúdo sobre Hanseníase será adicionado aqui.</p>
+          <p>Informações sobre Hanseníase serão exibidas aqui.</p>
         </CardContent>
       </Card>
     </div>

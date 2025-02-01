@@ -4,8 +4,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
-  ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell,
-  ScatterPlot, Scatter
+  ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell, Scatter
 } from "recharts";
 import { BackToHomeButton } from "@/components/BackToHomeButton";
 
