@@ -5,7 +5,7 @@ import {
   NavigationMenuTrigger,
   NavigationMenuContent,
 } from "@/components/ui/navigation-menu";
-import { Plus, Trash2, Calendar, FileText } from "lucide-react";
+import { Plus, Trash2, Calendar, FileText, Stethoscope } from "lucide-react";
 import { Link } from "react-router-dom";
 
 interface NavigationBarProps {
@@ -59,6 +59,13 @@ export const NavigationBar = ({
               >
                 <FileText className="h-4 w-4" />
                 Relatórios
+              </Link>
+              <Link
+                to="/consultas"
+                className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-accent"
+              >
+                <Stethoscope className="h-4 w-4" />
+                Consultas
               </Link>
             </div>
           </NavigationMenuContent>

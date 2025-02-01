@@ -8,6 +8,7 @@ import NotFound from "./pages/NotFound";
 import ProfessionalSchedule from "./pages/ProfessionalSchedule";
 import Reports from "./pages/Reports";
 import AppointmentRequest from "./pages/AppointmentRequest";
+import Consultas from "./pages/Consultas";
 
 const queryClient = new QueryClient();
 
@@ -22,6 +23,7 @@ const App = () => (
           <Route path="/agenda/:id" element={<ProfessionalSchedule />} />
           <Route path="/relatorios" element={<Reports />} />
           <Route path="/solicitar-agendamento" element={<AppointmentRequest />} />
+          <Route path="/consultas" element={<Consultas />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
