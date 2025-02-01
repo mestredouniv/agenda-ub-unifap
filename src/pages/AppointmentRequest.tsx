@@ -23,6 +23,13 @@ import {
 } from "@/components/ui/select";
 import { Info, Calendar as CalendarIcon } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface AppointmentRequest {
   professionalId: string;
@@ -33,11 +40,33 @@ interface AppointmentRequest {
   phone: string;
   preferredDate: Date | undefined;
   preferredTime: string;
+  responsible?: string;
 }
+
+const initialProfessionals = [
+  { id: 1, name: "Luciana", profession: "Psicóloga" },
+  { id: 2, name: "Janaína", profession: "Psicóloga" },
+  { id: 3, name: "Anna", profession: "Fisioterapeuta" },
+  { id: 4, name: "Anderson", profession: "Médico" },
+  { id: 5, name: "Anna", profession: "Auriculoterapeuta" },
+  { id: 6, name: "Wandervan", profession: "Enfermeiro" },
+  { id: 7, name: "Patrícia", profession: "Enfermeira" },
+  { id: 8, name: "Liliany", profession: "Médica" },
+  { id: 9, name: "Janaína", profession: "Enfermeira" },
+  { id: 10, name: "Equipe", profession: "Curativo" },
+  { id: 11, name: "André", profession: "Médico" },
+  { id: 12, name: "Ananda", profession: "Enfermeira" },
+  { id: 13, name: "Nely", profession: "Enfermeira" },
+  { id: 14, name: "Luciana", profession: "Psicóloga" },
+  { id: 15, name: "Janaína", profession: "Psicóloga" },
+  { id: 16, name: "Equipe", profession: "Laboratório" },
+  { id: 17, name: "Equipe", profession: "Gestante" },
+];
 
 const AppointmentRequest = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [showConfirmation, setShowConfirmation] = useState(false);
   const [formData, setFormData] = useState<AppointmentRequest>({
     professionalId: "",
     patientName: "",
@@ -51,13 +80,14 @@ const AppointmentRequest = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Here we would handle the appointment request submission
+    setShowConfirmation(true);
     toast({
       title: "Solicitação enviada",
       description: "Sua solicitação de agendamento foi enviada com sucesso!",
     });
-    navigate("/");
   };
+
+  const isMinor = parseInt(formData.age) < 18;
 
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
@@ -86,8 +116,11 @@ const AppointmentRequest = () => {
                       <SelectValue placeholder="Selecione o profissional" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="1">Dr. João Silva</SelectItem>
-                      <SelectItem value="2">Dra. Maria Santos</SelectItem>
+                      {initialProfessionals.map((prof) => (
+                        <SelectItem key={prof.id} value={prof.id.toString()}>
+                          {prof.name} - {prof.profession}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -103,6 +136,7 @@ const AppointmentRequest = () => {
                       }
                       className="rounded-md border"
                       locale={ptBR}
+                      disabled={(date) => date < new Date()}
                     />
                   </div>
 
@@ -144,6 +178,20 @@ const AppointmentRequest = () => {
                     />
                   </div>
                 </div>
+
+                {isMinor && (
+                  <div>
+                    <Label htmlFor="responsible">Nome do Responsável</Label>
+                    <Input
+                      id="responsible"
+                      value={formData.responsible}
+                      onChange={(e) =>
+                        setFormData({ ...formData, responsible: e.target.value })
+                      }
+                      required
+                    />
+                  </div>
+                )}
 
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div>
@@ -200,26 +248,40 @@ const AppointmentRequest = () => {
                   chegada.
                 </p>
               </div>
+
+              <Button type="submit" className="w-full">
+                Solicitar Agendamento
+              </Button>
             </form>
           </CardContent>
-          <CardFooter className="flex justify-end gap-4">
-            <Button
-              variant="outline"
-              onClick={() => navigate("/")}
-              className="w-full sm:w-auto"
-            >
-              Cancelar
-            </Button>
-            <Button
-              type="submit"
-              onClick={handleSubmit}
-              className="w-full sm:w-auto"
-            >
-              Solicitar Agendamento
-            </Button>
-          </CardFooter>
         </Card>
       </div>
+
+      <Dialog open={showConfirmation} onOpenChange={setShowConfirmation}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Status da Solicitação</DialogTitle>
+            <DialogDescription>
+              Sua solicitação está aguardando aprovação do profissional
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="bg-yellow-50 p-4 rounded-md">
+              <p className="text-sm text-yellow-800">
+                Aguardando confirmação do profissional. Você será notificado sobre:
+              </p>
+              <ul className="mt-2 space-y-1 text-sm text-yellow-700">
+                <li>• Consulta agendada com sucesso</li>
+                <li>• Necessidade de remarcação</li>
+                <li>• Contato com o SAME para mais informações</li>
+              </ul>
+            </div>
+            <Button onClick={() => navigate("/")} className="w-full">
+              Voltar para a Página Inicial
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

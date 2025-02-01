@@ -1,11 +1,12 @@
 import {
   NavigationMenu,
-  NavigationMenuContent,
   NavigationMenuItem,
   NavigationMenuList,
   NavigationMenuTrigger,
+  NavigationMenuContent,
 } from "@/components/ui/navigation-menu";
-import { Plus, Trash2, UserCog } from "lucide-react";
+import { Plus, Trash2, Calendar, FileText } from "lucide-react";
+import { Link } from "react-router-dom";
 
 interface NavigationBarProps {
   onAddProfessional: () => void;
@@ -37,6 +38,28 @@ export const NavigationBar = ({
                 <Trash2 className="h-4 w-4" />
                 Remover Profissional
               </button>
+            </div>
+          </NavigationMenuContent>
+        </NavigationMenuItem>
+
+        <NavigationMenuItem>
+          <NavigationMenuTrigger>Páginas</NavigationMenuTrigger>
+          <NavigationMenuContent>
+            <div className="w-48 p-2 space-y-2">
+              <Link
+                to="/solicitar-agendamento"
+                className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-accent"
+              >
+                <Calendar className="h-4 w-4" />
+                Solicitar Agendamento
+              </Link>
+              <Link
+                to="/relatorios"
+                className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-accent"
+              >
+                <FileText className="h-4 w-4" />
+                Relatórios
+              </Link>
             </div>
           </NavigationMenuContent>
         </NavigationMenuItem>
