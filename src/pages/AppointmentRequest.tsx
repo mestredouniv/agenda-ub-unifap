@@ -19,7 +19,6 @@ import {
 import { AppointmentTicket } from "@/components/AppointmentTicket";
 import { PersonalDataForm } from "@/components/PersonalDataForm";
 import { AppointmentSelection } from "@/components/AppointmentSelection";
-import { LoginCredentialsForm } from "@/components/LoginCredentialsForm";
 
 interface AppointmentRequest {
   professionalId: string;
@@ -31,9 +30,27 @@ interface AppointmentRequest {
   preferredDate: Date | undefined;
   preferredTime: string;
   responsible?: string;
-  username: string;
-  password: string;
 }
+
+const initialProfessionals = [
+  { id: 1, name: "Luciana", profession: "Psicóloga" },
+  { id: 2, name: "Janaína", profession: "Psicóloga" },
+  { id: 3, name: "Anna", profession: "Fisioterapeuta" },
+  { id: 4, name: "Anderson", profession: "Médico" },
+  { id: 5, name: "Anna", profession: "Auriculoterapeuta" },
+  { id: 6, name: "Wandervan", profession: "Enfermeiro" },
+  { id: 7, name: "Patrícia", profession: "Enfermeira" },
+  { id: 8, name: "Liliany", profession: "Médica" },
+  { id: 9, name: "Janaína", profession: "Enfermeira" },
+  { id: 10, name: "Equipe", profession: "Curativo" },
+  { id: 11, name: "André", profession: "Médico" },
+  { id: 12, name: "Ananda", profession: "Enfermeira" },
+  { id: 13, name: "Nely", profession: "Enfermeira" },
+  { id: 14, name: "Luciana", profession: "Psicóloga" },
+  { id: 15, name: "Janaína", profession: "Psicóloga" },
+  { id: 16, name: "Equipe", profession: "Laboratório" },
+  { id: 17, name: "Equipe", profession: "Gestante" },
+];
 
 const generateTicketNumber = () => {
   return Math.random().toString().substring(2, 8);
@@ -52,8 +69,6 @@ const AppointmentRequest = () => {
     phone: "",
     preferredDate: undefined,
     preferredTime: "",
-    username: "",
-    password: "",
   });
 
   const handleFormChange = (field: string, value: any) => {
@@ -116,11 +131,6 @@ const AppointmentRequest = () => {
                 onChange={handleFormChange}
               />
 
-              <LoginCredentialsForm
-                formData={formData}
-                onChange={handleFormChange}
-              />
-
               <div className="bg-blue-50 p-4 rounded-md flex items-start gap-2">
                 <Info className="h-5 w-5 text-blue-500 mt-0.5 flex-shrink-0" />
                 <p className="text-sm text-blue-700">
@@ -151,7 +161,7 @@ const AppointmentRequest = () => {
           <DialogHeader>
             <DialogTitle>Status da Solicitação</DialogTitle>
             <DialogDescription>
-              Guarde seu número de protocolo e credenciais para consultar o status do agendamento
+              Guarde seu número de protocolo para consultar o status do agendamento
             </DialogDescription>
           </DialogHeader>
           
@@ -159,8 +169,6 @@ const AppointmentRequest = () => {
             ticketNumber={ticketNumber}
             appointmentDate={formData.preferredDate}
             appointmentTime={formData.preferredTime}
-            username={formData.username}
-            password={formData.password}
           />
           
           <Button 
