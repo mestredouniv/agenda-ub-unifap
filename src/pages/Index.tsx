@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { ProfessionalCard } from "@/components/ProfessionalCard";
 import { AddProfessionalModal } from "@/components/AddProfessionalModal";
 import { DailyAnnouncements } from "@/components/DailyAnnouncements";
-import { AttendingProfessionals } from "@/components/AttendingProfessionals";
 import { Header } from "@/components/Header";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Button } from "@/components/ui/button";
@@ -85,14 +84,12 @@ const Index = () => {
           setIsModalOpen(true);
         }}
         onRemoveClick={() => {
-          // This will be implemented later when needed
           console.log("Remove functionality to be implemented");
         }}
       />
       
       <main className="container mx-auto px-4 py-6">
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-          <AttendingProfessionals professionals={professionals} />
           <DailyAnnouncements />
         </div>
 

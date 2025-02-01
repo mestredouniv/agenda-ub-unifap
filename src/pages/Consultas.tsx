@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { AttendingProfessionals } from "@/components/AttendingProfessionals";
 import {
   Select,
   SelectContent,
@@ -18,7 +17,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
-import { format } from "date-fns";
+import { format, differenceInYears } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { 
   UserRound, 
@@ -32,9 +31,16 @@ interface Patient {
   name: string;
   birthDate: string;
   password: string;
+  priority: boolean;
   triageStatus: "waiting" | "in_progress" | "completed";
   consultationStatus: "waiting" | "in_progress" | "completed";
   triageTime?: string;
+}
+
+interface Professional {
+  id: number;
+  name: string;
+  profession: string;
 }
 
 const initialPatients: Patient[] = [
@@ -42,7 +48,8 @@ const initialPatients: Patient[] = [
     id: 1,
     name: "João Silva",
     birthDate: "1990-05-15",
-    password: "A001",
+    password: "P001",
+    priority: true,
     triageStatus: "completed",
     consultationStatus: "waiting",
     triageTime: "09:30"
@@ -52,9 +59,17 @@ const initialPatients: Patient[] = [
     name: "Maria Santos",
     birthDate: "1985-08-22",
     password: "A002",
+    priority: false,
     triageStatus: "in_progress",
     consultationStatus: "waiting"
   }
+];
+
+const professionals: Professional[] = [
+  { id: 1, name: "Dr. Anderson", profession: "Médico" },
+  { id: 2, name: "Dra. Liliany", profession: "Médica" },
+  { id: 3, name: "Dr. André", profession: "Médico" },
+  { id: 4, name: "Dra. Anna", profession: "Fisioterapeuta" }
 ];
 
 const Consultas = () => {
@@ -104,33 +119,33 @@ const Consultas = () => {
     setShowNotification(true);
   };
 
+  const calculateAge = (birthDate: string) => {
+    return differenceInYears(new Date(), new Date(birthDate));
+  };
+
   return (
     <div className="container mx-auto px-4 py-8">
       <h1 className="text-2xl font-bold mb-6">Acompanhamento de Consultas</h1>
       
-      <div className="grid gap-6 md:grid-cols-2 mb-8">
-        <Card className="p-6">
-          <h2 className="text-xl font-semibold mb-4">Profissionais em Atendimento</h2>
-          <AttendingProfessionals professionals={[]} />
-        </Card>
-
-        <Card className="p-6">
-          <h2 className="text-xl font-semibold mb-4">Filtrar por Profissional</h2>
-          <Select
-            value={selectedProfessional}
-            onValueChange={setSelectedProfessional}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Selecione um profissional" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos os Profissionais</SelectItem>
-              <SelectItem value="1">Dr. Anderson</SelectItem>
-              <SelectItem value="2">Dra. Liliany</SelectItem>
-            </SelectContent>
-          </Select>
-        </Card>
-      </div>
+      <Card className="p-6 mb-8">
+        <h2 className="text-xl font-semibold mb-4">Filtrar por Profissional</h2>
+        <Select
+          value={selectedProfessional}
+          onValueChange={setSelectedProfessional}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Selecione um profissional" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos os Profissionais</SelectItem>
+            {professionals.map(prof => (
+              <SelectItem key={prof.id} value={prof.id.toString()}>
+                {prof.name} ({prof.profession})
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </Card>
 
       <Card className="p-6">
         <h2 className="text-xl font-semibold mb-4">Pacientes</h2>
@@ -139,6 +154,7 @@ const Consultas = () => {
             <TableRow>
               <TableHead>Senha</TableHead>
               <TableHead>Nome</TableHead>
+              <TableHead>Idade</TableHead>
               <TableHead>Data de Nascimento</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Ações</TableHead>
@@ -147,8 +163,18 @@ const Consultas = () => {
           <TableBody>
             {patients.map((patient) => (
               <TableRow key={patient.id}>
-                <TableCell>{patient.password}</TableCell>
+                <TableCell>
+                  <span className="flex items-center gap-2">
+                    {patient.password}
+                    {patient.priority && (
+                      <span className="bg-red-100 text-red-800 text-xs font-medium px-2 py-0.5 rounded">
+                        Prioritário
+                      </span>
+                    )}
+                  </span>
+                </TableCell>
                 <TableCell>{patient.name}</TableCell>
+                <TableCell>{calculateAge(patient.birthDate)} anos</TableCell>
                 <TableCell>
                   {format(new Date(patient.birthDate), "dd/MM/yyyy")}
                 </TableCell>
