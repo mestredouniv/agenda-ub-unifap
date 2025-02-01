@@ -71,7 +71,7 @@ const AppointmentRequest = () => {
   };
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+    e.preventDefault(); // Prevent form submission from refreshing the page
     
     const appointment: AppointmentRequest = {
       id: generateId(),
