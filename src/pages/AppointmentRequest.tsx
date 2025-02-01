@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
@@ -21,7 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Info } from "lucide-react";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import {
   Dialog,
   DialogContent,
@@ -31,6 +30,7 @@ import {
 } from "@/components/ui/dialog";
 import { BackToHomeButton } from "@/components/BackToHomeButton";
 import { useAvailableSlots } from "@/hooks/useAvailableSlots";
+import { AppointmentTicket } from "@/components/AppointmentTicket";
 
 interface AppointmentRequest {
   professionalId: string;
@@ -64,10 +64,14 @@ const initialProfessionals = [
   { id: 17, name: "Equipe", profession: "Gestante" },
 ];
 
+const generateTicketNumber = () => {
+  return Math.random().toString().substring(2, 8);
+};
+
 const AppointmentRequest = () => {
-  const navigate = useNavigate();
   const { toast } = useToast();
   const [showConfirmation, setShowConfirmation] = useState(false);
+  const [ticketNumber, setTicketNumber] = useState<string>("");
   const [formData, setFormData] = useState<AppointmentRequest>({
     professionalId: "",
     patientName: "",
@@ -86,7 +90,22 @@ const AppointmentRequest = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const newTicketNumber = generateTicketNumber();
+    setTicketNumber(newTicketNumber);
     setShowConfirmation(true);
+    
+    // Salvar a solicitação no localStorage
+    const appointment = {
+      ...formData,
+      ticketNumber: newTicketNumber,
+      status: "pending",
+      createdAt: new Date().toISOString(),
+    };
+    
+    const appointments = JSON.parse(localStorage.getItem("appointments") || "[]");
+    appointments.push(appointment);
+    localStorage.setItem("appointments", JSON.stringify(appointments));
+
     toast({
       title: "Solicitação enviada",
       description: "Sua solicitação de agendamento foi enviada com sucesso!",
@@ -97,7 +116,6 @@ const AppointmentRequest = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
-      <BackToHomeButton />
       <div className="max-w-3xl mx-auto">
         <div className="text-center mb-8">
           <h1 className="text-2xl font-bold text-gray-900 mb-2">
@@ -293,28 +311,26 @@ const AppointmentRequest = () => {
       </div>
 
       <Dialog open={showConfirmation} onOpenChange={setShowConfirmation}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Status da Solicitação</DialogTitle>
             <DialogDescription>
-              Sua solicitação está aguardando aprovação do profissional
+              Guarde seu número de protocolo para consultar o status do agendamento
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
-            <div className="bg-yellow-50 p-4 rounded-md">
-              <p className="text-sm text-yellow-800">
-                Aguardando confirmação do profissional. Você será notificado sobre:
-              </p>
-              <ul className="mt-2 space-y-1 text-sm text-yellow-700">
-                <li>• Consulta agendada com sucesso</li>
-                <li>• Necessidade de remarcação</li>
-                <li>• Contato com o SAME para mais informações</li>
-              </ul>
-            </div>
-            <Button onClick={() => navigate("/")} className="w-full">
-              Voltar para a Página Inicial
-            </Button>
-          </div>
+          
+          <AppointmentTicket
+            ticketNumber={ticketNumber}
+            appointmentDate={formData.preferredDate}
+            appointmentTime={formData.preferredTime}
+          />
+          
+          <Button 
+            onClick={() => window.location.href = "/consultar-agendamento"} 
+            className="w-full mt-4"
+          >
+            Consultar Status do Agendamento
+          </Button>
         </DialogContent>
       </Dialog>
     </div>
