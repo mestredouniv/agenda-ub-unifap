@@ -4,10 +4,17 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
-  ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell,
-  ScatterPlot, Scatter
+  ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell
 } from "recharts";
 import { BackToHomeButton } from "@/components/BackToHomeButton";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 const Reports = () => {
   const navigate = useNavigate();
@@ -169,6 +176,44 @@ const Reports = () => {
           </CardContent>
         </Card>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Relatório de Dados</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Mês</TableHead>
+                <TableHead>Consultas</TableHead>
+                <TableHead>Faltas</TableHead>
+                <TableHead>Idade Média</TableHead>
+                <TableHead>Ações</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {monthlyData.map((data, index) => (
+                <TableRow key={index}>
+                  <TableCell>{data.month}</TableCell>
+                  <TableCell>{data.consultas}</TableCell>
+                  <TableCell>{data.faltas}</TableCell>
+                  <TableCell>{data.idade_media}</TableCell>
+                  <TableCell>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="text-red-500 hover:text-red-700"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
     </div>
   );
 };
