@@ -19,6 +19,11 @@ import {
 
 interface PuericulturaRecord {
   id: string;
+  nome: string;
+  nomeMae: string;
+  cnsCpf: string;
+  telefone: string;
+  dataNascimento: string;
   tipoParto: string;
   aleitamento: {
     ame: string;
@@ -49,6 +54,11 @@ const Puericultura = () => {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [records, setRecords] = useState<PuericulturaRecord[]>([]);
   const [formData, setFormData] = useState<Omit<PuericulturaRecord, 'id'>>({
+    nome: "",
+    nomeMae: "",
+    cnsCpf: "",
+    telefone: "",
+    dataNascimento: "",
     tipoParto: "",
     aleitamento: { ame: "", pred: "", comp: "", form: "" },
     triagens: { pezinho: "", olhinho: "", orelhinha: "" },
@@ -86,14 +96,31 @@ const Puericultura = () => {
     });
   };
 
+  const handlePrint = () => {
+    const printContent = document.getElementById('report-table');
+    if (printContent) {
+      const printWindow = window.open('', '', 'height=500,width=800');
+      printWindow?.document.write('<html><head><title>Relatório Puericultura</title>');
+      printWindow?.document.write('</head><body>');
+      printWindow?.document.write(printContent.innerHTML);
+      printWindow?.document.write('</body></html>');
+      printWindow?.document.close();
+      printWindow?.print();
+    }
+  };
+
   const handleAddRecord = () => {
     const newRecord: PuericulturaRecord = {
       id: crypto.randomUUID(),
       ...formData,
     };
     setRecords((prev) => [...prev, newRecord]);
-    // Reset form
     setFormData({
+      nome: "",
+      nomeMae: "",
+      cnsCpf: "",
+      telefone: "",
+      dataNascimento: "",
       tipoParto: "",
       aleitamento: { ame: "", pred: "", comp: "", form: "" },
       triagens: { pezinho: "", olhinho: "", orelhinha: "" },
@@ -112,45 +139,6 @@ const Puericultura = () => {
     });
   };
 
-  const handlePrint = () => {
-    const printContent = document.getElementById('report-table');
-    if (printContent) {
-      const printWindow = window.open('', '', 'height=500,width=800');
-      printWindow?.document.write('<html><head><title>Relatório Puericultura</title>');
-      printWindow?.document.write('</head><body>');
-      printWindow?.document.write(printContent.innerHTML);
-      printWindow?.document.write('</body></html>');
-      printWindow?.document.close();
-      printWindow?.print();
-    }
-  };
-
-  const handleDownload = () => {
-    const data = JSON.stringify(records, null, 2);
-    const blob = new Blob([data], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `puericultura-${selectedDate ? selectedDate.toISOString().split('T')[0] : 'dados'}.json`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-  };
-
-  const handleShare = async () => {
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: 'Dados Puericultura',
-          text: JSON.stringify(records, null, 2),
-        });
-      } catch (error) {
-        console.error('Erro ao compartilhar:', error);
-      }
-    }
-  };
-
   return (
     <div className="container mx-auto p-6 space-y-6">
       <BackToHomeButton />
@@ -161,11 +149,33 @@ const Puericultura = () => {
           <Printer className="mr-2" />
           Imprimir Relatório
         </Button>
-        <Button onClick={handleDownload} variant="outline">
+        <Button onClick={() => {
+          const data = JSON.stringify(records, null, 2);
+          const blob = new Blob([data], { type: "application/json" });
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement("a");
+          link.href = url;
+          link.download = `puericultura-${selectedDate ? selectedDate.toISOString().split('T')[0] : 'dados'}.json`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(url);
+        }} variant="outline">
           <Download className="mr-2" />
           Baixar Relatório
         </Button>
-        <Button onClick={handleShare} variant="outline">
+        <Button onClick={async () => {
+          if (navigator.share) {
+            try {
+              await navigator.share({
+                title: 'Dados Puericultura',
+                text: JSON.stringify(records, null, 2),
+              });
+            } catch (error) {
+              console.error('Erro ao compartilhar:', error);
+            }
+          }
+        }} variant="outline">
           <Share2 className="mr-2" />
           Compartilhar Relatório
         </Button>
@@ -174,52 +184,98 @@ const Puericultura = () => {
       <div className="grid md:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
-            <CardTitle>Puericultura</CardTitle>
+            <CardTitle>Dados do Paciente</CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div>
-              <Label htmlFor="tipoParto">Tipo de Parto</Label>
-              <Input
-                id="tipoParto"
-                value={formData.tipoParto}
-                onChange={(e) => handleInputChange("", "tipoParto", e.target.value)}
-              />
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="nome">Nome</Label>
+                <Input
+                  id="nome"
+                  value={formData.nome}
+                  onChange={(e) => handleInputChange("", "nome", e.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="nomeMae">Nome da Mãe</Label>
+                <Input
+                  id="nomeMae"
+                  value={formData.nomeMae}
+                  onChange={(e) => handleInputChange("", "nomeMae", e.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="cnsCpf">CNS/CPF</Label>
+                <Input
+                  id="cnsCpf"
+                  value={formData.cnsCpf}
+                  onChange={(e) => handleInputChange("", "cnsCpf", e.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="telefone">Telefone</Label>
+                <Input
+                  id="telefone"
+                  value={formData.telefone}
+                  onChange={(e) => handleInputChange("", "telefone", e.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="dataNascimento">Data de Nascimento</Label>
+                <Input
+                  id="dataNascimento"
+                  type="date"
+                  value={formData.dataNascimento}
+                  onChange={(e) => handleInputChange("", "dataNascimento", e.target.value)}
+                />
+              </div>
             </div>
 
-            <div className="space-y-4">
-              <h3 className="font-medium">Aleitamento</h3>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="ame">AME</Label>
-                  <Input
-                    id="ame"
-                    value={formData.aleitamento.ame}
-                    onChange={(e) => handleInputChange("aleitamento", "ame", e.target.value)}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="pred">PRED</Label>
-                  <Input
-                    id="pred"
-                    value={formData.aleitamento.pred}
-                    onChange={(e) => handleInputChange("aleitamento", "pred", e.target.value)}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="comp">COMP</Label>
-                  <Input
-                    id="comp"
-                    value={formData.aleitamento.comp}
-                    onChange={(e) => handleInputChange("aleitamento", "comp", e.target.value)}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="form">FORM</Label>
-                  <Input
-                    id="form"
-                    value={formData.aleitamento.form}
-                    onChange={(e) => handleInputChange("aleitamento", "form", e.target.value)}
-                  />
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <Label htmlFor="tipoParto">Tipo de Parto</Label>
+                <Input
+                  id="tipoParto"
+                  value={formData.tipoParto}
+                  onChange={(e) => handleInputChange("", "tipoParto", e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-4">
+                <h3 className="font-medium">Aleitamento</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="ame">AME</Label>
+                    <Input
+                      id="ame"
+                      value={formData.aleitamento.ame}
+                      onChange={(e) => handleInputChange("aleitamento", "ame", e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="pred">PRED</Label>
+                    <Input
+                      id="pred"
+                      value={formData.aleitamento.pred}
+                      onChange={(e) => handleInputChange("aleitamento", "pred", e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="comp">COMP</Label>
+                    <Input
+                      id="comp"
+                      value={formData.aleitamento.comp}
+                      onChange={(e) => handleInputChange("aleitamento", "comp", e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="form">FORM</Label>
+                    <Input
+                      id="form"
+                      value={formData.aleitamento.form}
+                      onChange={(e) => handleInputChange("aleitamento", "form", e.target.value)}
+                    />
+                  </div>
                 </div>
               </div>
             </div>
@@ -259,6 +315,11 @@ const Puericultura = () => {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead>Nome</TableHead>
+                  <TableHead>Nome da Mãe</TableHead>
+                  <TableHead>CNS/CPF</TableHead>
+                  <TableHead>Telefone</TableHead>
+                  <TableHead>Data de Nascimento</TableHead>
                   <TableHead>Tipo de Parto</TableHead>
                   <TableHead colSpan={4}>Aleitamento</TableHead>
                   <TableHead colSpan={3}>Triagens</TableHead>
@@ -292,6 +353,11 @@ const Puericultura = () => {
               <TableBody>
                 {records.map((record) => (
                   <TableRow key={record.id}>
+                    <TableCell>{record.nome}</TableCell>
+                    <TableCell>{record.nomeMae}</TableCell>
+                    <TableCell>{record.cnsCpf}</TableCell>
+                    <TableCell>{record.telefone}</TableCell>
+                    <TableCell>{record.dataNascimento}</TableCell>
                     <TableCell>{record.tipoParto}</TableCell>
                     <TableCell>{record.aleitamento.ame}</TableCell>
                     <TableCell>{record.aleitamento.pred}</TableCell>
