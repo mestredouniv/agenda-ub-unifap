@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useDisplayState } from "@/hooks/useDisplayState";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
@@ -21,57 +21,53 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { professionals } from "@/data/professionals";
 
 interface Patient {
-  id: number;
+  id: string;
   name: string;
   professional: string;
+  professionalId: string;
   time: string;
   status: 'waiting' | 'triage' | 'in_progress' | 'completed';
   priority: 'normal' | 'priority';
+  responsible?: string;
 }
-
-const professionals = [
-  { id: "all", name: "Todos os Profissionais" },
-  { id: "1", name: "Dr. Anderson" },
-  { id: "2", name: "Dra. Liliany" },
-];
 
 const Consultas = () => {
   const { toast } = useToast();
   const setCurrentPatient = useDisplayState((state) => state.setCurrentPatient);
   const [selectedProfessional, setSelectedProfessional] = useState("all");
+  const [appointments, setAppointments] = useState<Patient[]>([]);
 
-  const initialPatients: Patient[] = [
-    {
-      id: 1,
-      name: "João Silva",
-      professional: "Dr. Anderson",
-      time: "09:00",
-      status: 'waiting',
-      priority: 'normal',
-    },
-    {
-      id: 2,
-      name: "Maria Santos",
-      professional: "Dra. Liliany",
-      time: "09:30",
-      status: 'waiting',
-      priority: 'priority',
-    },
-    {
-      id: 3,
-      name: "Pedro Oliveira",
-      professional: "Dr. André",
-      time: "10:00",
-      status: 'waiting',
-      priority: 'normal',
-    },
-  ];
+  useEffect(() => {
+    const loadAppointments = () => {
+      const storedAppointments = JSON.parse(localStorage.getItem("appointments") || "[]");
+      const today = new Date().toISOString().split('T')[0];
+      
+      const activeAppointments = storedAppointments
+        .filter((app: any) => app.preferredDate?.split('T')[0] === today && app.status === "approved")
+        .map((app: any) => ({
+          id: app.id,
+          name: app.patientName,
+          professional: professionals.find(p => p.id === app.professionalId)?.name || "Não encontrado",
+          professionalId: app.professionalId,
+          time: app.preferredTime,
+          status: 'waiting' as const,
+          priority: 'normal' as const,
+          responsible: app.responsible,
+        }));
 
-  const filteredPatients = initialPatients.filter(patient => 
-    selectedProfessional === "all" || 
-    patient.professional === professionals.find(p => p.id === selectedProfessional)?.name
+      setAppointments(activeAppointments);
+    };
+
+    loadAppointments();
+    window.addEventListener("storage", loadAppointments);
+    return () => window.removeEventListener("storage", loadAppointments);
+  }, []);
+
+  const filteredAppointments = appointments.filter(appointment => 
+    selectedProfessional === "all" || appointment.professionalId === selectedProfessional
   );
 
   const handleCallNext = (patient: Patient) => {
@@ -136,9 +132,10 @@ const Consultas = () => {
               <SelectValue placeholder="Filtrar por profissional" />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="all">Todos os Profissionais</SelectItem>
               {professionals.map((prof) => (
                 <SelectItem key={prof.id} value={prof.id}>
-                  {prof.name}
+                  {prof.name} - {prof.profession}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -158,48 +155,58 @@ const Consultas = () => {
               <TableHead>Profissional</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Prioridade</TableHead>
+              <TableHead>Responsável</TableHead>
               <TableHead>Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredPatients.map((patient) => (
-              <TableRow key={patient.id}>
-                <TableCell>{patient.time}</TableCell>
-                <TableCell>{patient.name}</TableCell>
-                <TableCell>{patient.professional}</TableCell>
-                <TableCell>{getStatusBadge(patient.status)}</TableCell>
-                <TableCell>
-                  <Badge variant={patient.priority === 'priority' ? "destructive" : "secondary"}>
-                    {patient.priority === 'priority' ? 'Prioritário' : 'Normal'}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  <div className="flex space-x-2">
-                    <Button
-                      size="sm"
-                      onClick={() => handleCallNext(patient)}
-                      disabled={patient.status !== 'waiting'}
-                    >
-                      Chamar
-                    </Button>
-                    <Button
-                      size="sm"
-                      onClick={() => handleStartTriage(patient)}
-                      disabled={patient.status !== 'waiting'}
-                    >
-                      Triagem
-                    </Button>
-                    <Button
-                      size="sm"
-                      onClick={() => handleStartAppointment(patient)}
-                      disabled={patient.status !== 'triage'}
-                    >
-                      Iniciar
-                    </Button>
-                  </div>
+            {filteredAppointments.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={7} className="text-center text-muted-foreground">
+                  Não há consultas agendadas para hoje
                 </TableCell>
               </TableRow>
-            ))}
+            ) : (
+              filteredAppointments.map((patient) => (
+                <TableRow key={patient.id}>
+                  <TableCell>{patient.time}</TableCell>
+                  <TableCell>{patient.name}</TableCell>
+                  <TableCell>{patient.professional}</TableCell>
+                  <TableCell>{getStatusBadge(patient.status)}</TableCell>
+                  <TableCell>
+                    <Badge variant={patient.priority === 'priority' ? "destructive" : "secondary"}>
+                      {patient.priority === 'priority' ? 'Prioritário' : 'Normal'}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>{patient.responsible || "-"}</TableCell>
+                  <TableCell>
+                    <div className="flex space-x-2">
+                      <Button
+                        size="sm"
+                        onClick={() => handleCallNext(patient)}
+                        disabled={patient.status !== 'waiting'}
+                      >
+                        Chamar
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={() => handleStartTriage(patient)}
+                        disabled={patient.status !== 'waiting'}
+                      >
+                        Triagem
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={() => handleStartAppointment(patient)}
+                        disabled={patient.status !== 'triage'}
+                      >
+                        Iniciar
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
           </TableBody>
         </Table>
       </div>
