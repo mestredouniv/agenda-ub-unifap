@@ -184,98 +184,160 @@ const Puericultura = () => {
       <div className="grid md:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
-            <CardTitle>Dados do Paciente</CardTitle>
+            <CardTitle>Triagens e Consultas</CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="space-y-4">
-              <div>
-                <Label htmlFor="nome">Nome</Label>
-                <Input
-                  id="nome"
-                  value={formData.nome}
-                  onChange={(e) => handleInputChange("", "nome", e.target.value)}
-                />
-              </div>
-              <div>
-                <Label htmlFor="nomeMae">Nome da Mãe</Label>
-                <Input
-                  id="nomeMae"
-                  value={formData.nomeMae}
-                  onChange={(e) => handleInputChange("", "nomeMae", e.target.value)}
-                />
-              </div>
-              <div>
-                <Label htmlFor="cnsCpf">CNS/CPF</Label>
-                <Input
-                  id="cnsCpf"
-                  value={formData.cnsCpf}
-                  onChange={(e) => handleInputChange("", "cnsCpf", e.target.value)}
-                />
-              </div>
-              <div>
-                <Label htmlFor="telefone">Telefone</Label>
-                <Input
-                  id="telefone"
-                  value={formData.telefone}
-                  onChange={(e) => handleInputChange("", "telefone", e.target.value)}
-                />
-              </div>
-              <div>
-                <Label htmlFor="dataNascimento">Data de Nascimento</Label>
-                <Input
-                  id="dataNascimento"
-                  type="date"
-                  value={formData.dataNascimento}
-                  onChange={(e) => handleInputChange("", "dataNascimento", e.target.value)}
-                />
-              </div>
-            </div>
-
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div>
-                <Label htmlFor="tipoParto">Tipo de Parto</Label>
-                <Input
-                  id="tipoParto"
-                  value={formData.tipoParto}
-                  onChange={(e) => handleInputChange("", "tipoParto", e.target.value)}
-                />
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <Label htmlFor="pezinho">Pezinho</Label>
+                  <Input
+                    id="pezinho"
+                    value={formData.triagens.pezinho}
+                    onChange={(e) => handleInputChange("triagens", "pezinho", e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="olhinho">Olhinho</Label>
+                  <Input
+                    id="olhinho"
+                    value={formData.triagens.olhinho}
+                    onChange={(e) => handleInputChange("triagens", "olhinho", e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="orelhinha">Orelhinha</Label>
+                  <Input
+                    id="orelhinha"
+                    value={formData.triagens.orelhinha}
+                    onChange={(e) => handleInputChange("triagens", "orelhinha", e.target.value)}
+                  />
+                </div>
               </div>
 
-              <div className="space-y-4">
-                <h3 className="font-medium">Aleitamento</h3>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="ame">AME</Label>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>1 Mês</Label>
+                  <div className="space-y-2">
                     <Input
-                      id="ame"
-                      value={formData.aleitamento.ame}
-                      onChange={(e) => handleInputChange("aleitamento", "ame", e.target.value)}
+                      placeholder="ENF"
+                      value={formData.consultas.mes1.enf}
+                      onChange={(e) => handleInputChange("consultas", "mes1.enf", e.target.value)}
+                    />
+                    <Input
+                      placeholder="MÉDICO"
+                      value={formData.consultas.mes1.medico}
+                      onChange={(e) => handleInputChange("consultas", "mes1.medico", e.target.value)}
+                    />
+                    <Input
+                      placeholder="MED/ENF"
+                      value={formData.consultas.mes1.medEnf}
+                      onChange={(e) => handleInputChange("consultas", "mes1.medEnf", e.target.value)}
                     />
                   </div>
-                  <div>
-                    <Label htmlFor="pred">PRED</Label>
+                </div>
+
+                <div>
+                  <Label>2 Meses</Label>
+                  <div className="space-y-2">
                     <Input
-                      id="pred"
-                      value={formData.aleitamento.pred}
-                      onChange={(e) => handleInputChange("aleitamento", "pred", e.target.value)}
+                      placeholder="MÉDICO"
+                      value={formData.consultas.mes2.medico}
+                      onChange={(e) => handleInputChange("consultas", "mes2.medico", e.target.value)}
+                    />
+                    <Input
+                      placeholder="MED/ENF"
+                      value={formData.consultas.mes2.medEnf}
+                      onChange={(e) => handleInputChange("consultas", "mes2.medEnf", e.target.value)}
                     />
                   </div>
-                  <div>
-                    <Label htmlFor="comp">COMP</Label>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>4 Meses</Label>
+                  <Input
+                    placeholder="NUTRI"
+                    value={formData.consultas.mes4.nutri}
+                    onChange={(e) => handleInputChange("consultas", "mes4.nutri", e.target.value)}
+                  />
+                </div>
+
+                <div>
+                  <Label>6 Meses</Label>
+                  <div className="space-y-2">
                     <Input
-                      id="comp"
-                      value={formData.aleitamento.comp}
-                      onChange={(e) => handleInputChange("aleitamento", "comp", e.target.value)}
+                      placeholder="MÉDICO"
+                      value={formData.consultas.mes6.medico}
+                      onChange={(e) => handleInputChange("consultas", "mes6.medico", e.target.value)}
+                    />
+                    <Input
+                      placeholder="MED/ENF"
+                      value={formData.consultas.mes6.medEnf}
+                      onChange={(e) => handleInputChange("consultas", "mes6.medEnf", e.target.value)}
                     />
                   </div>
-                  <div>
-                    <Label htmlFor="form">FORM</Label>
-                    <Input
-                      id="form"
-                      value={formData.aleitamento.form}
-                      onChange={(e) => handleInputChange("aleitamento", "form", e.target.value)}
-                    />
-                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>9 Meses</Label>
+                  <Input
+                    placeholder="MED/ENF"
+                    value={formData.consultas.mes9.medEnf}
+                    onChange={(e) => handleInputChange("consultas", "mes9.medEnf", e.target.value)}
+                  />
+                </div>
+
+                <div>
+                  <Label>1 Ano</Label>
+                  <Input
+                    placeholder="MED/ENF"
+                    value={formData.consultas.ano1.medEnf}
+                    onChange={(e) => handleInputChange("consultas", "ano1.medEnf", e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>2 Anos</Label>
+                  <Input
+                    placeholder="MED/ENF"
+                    value={formData.consultas.ano2.medEnf}
+                    onChange={(e) => handleInputChange("consultas", "ano2.medEnf", e.target.value)}
+                  />
+                </div>
+
+                <div>
+                  <Label>3 Anos</Label>
+                  <Input
+                    placeholder="MED/ENF"
+                    value={formData.consultas.ano3.medEnf}
+                    onChange={(e) => handleInputChange("consultas", "ano3.medEnf", e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>4 Anos</Label>
+                  <Input
+                    placeholder="MED/ENF"
+                    value={formData.consultas.ano4.medEnf}
+                    onChange={(e) => handleInputChange("consultas", "ano4.medEnf", e.target.value)}
+                  />
+                </div>
+
+                <div>
+                  <Label>5 Anos</Label>
+                  <Input
+                    placeholder="MED/ENF"
+                    value={formData.consultas.ano5.medEnf}
+                    onChange={(e) => handleInputChange("consultas", "ano5.medEnf", e.target.value)}
+                  />
                 </div>
               </div>
             </div>
