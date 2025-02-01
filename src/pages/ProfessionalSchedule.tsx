@@ -31,6 +31,7 @@ import {
 import { Home, Printer, Share2, Plus, Edit2, Trash2, Calendar as CalendarIcon } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { UnavailableDaysSelector } from "@/components/UnavailableDaysSelector";
+import { BackToHomeButton } from "@/components/BackToHomeButton";
 
 interface Appointment {
   id: number;
@@ -150,6 +151,7 @@ const ProfessionalSchedule = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <BackToHomeButton />
       <div className="fixed top-0 left-0 right-0 bg-white shadow-md z-50">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">

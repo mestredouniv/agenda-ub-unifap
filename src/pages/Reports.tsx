@@ -14,6 +14,7 @@ import {
   BarChart,
   Bar,
 } from "recharts";
+import { BackToHomeButton } from "@/components/BackToHomeButton";
 
 const Reports = () => {
   const navigate = useNavigate();
@@ -37,6 +38,7 @@ const Reports = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 p-8">
+      <BackToHomeButton />
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">Relatórios e Estatísticas</h1>
         <Button

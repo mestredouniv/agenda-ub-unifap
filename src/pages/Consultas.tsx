@@ -25,6 +25,7 @@ import {
   ClipboardCheck,
   Bell
 } from "lucide-react";
+import { BackToHomeButton } from "@/components/BackToHomeButton";
 
 interface Patient {
   id: number;
@@ -125,6 +126,7 @@ const Consultas = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
+      <BackToHomeButton />
       <h1 className="text-2xl font-bold mb-6">Acompanhamento de Consultas</h1>
       
       <Card className="p-6 mb-8">

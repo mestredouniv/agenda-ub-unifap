@@ -30,6 +30,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { BackToHomeButton } from "@/components/BackToHomeButton";
 
 interface AppointmentRequest {
   professionalId: string;
@@ -91,6 +92,7 @@ const AppointmentRequest = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
+      <BackToHomeButton />
       <div className="max-w-3xl mx-auto">
         <Card className="shadow-lg">
           <CardHeader>
