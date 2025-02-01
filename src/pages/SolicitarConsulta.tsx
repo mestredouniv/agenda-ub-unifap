@@ -18,29 +18,9 @@ const RequiredField = () => (
   <Asterisk className="inline-block h-2 w-2 text-red-500 ml-1" />
 );
 
-const initialProfessionals = [
-  { id: "1", name: "Luciana", profession: "Psicóloga" },
-  { id: "2", name: "Janaína", profession: "Psicóloga" },
-  { id: "3", name: "Anna", profession: "Fisioterapeuta" },
-  { id: "4", name: "Anderson", profession: "Médico" },
-  { id: "5", name: "Anna", profession: "Auriculoterapeuta" },
-  { id: "6", name: "Wandervan", profession: "Enfermeiro" },
-  { id: "7", name: "Patrícia", profession: "Enfermeira" },
-  { id: "8", name: "Liliany", profession: "Médica" },
-  { id: "9", name: "Janaína", profession: "Enfermeira" },
-  { id: "10", name: "Equipe", profession: "Curativo" },
-  { id: "11", name: "André", profession: "Médico" },
-  { id: "12", name: "Ananda", profession: "Enfermeira" },
-  { id: "13", name: "Nely", profession: "Enfermeira" },
-  { id: "14", name: "Luciana", profession: "Psicóloga" },
-  { id: "15", name: "Janaína", profession: "Psicóloga" },
-  { id: "16", name: "Equipe", profession: "Laboratório" },
-  { id: "17", name: "Equipe", profession: "Gestante" },
-];
-
 const SolicitarConsulta = () => {
   const { toast } = useToast();
-  const [professionals, setProfessionals] = useState<Professional[]>(initialProfessionals);
+  const [professionals, setProfessionals] = useState<Professional[]>([]);
   const [errors, setErrors] = useState<Record<string, boolean>>({});
   const [formData, setFormData] = useState({
     patientName: "",
@@ -55,7 +35,8 @@ const SolicitarConsulta = () => {
   });
 
   useEffect(() => {
-    localStorage.setItem("professionals", JSON.stringify(initialProfessionals));
+    const storedProfessionals = JSON.parse(localStorage.getItem("professionals") || "[]");
+    setProfessionals(storedProfessionals);
   }, []);
 
   const validateForm = () => {
@@ -92,20 +73,32 @@ const SolicitarConsulta = () => {
       return;
     }
 
+    const appointmentId = crypto.randomUUID();
     const newAppointment = {
-      id: crypto.randomUUID(),
+      id: appointmentId,
       ...formData,
       status: "pending",
       preferredDate: formData.preferredDate?.toISOString(),
     };
 
+    // Salvar na lista geral de agendamentos
     const appointments = JSON.parse(localStorage.getItem("appointments") || "[]");
     appointments.push(newAppointment);
     localStorage.setItem("appointments", JSON.stringify(appointments));
 
+    // Adicionar à agenda do profissional específico
+    const professionalSchedule = JSON.parse(
+      localStorage.getItem(`schedule-${formData.professionalId}`) || "[]"
+    );
+    professionalSchedule.push(newAppointment);
+    localStorage.setItem(
+      `schedule-${formData.professionalId}`,
+      JSON.stringify(professionalSchedule)
+    );
+
     toast({
       title: "Solicitação enviada",
-      description: "Sua solicitação foi enviada com sucesso!",
+      description: "Sua solicitação foi enviada com sucesso! Aguarde a aprovação do profissional.",
     });
 
     setFormData({
