@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Check, X, Calendar } from "lucide-react";
+import { Check, X, Calendar, UserPlus } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -14,13 +14,14 @@ import {
 } from "@/components/ui/dialog";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 
 interface Appointment {
   id: string;
   patientName: string;
   preferredDate: string;
   preferredTime: string;
-  status: "pending" | "approved" | "rejected" | "rescheduled";
+  status: "pending" | "approved" | "rejected" | "rescheduled" | "direct_visit";
   professionalId: string;
   suggestedDate?: string;
   suggestedTime?: string;
@@ -36,6 +37,7 @@ export const AppointmentApprovalList = ({ professionalId }: AppointmentApprovalL
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
   const [showRescheduleDialog, setShowRescheduleDialog] = useState(false);
+  const [showDirectVisitDialog, setShowDirectVisitDialog] = useState(false);
   const [suggestedDate, setSuggestedDate] = useState<Date | undefined>();
   const [suggestedTime, setSuggestedTime] = useState("");
   const [message, setMessage] = useState("");
@@ -43,8 +45,11 @@ export const AppointmentApprovalList = ({ professionalId }: AppointmentApprovalL
   useEffect(() => {
     const loadAppointments = () => {
       const allAppointments = JSON.parse(localStorage.getItem("appointments") || "[]");
-      const currentDate = new Date();
+      const professionalSchedule = JSON.parse(
+        localStorage.getItem(`schedule-${professionalId}`) || "[]"
+      );
       
+      const currentDate = new Date();
       const filteredAppointments = allAppointments.filter((app: Appointment) => {
         const appointmentDate = new Date(app.preferredDate);
         return (
@@ -87,6 +92,11 @@ export const AppointmentApprovalList = ({ professionalId }: AppointmentApprovalL
     setShowRescheduleDialog(true);
   };
 
+  const handleDirectVisit = (appointment: Appointment) => {
+    setSelectedAppointment(appointment);
+    setShowDirectVisitDialog(true);
+  };
+
   const handleSaveReschedule = () => {
     if (!selectedAppointment || !suggestedDate || !suggestedTime) {
       toast({
@@ -121,6 +131,43 @@ export const AppointmentApprovalList = ({ professionalId }: AppointmentApprovalL
     setSelectedAppointment(null);
     setSuggestedDate(undefined);
     setSuggestedTime("");
+    setMessage("");
+    
+    setAppointments(prevAppointments => 
+      prevAppointments.filter(app => app.id !== selectedAppointment.id)
+    );
+  };
+
+  const handleSaveDirectVisit = () => {
+    if (!selectedAppointment || !message) {
+      toast({
+        title: "Erro",
+        description: "Por favor, adicione uma mensagem para o paciente.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const allAppointments = JSON.parse(localStorage.getItem("appointments") || "[]");
+    const updatedAppointments = allAppointments.map((app: Appointment) =>
+      app.id === selectedAppointment.id
+        ? {
+            ...app,
+            status: "direct_visit",
+            message,
+          }
+        : app
+    );
+
+    localStorage.setItem("appointments", JSON.stringify(updatedAppointments));
+    
+    toast({
+      title: "Visita direta solicitada",
+      description: "O paciente foi notificado para comparecer à UBS.",
+    });
+
+    setShowDirectVisitDialog(false);
+    setSelectedAppointment(null);
     setMessage("");
     
     setAppointments(prevAppointments => 
@@ -174,6 +221,14 @@ export const AppointmentApprovalList = ({ professionalId }: AppointmentApprovalL
               <Button
                 variant="outline"
                 size="icon"
+                onClick={() => handleDirectVisit(appointment)}
+                className="text-yellow-600 hover:text-yellow-700"
+              >
+                <UserPlus className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
                 onClick={() => handleApproval(appointment.id, false)}
                 className="text-red-600 hover:text-red-700"
               >
@@ -213,7 +268,7 @@ export const AppointmentApprovalList = ({ professionalId }: AppointmentApprovalL
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">Mensagem para o Paciente</label>
-              <Input
+              <Textarea
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 placeholder="Ex: Por favor, confirme se este horário é adequado"
@@ -221,6 +276,30 @@ export const AppointmentApprovalList = ({ professionalId }: AppointmentApprovalL
             </div>
             <Button onClick={handleSaveReschedule} className="w-full">
               Salvar Nova Data
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showDirectVisitDialog} onOpenChange={setShowDirectVisitDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Solicitar Visita Direta à UBS</DialogTitle>
+            <DialogDescription>
+              Adicione uma mensagem explicando o motivo da visita direta
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Mensagem para o Paciente</label>
+              <Textarea
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                placeholder="Ex: Por favor, compareça à UBS para uma avaliação inicial"
+              />
+            </div>
+            <Button onClick={handleSaveDirectVisit} className="w-full">
+              Solicitar Visita Direta
             </Button>
           </div>
         </DialogContent>

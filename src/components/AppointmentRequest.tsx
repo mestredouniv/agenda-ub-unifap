@@ -30,7 +30,8 @@ interface AppointmentRequest {
   preferredDate: Date | undefined;
   preferredTime: string;
   responsible?: string;
-  status: "pending" | "approved" | "rejected" | "rescheduled";
+  status: "pending" | "approved" | "rejected" | "rescheduled" | "direct_visit";
+  message?: string;
   createdAt: string;
 }
 
@@ -53,11 +54,11 @@ const AppointmentRequest = () => {
   });
 
   useEffect(() => {
-    // Load professionals from localStorage
+    // Carregar profissionais do localStorage
     const storedProfessionals = localStorage.getItem("professionals");
     if (storedProfessionals) {
       setProfessionals(JSON.parse(storedProfessionals));
-      console.log("Loaded professionals:", JSON.parse(storedProfessionals));
+      console.log("Profissionais carregados:", JSON.parse(storedProfessionals));
     }
   }, []);
 
@@ -68,6 +69,16 @@ const AppointmentRequest = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Validar se todos os campos obrigatórios estão preenchidos
+    if (!formData.professionalId || !formData.preferredDate || !formData.preferredTime) {
+      toast({
+        title: "Erro",
+        description: "Por favor, preencha todos os campos obrigatórios.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const appointment: AppointmentRequest = {
       id: generateId(),
       ...formData,
@@ -75,16 +86,27 @@ const AppointmentRequest = () => {
       createdAt: new Date().toISOString(),
     };
     
+    // Salvar no localStorage
     const appointments = JSON.parse(localStorage.getItem("appointments") || "[]");
     appointments.push(appointment);
     localStorage.setItem("appointments", JSON.stringify(appointments));
+
+    // Adicionar à agenda do profissional
+    const professionalSchedule = JSON.parse(
+      localStorage.getItem(`schedule-${formData.professionalId}`) || "[]"
+    );
+    professionalSchedule.push(appointment);
+    localStorage.setItem(
+      `schedule-${formData.professionalId}`,
+      JSON.stringify(professionalSchedule)
+    );
 
     toast({
       title: "Solicitação enviada",
       description: "Sua solicitação foi enviada e está aguardando aprovação do profissional.",
     });
 
-    // Reset form
+    // Resetar formulário
     setFormData({
       professionalId: "",
       patientName: "",
