@@ -9,6 +9,7 @@ import ProfessionalSchedule from "./pages/ProfessionalSchedule";
 import Reports from "./pages/Reports";
 import AppointmentRequest from "./pages/AppointmentRequest";
 import Consultas from "./pages/Consultas";
+import Display from "./pages/Display";
 
 const queryClient = new QueryClient();
 
@@ -24,6 +25,7 @@ const App = () => (
           <Route path="/relatorios" element={<Reports />} />
           <Route path="/solicitar-agendamento" element={<AppointmentRequest />} />
           <Route path="/consultas" element={<Consultas />} />
+          <Route path="/display" element={<Display />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
