@@ -10,7 +10,6 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -21,7 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Info, Calendar as CalendarIcon } from "lucide-react";
+import { Info } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import {
   Dialog,
@@ -31,6 +30,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { BackToHomeButton } from "@/components/BackToHomeButton";
+import { useAvailableSlots } from "@/hooks/useAvailableSlots";
 
 interface AppointmentRequest {
   professionalId: string;
@@ -78,6 +78,11 @@ const AppointmentRequest = () => {
     preferredDate: undefined,
     preferredTime: "",
   });
+
+  const { data: availableSlots, isLoading } = useAvailableSlots(
+    formData.professionalId,
+    formData.preferredDate
+  );
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -144,13 +149,33 @@ const AppointmentRequest = () => {
 
                   <div>
                     <Label htmlFor="preferredTime">Horário Preferencial</Label>
-                    <Input
-                      type="time"
+                    <Select
                       value={formData.preferredTime}
-                      onChange={(e) =>
-                        setFormData({ ...formData, preferredTime: e.target.value })
+                      onValueChange={(value) =>
+                        setFormData({ ...formData, preferredTime: value })
                       }
-                    />
+                      disabled={!formData.preferredDate || !availableSlots}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione um horário disponível" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {availableSlots?.map((slot) => (
+                          <SelectItem
+                            key={slot.time}
+                            value={slot.time}
+                            disabled={!slot.available}
+                          >
+                            {slot.time}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {isLoading && (
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Carregando horários disponíveis...
+                      </p>
+                    )}
                   </div>
                 </div>
 
