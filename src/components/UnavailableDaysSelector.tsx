@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { ptBR } from "date-fns/locale";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
+import { DEFAULT_TIME_SLOTS } from "@/hooks/useAvailableSlots";
 
 interface TimeSlot {
   time: string;
@@ -15,16 +16,6 @@ interface UnavailableDaysSelectorProps {
   timeSlots?: TimeSlot[];
   onTimeSlotsChange?: (slots: TimeSlot[]) => void;
 }
-
-const DEFAULT_TIME_SLOTS = [
-  { time: "08:00", available: true },
-  { time: "09:00", available: true },
-  { time: "10:00", available: true },
-  { time: "11:00", available: true },
-  { time: "14:00", available: true },
-  { time: "15:00", available: true },
-  { time: "16:00", available: true },
-];
 
 export const UnavailableDaysSelector = ({
   selectedDays,
