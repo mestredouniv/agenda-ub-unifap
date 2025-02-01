@@ -1,10 +1,5 @@
 import { useState } from "react";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Card,
   CardContent,
@@ -12,13 +7,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Info } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -28,9 +16,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { BackToHomeButton } from "@/components/BackToHomeButton";
-import { useAvailableSlots } from "@/hooks/useAvailableSlots";
 import { AppointmentTicket } from "@/components/AppointmentTicket";
+import { PersonalDataForm } from "@/components/PersonalDataForm";
+import { AppointmentSelection } from "@/components/AppointmentSelection";
 
 interface AppointmentRequest {
   professionalId: string;
@@ -83,10 +71,9 @@ const AppointmentRequest = () => {
     preferredTime: "",
   });
 
-  const { slots: availableSlots, isLoading } = useAvailableSlots(
-    formData.professionalId,
-    formData.preferredDate
-  );
+  const handleFormChange = (field: string, value: any) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -94,7 +81,6 @@ const AppointmentRequest = () => {
     setTicketNumber(newTicketNumber);
     setShowConfirmation(true);
     
-    // Salvar a solicitação no localStorage
     const appointment = {
       ...formData,
       ticketNumber: newTicketNumber,
@@ -111,8 +97,6 @@ const AppointmentRequest = () => {
       description: "Sua solicitação de agendamento foi enviada com sucesso!",
     });
   };
-
-  const isMinor = parseInt(formData.age) < 18;
 
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
@@ -136,154 +120,16 @@ const AppointmentRequest = () => {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="professional">Profissional</Label>
-                  <Select
-                    value={formData.professionalId}
-                    onValueChange={(value) =>
-                      setFormData({ ...formData, professionalId: value })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione o profissional" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {initialProfessionals.map((prof) => (
-                        <SelectItem key={prof.id} value={prof.id.toString()}>
-                          {prof.name} - {prof.profession}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+              <AppointmentSelection
+                professionals={initialProfessionals}
+                formData={formData}
+                onChange={handleFormChange}
+              />
 
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div>
-                    <Label htmlFor="preferredDate">Data Preferencial</Label>
-                    <Calendar
-                      mode="single"
-                      selected={formData.preferredDate}
-                      onSelect={(date) =>
-                        setFormData({ ...formData, preferredDate: date })
-                      }
-                      className="rounded-md border"
-                      locale={ptBR}
-                      disabled={(date) => date < new Date()}
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="preferredTime">Horário Preferencial</Label>
-                    <Select
-                      value={formData.preferredTime}
-                      onValueChange={(value) =>
-                        setFormData({ ...formData, preferredTime: value })
-                      }
-                      disabled={!formData.preferredDate || !availableSlots}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione um horário disponível" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {availableSlots?.map((slot) => (
-                          <SelectItem
-                            key={slot.time}
-                            value={slot.time}
-                            disabled={!slot.available}
-                          >
-                            {slot.time}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    {isLoading && (
-                      <p className="text-sm text-muted-foreground mt-1">
-                        Carregando horários disponíveis...
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div>
-                    <Label htmlFor="patientName">Nome Completo</Label>
-                    <Input
-                      id="patientName"
-                      value={formData.patientName}
-                      onChange={(e) =>
-                        setFormData({ ...formData, patientName: e.target.value })
-                      }
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="age">Idade</Label>
-                    <Input
-                      id="age"
-                      type="number"
-                      value={formData.age}
-                      onChange={(e) =>
-                        setFormData({ ...formData, age: e.target.value })
-                      }
-                      required
-                    />
-                  </div>
-                </div>
-
-                {isMinor && (
-                  <div>
-                    <Label htmlFor="responsible">Nome do Responsável</Label>
-                    <Input
-                      id="responsible"
-                      value={formData.responsible}
-                      onChange={(e) =>
-                        setFormData({ ...formData, responsible: e.target.value })
-                      }
-                      required
-                    />
-                  </div>
-                )}
-
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div>
-                    <Label htmlFor="cpf">CPF</Label>
-                    <Input
-                      id="cpf"
-                      value={formData.cpf}
-                      onChange={(e) =>
-                        setFormData({ ...formData, cpf: e.target.value })
-                      }
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="sus">Cartão SUS</Label>
-                    <Input
-                      id="sus"
-                      value={formData.sus}
-                      onChange={(e) =>
-                        setFormData({ ...formData, sus: e.target.value })
-                      }
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <Label htmlFor="phone">Telefone de Contato</Label>
-                  <Input
-                    id="phone"
-                    value={formData.phone}
-                    onChange={(e) =>
-                      setFormData({ ...formData, phone: e.target.value })
-                    }
-                    required
-                  />
-                </div>
-              </div>
+              <PersonalDataForm
+                formData={formData}
+                onChange={handleFormChange}
+              />
 
               <div className="bg-blue-50 p-4 rounded-md flex items-start gap-2">
                 <Info className="h-5 w-5 text-blue-500 mt-0.5 flex-shrink-0" />
