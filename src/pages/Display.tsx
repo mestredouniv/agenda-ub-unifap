@@ -10,7 +10,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { useToast } from "@/components/ui/use-toast";
 import { Bold, Italic, Underline, Image as ImageIcon, Youtube, Eye, Send, Plus } from "lucide-react";
@@ -39,7 +38,13 @@ const Display = () => {
   const [currentAnnouncementIndex, setCurrentAnnouncementIndex] = useState(0);
   const { toast } = useToast();
 
-  // Function to handle preview generation
+  // Function to play notification sound
+  const playNotificationSound = () => {
+    const audio = new Audio("/notification.mp3"); // You'll need to add this sound file to your public folder
+    audio.play().catch(error => console.log("Audio playback failed:", error));
+  };
+
+  // Handle preview generation
   const handlePreview = () => {
     const activeTab = document.querySelector('[role="tab"][data-state="active"]')?.getAttribute('value');
     const newContent: Announcement = {
@@ -57,6 +62,7 @@ const Display = () => {
       setNewAnnouncement("");
       setYoutubeUrl("");
       setPreviewContent(null);
+      playNotificationSound();
       toast({
         title: "Publicado com sucesso!",
         description: "O conteúdo foi adicionado à lista de exibição.",
@@ -68,15 +74,18 @@ const Display = () => {
   useEffect(() => {
     if (!isEditMode && announcements.length > 0) {
       const interval = setInterval(() => {
-        setCurrentAnnouncementIndex((prev) => 
-          prev === announcements.length - 1 ? 0 : prev + 1
-        );
+        setCurrentAnnouncementIndex((prev) => {
+          const nextIndex = prev === announcements.length - 1 ? 0 : prev + 1;
+          if (nextIndex === 0) {
+            playNotificationSound(); // Play sound when loop restarts
+          }
+          return nextIndex;
+        });
       }, 10000);
       return () => clearInterval(interval);
     }
   }, [isEditMode, announcements.length]);
 
-  // Simulated patient data
   useEffect(() => {
     const mockPatient = {
       password: "A123",
