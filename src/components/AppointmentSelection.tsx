@@ -37,10 +37,9 @@ export const AppointmentSelection = ({
     formData.preferredDate
   );
 
-  // Filtra apenas os slots que ainda têm vagas disponíveis
   const availableTimeSlots = availableSlots.filter(slot => 
     slot.available && 
-    (!slot.currentAppointments || slot.currentAppointments < (slot.maxAppointments || 3))
+    (!slot.currentAppointments || slot.currentAppointments < (slot.maxAppointments || 10))
   );
 
   return (
@@ -106,7 +105,7 @@ export const AppointmentSelection = ({
             <SelectContent>
               {availableTimeSlots.map((slot) => (
                 <SelectItem key={slot.time} value={slot.time}>
-                  {slot.time} ({slot.currentAppointments || 0}/{slot.maxAppointments || 3} agendamentos)
+                  {slot.time} ({slot.currentAppointments || 0}/{slot.maxAppointments || 10} agendamentos)
                 </SelectItem>
               ))}
             </SelectContent>

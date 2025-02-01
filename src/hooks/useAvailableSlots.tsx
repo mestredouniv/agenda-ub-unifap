@@ -8,12 +8,12 @@ interface TimeSlot {
 }
 
 const DEFAULT_TIME_SLOTS = [
-  { time: "08:00", available: true, maxAppointments: 3, currentAppointments: 0 },
-  { time: "09:00", available: true, maxAppointments: 3, currentAppointments: 0 },
-  { time: "10:00", available: true, maxAppointments: 3, currentAppointments: 0 },
-  { time: "11:00", available: true, maxAppointments: 3, currentAppointments: 0 },
-  { time: "14:00", available: true, maxAppointments: 3, currentAppointments: 0 },
-  { time: "15:00", available: true, maxAppointments: 3, currentAppointments: 0 },
+  { time: "08:00", available: true, maxAppointments: 10, currentAppointments: 0 },
+  { time: "09:00", available: true, maxAppointments: 10, currentAppointments: 0 },
+  { time: "10:00", available: true, maxAppointments: 10, currentAppointments: 0 },
+  { time: "11:00", available: true, maxAppointments: 10, currentAppointments: 0 },
+  { time: "14:00", available: true, maxAppointments: 10, currentAppointments: 0 },
+  { time: "15:00", available: true, maxAppointments: 10, currentAppointments: 0 },
 ];
 
 export const useAvailableSlots = (professionalId: string, date: Date | undefined) => {
@@ -24,24 +24,19 @@ export const useAvailableSlots = (professionalId: string, date: Date | undefined
     queryFn: async () => {
       if (!professionalId || !date) return DEFAULT_TIME_SLOTS;
 
-      // Busca os slots do localStorage
       const storedSlots = localStorage.getItem(`slots-${professionalId}`);
       const slots = storedSlots ? JSON.parse(storedSlots) : DEFAULT_TIME_SLOTS;
       
-      // Busca os dias indisponíveis do profissional
       const unavailableDays = JSON.parse(localStorage.getItem(`unavailableDays-${professionalId}`) || '[]');
       
-      // Verifica se a data selecionada está nos dias indisponíveis
       const isDateUnavailable = unavailableDays.some((unavailableDate: string) => 
         new Date(unavailableDate).toDateString() === date.toDateString()
       );
 
-      // Se a data estiver indisponível, retorna todos os slots como indisponíveis
       if (isDateUnavailable) {
         return slots.map((slot: TimeSlot) => ({ ...slot, available: false }));
       }
 
-      // Busca os agendamentos existentes para atualizar o contador
       const appointments = JSON.parse(localStorage.getItem("appointments") || "[]");
       const dateStr = date.toISOString().split('T')[0];
       
@@ -55,7 +50,7 @@ export const useAvailableSlots = (professionalId: string, date: Date | undefined
         return {
           ...slot,
           currentAppointments: slotAppointments,
-          available: slot.available && (slotAppointments < (slot.maxAppointments || 3))
+          available: slot.available && (slotAppointments < (slot.maxAppointments || 10))
         };
       });
     },

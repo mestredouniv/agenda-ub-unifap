@@ -7,29 +7,55 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import {
-  InputOTP,
-  InputOTPGroup,
-  InputOTPSlot,
-} from "@/components/ui/input-otp";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 const CheckAppointment = () => {
-  const [ticketNumber, setTicketNumber] = useState("");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
   const [appointment, setAppointment] = useState<any>(null);
   const [error, setError] = useState("");
 
   const handleCheck = () => {
     const appointments = JSON.parse(localStorage.getItem("appointments") || "[]");
-    const found = appointments.find((a: any) => a.ticketNumber === ticketNumber);
+    const found = appointments.find((a: any) => 
+      a.username === username && a.password === password
+    );
     
     if (found) {
       setAppointment(found);
       setError("");
     } else {
-      setError("Agendamento não encontrado");
+      setError("Credenciais inválidas ou agendamento não encontrado");
       setAppointment(null);
+    }
+  };
+
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case "pending":
+        return "Aguardando aprovação";
+      case "approved":
+        return "Aprovado";
+      case "rejected":
+        return "Rejeitado";
+      default:
+        return "Status desconhecido";
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "pending":
+        return "text-yellow-600";
+      case "approved":
+        return "text-green-600";
+      case "rejected":
+        return "text-red-600";
+      default:
+        return "text-gray-600";
     }
   };
 
@@ -49,28 +75,28 @@ const CheckAppointment = () => {
           <CardHeader>
             <CardTitle>Consultar Agendamento</CardTitle>
             <CardDescription>
-              Digite o número de protocolo recebido
+              Digite suas credenciais para verificar o status do seu agendamento
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div className="flex justify-center">
-              <InputOTP
-                value={ticketNumber}
-                onChange={setTicketNumber}
-                maxLength={6}
-                render={({ slots }) => (
-                  <InputOTPGroup className="gap-2">
-                    {slots.map((slot, i) => (
-                      <InputOTPSlot
-                        key={i}
-                        {...slot}
-                        index={i}
-                        className="w-12 h-12 text-2xl"
-                      />
-                    ))}
-                  </InputOTPGroup>
-                )}
-              />
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="username">Nome de Usuário</Label>
+                <Input
+                  id="username"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="password">Senha</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+              </div>
             </div>
 
             <Button onClick={handleCheck} className="w-full">
@@ -85,7 +111,9 @@ const CheckAppointment = () => {
               <div className="space-y-4">
                 <div className="bg-primary/10 p-4 rounded-lg">
                   <h3 className="font-medium text-lg mb-2">
-                    Status: {appointment.status === "pending" ? "Pendente" : "Aprovado"}
+                    Status: <span className={getStatusColor(appointment.status)}>
+                      {getStatusText(appointment.status)}
+                    </span>
                   </h3>
                   <p>Data solicitada: {format(new Date(appointment.preferredDate), "dd/MM/yyyy")}</p>
                   <p>Horário solicitado: {appointment.preferredTime}</p>
