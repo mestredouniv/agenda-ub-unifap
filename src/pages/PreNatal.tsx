@@ -1,14 +1,11 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Calendar } from "@/components/ui/calendar";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { BackToHomeButton } from "@/components/BackToHomeButton";
 import { ConsultaHeader } from "@/components/ConsultaHeader";
 import { Download, Printer, Share2, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
-import { ptBR } from "date-fns/locale";
 import {
   Table,
   TableBody,
@@ -21,18 +18,55 @@ import {
 interface HealthRecord {
   id: string;
   date: string;
-  has: string;
-  medication: string;
-  comorbidities: string;
+  name: string;
+  cns: string;
+  phone: string;
+  birthDate: string;
+  ig: string;
+  dum: string;
+  dpp: string;
+  gpa: string;
+  enf: string;
+  medEnf1: string;
+  medEnf2: string;
+  medEnf3: string;
+  medEnf4: string;
+  medEnf5: string;
+  medEnf6: string;
+  medEnf7: string;
+  medEnf8: string;
+  medEnf9: string;
+  medEnf10: string;
+  medEnf11: string;
+  medEnf12: string;
+  puerperio: string;
   notes: string;
 }
 
 const PreNatal = () => {
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [formData, setFormData] = useState({
-    has: "",
-    medication: "",
-    comorbidities: "",
+    name: "",
+    cns: "",
+    phone: "",
+    birthDate: "",
+    ig: "",
+    dum: "",
+    dpp: "",
+    gpa: "",
+    enf: "",
+    medEnf1: "",
+    medEnf2: "",
+    medEnf3: "",
+    medEnf4: "",
+    medEnf5: "",
+    medEnf6: "",
+    medEnf7: "",
+    medEnf8: "",
+    medEnf9: "",
+    medEnf10: "",
+    medEnf11: "",
+    medEnf12: "",
+    puerperio: "",
     notes: "",
   });
   const [records, setRecords] = useState<HealthRecord[]>([]);
@@ -45,22 +79,36 @@ const PreNatal = () => {
   };
 
   const handleAddRecord = () => {
-    if (!selectedDate) {
-      alert("Por favor, selecione uma data");
-      return;
-    }
-
     const newRecord: HealthRecord = {
       id: Date.now().toString(),
-      date: selectedDate.toLocaleDateString('pt-BR'),
+      date: new Date().toLocaleDateString('pt-BR'),
       ...formData,
     };
 
     setRecords((prev) => [...prev, newRecord]);
     setFormData({
-      has: "",
-      medication: "",
-      comorbidities: "",
+      name: "",
+      cns: "",
+      phone: "",
+      birthDate: "",
+      ig: "",
+      dum: "",
+      dpp: "",
+      gpa: "",
+      enf: "",
+      medEnf1: "",
+      medEnf2: "",
+      medEnf3: "",
+      medEnf4: "",
+      medEnf5: "",
+      medEnf6: "",
+      medEnf7: "",
+      medEnf8: "",
+      medEnf9: "",
+      medEnf10: "",
+      medEnf11: "",
+      medEnf12: "",
+      puerperio: "",
       notes: "",
     });
   };
@@ -79,7 +127,7 @@ const PreNatal = () => {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `pre-natal-${selectedDate ? selectedDate.toISOString().split('T')[0] : 'dados'}.json`;
+    link.download = "pre-natal-dados.json";
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -125,40 +173,82 @@ const PreNatal = () => {
         </CardHeader>
         <CardContent>
           <div className="grid md:grid-cols-2 gap-6">
-            <div className="space-y-6">
+            <div className="space-y-4">
               <div>
-                <Label htmlFor="has">HAS (Hipertensão Arterial Sistêmica)</Label>
+                <Label htmlFor="name">Nome</Label>
                 <Input
-                  id="has"
-                  value={formData.has}
-                  onChange={(e) => handleInputChange("has", e.target.value)}
+                  id="name"
+                  value={formData.name}
+                  onChange={(e) => handleInputChange("name", e.target.value)}
                 />
               </div>
 
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="cns">CNS</Label>
+                  <Input
+                    id="cns"
+                    value={formData.cns}
+                    onChange={(e) => handleInputChange("cns", e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="phone">Telefone</Label>
+                  <Input
+                    id="phone"
+                    value={formData.phone}
+                    onChange={(e) => handleInputChange("phone", e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="birthDate">Data de Nascimento</Label>
+                  <Input
+                    id="birthDate"
+                    type="date"
+                    value={formData.birthDate}
+                    onChange={(e) => handleInputChange("birthDate", e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="ig">IG</Label>
+                  <Input
+                    id="ig"
+                    value={formData.ig}
+                    onChange={(e) => handleInputChange("ig", e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="dum">DUM</Label>
+                  <Input
+                    id="dum"
+                    type="date"
+                    value={formData.dum}
+                    onChange={(e) => handleInputChange("dum", e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="dpp">DPP</Label>
+                  <Input
+                    id="dpp"
+                    type="date"
+                    value={formData.dpp}
+                    onChange={(e) => handleInputChange("dpp", e.target.value)}
+                  />
+                </div>
+              </div>
+
               <div>
-                <Label htmlFor="medication">Medicação</Label>
+                <Label htmlFor="gpa">G/P/A</Label>
                 <Input
-                  id="medication"
-                  value={formData.medication}
-                  onChange={(e) => handleInputChange("medication", e.target.value)}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="comorbidities">Comorbidades</Label>
-                <Textarea
-                  id="comorbidities"
-                  value={formData.comorbidities}
-                  onChange={(e) => handleInputChange("comorbidities", e.target.value)}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="notes">Anotações para a data selecionada</Label>
-                <Textarea
-                  id="notes"
-                  value={formData.notes}
-                  onChange={(e) => handleInputChange("notes", e.target.value)}
+                  id="gpa"
+                  value={formData.gpa}
+                  onChange={(e) => handleInputChange("gpa", e.target.value)}
                 />
               </div>
 
@@ -169,21 +259,34 @@ const PreNatal = () => {
             </div>
 
             <div className="space-y-4">
-              <h3 className="text-lg font-medium">Calendário de Acompanhamento</h3>
-              <Calendar
-                mode="single"
-                selected={selectedDate}
-                onSelect={setSelectedDate}
-                locale={ptBR}
-                className="rounded-md border"
-                fromDate={new Date()}
-                toDate={new Date(new Date().getFullYear(), 11, 31)}
-              />
-              {selectedDate && (
-                <p className="text-sm text-muted-foreground">
-                  Data selecionada: {selectedDate.toLocaleDateString('pt-BR')}
-                </p>
-              )}
+              <div>
+                <Label htmlFor="enf">ENF</Label>
+                <Input
+                  id="enf"
+                  value={formData.enf}
+                  onChange={(e) => handleInputChange("enf", e.target.value)}
+                />
+              </div>
+
+              {[...Array(12)].map((_, index) => (
+                <div key={index}>
+                  <Label htmlFor={`medEnf${index + 1}`}>{`MED/ENF ${index + 1}`}</Label>
+                  <Input
+                    id={`medEnf${index + 1}`}
+                    value={formData[`medEnf${index + 1}` as keyof typeof formData]}
+                    onChange={(e) => handleInputChange(`medEnf${index + 1}`, e.target.value)}
+                  />
+                </div>
+              ))}
+
+              <div>
+                <Label htmlFor="puerperio">PUERPÉRIO</Label>
+                <Input
+                  id="puerperio"
+                  value={formData.puerperio}
+                  onChange={(e) => handleInputChange("puerperio", e.target.value)}
+                />
+              </div>
             </div>
           </div>
         </CardContent>
@@ -194,39 +297,57 @@ const PreNatal = () => {
           <CardTitle>Relatório de Dados</CardTitle>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Data</TableHead>
-                <TableHead>HAS</TableHead>
-                <TableHead>Medicação</TableHead>
-                <TableHead>Comorbidades</TableHead>
-                <TableHead>Anotações</TableHead>
-                <TableHead>Ações</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {records.map((record) => (
-                <TableRow key={record.id}>
-                  <TableCell>{record.date}</TableCell>
-                  <TableCell>{record.has}</TableCell>
-                  <TableCell>{record.medication}</TableCell>
-                  <TableCell>{record.comorbidades}</TableCell>
-                  <TableCell>{record.notes}</TableCell>
-                  <TableCell>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleDeleteRecord(record.id)}
-                      className="text-red-500 hover:text-red-700"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </TableCell>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Nome</TableHead>
+                  <TableHead>CNS</TableHead>
+                  <TableHead>TEL</TableHead>
+                  <TableHead>DN</TableHead>
+                  <TableHead>IG</TableHead>
+                  <TableHead>DUM</TableHead>
+                  <TableHead>DPP</TableHead>
+                  <TableHead>G/P/A</TableHead>
+                  <TableHead>ENF</TableHead>
+                  {[...Array(12)].map((_, index) => (
+                    <TableHead key={index}>MED/ENF</TableHead>
+                  ))}
+                  <TableHead>PUERPÉRIO</TableHead>
+                  <TableHead>Ações</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {records.map((record) => (
+                  <TableRow key={record.id}>
+                    <TableCell>{record.name}</TableCell>
+                    <TableCell>{record.cns}</TableCell>
+                    <TableCell>{record.phone}</TableCell>
+                    <TableCell>{record.birthDate}</TableCell>
+                    <TableCell>{record.ig}</TableCell>
+                    <TableCell>{record.dum}</TableCell>
+                    <TableCell>{record.dpp}</TableCell>
+                    <TableCell>{record.gpa}</TableCell>
+                    <TableCell>{record.enf}</TableCell>
+                    {[...Array(12)].map((_, index) => (
+                      <TableCell key={index}>{record[`medEnf${index + 1}` as keyof typeof record]}</TableCell>
+                    ))}
+                    <TableCell>{record.puerperio}</TableCell>
+                    <TableCell>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleDeleteRecord(record.id)}
+                        className="text-red-500 hover:text-red-700"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
     </div>
