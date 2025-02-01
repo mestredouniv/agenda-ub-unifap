@@ -1,4 +1,4 @@
-// Same structure as PreNatal.tsx, just change the title to "Tuberculose" and the download filename to "tuberculose"
+// Same structure as PreNatal.tsx, just change the title to "Puericultura" and the download filename to "puericultura"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar } from "@/components/ui/calendar";
 import { Input } from "@/components/ui/input";
@@ -11,7 +11,7 @@ import { Download, Printer, Share2 } from "lucide-react";
 import { useState } from "react";
 import { ptBR } from "date-fns/locale";
 
-const Tuberculose = () => {
+const Puericultura = () => {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [formData, setFormData] = useState({
     has: "",
@@ -37,7 +37,7 @@ const Tuberculose = () => {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `tuberculose-${selectedDate ? selectedDate.toISOString().split('T')[0] : 'dados'}.json`;
+    link.download = `puericultura-${selectedDate ? selectedDate.toISOString().split('T')[0] : 'dados'}.json`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -48,7 +48,7 @@ const Tuberculose = () => {
     if (navigator.share) {
       try {
         await navigator.share({
-          title: 'Dados Tuberculose',
+          title: 'Dados Puericultura',
           text: JSON.stringify(formData, null, 2),
         });
       } catch (error) {
@@ -79,7 +79,7 @@ const Tuberculose = () => {
 
       <Card>
         <CardHeader>
-          <CardTitle>Tuberculose</CardTitle>
+          <CardTitle>Puericultura</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid md:grid-cols-2 gap-6">
@@ -179,4 +179,4 @@ const Tuberculose = () => {
   );
 };
 
-export default Tuberculose;
+export default Puericultura;

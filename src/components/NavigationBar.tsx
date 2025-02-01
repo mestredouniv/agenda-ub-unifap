@@ -105,6 +105,20 @@ export const NavigationBar = ({
                 <Heart className="h-4 w-4" />
                 PREP
               </Link>
+              <Link
+                to="/doencas-cronicas"
+                className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-accent"
+              >
+                <Heart className="h-4 w-4" />
+                Doenças Crônicas
+              </Link>
+              <Link
+                to="/puericultura"
+                className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-accent"
+              >
+                <Heart className="h-4 w-4" />
+                Puericultura
+              </Link>
             </div>
           </NavigationMenuContent>
         </NavigationMenuItem>
