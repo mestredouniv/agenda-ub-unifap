@@ -19,6 +19,8 @@ import {
 
 interface HanseniaseRecord {
   id: string;
+  nome: string;
+  cnes: string;
   tel: string;
   dn: string;
   pb: string;
@@ -31,6 +33,8 @@ const Hanseniase = () => {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [records, setRecords] = useState<HanseniaseRecord[]>([]);
   const [formData, setFormData] = useState<Omit<HanseniaseRecord, 'id'>>({
+    nome: "",
+    cnes: "",
     tel: "",
     dn: "",
     pb: "",
@@ -53,6 +57,8 @@ const Hanseniase = () => {
     };
     setRecords((prev) => [...prev, newRecord]);
     setFormData({
+      nome: "",
+      cnes: "",
       tel: "",
       dn: "",
       pb: "",
@@ -123,6 +129,24 @@ const Hanseniase = () => {
         <CardContent>
           <div className="grid md:grid-cols-2 gap-6">
             <div className="space-y-6">
+              <div>
+                <Label htmlFor="nome">Nome</Label>
+                <Input
+                  id="nome"
+                  value={formData.nome}
+                  onChange={(e) => handleInputChange("nome", e.target.value)}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="cnes">CNES</Label>
+                <Input
+                  id="cnes"
+                  value={formData.cnes}
+                  onChange={(e) => handleInputChange("cnes", e.target.value)}
+                />
+              </div>
+
               <div>
                 <Label htmlFor="tel">Telefone</Label>
                 <Input
@@ -212,6 +236,8 @@ const Hanseniase = () => {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead>NOME</TableHead>
+                <TableHead>CNES</TableHead>
                 <TableHead>TEL</TableHead>
                 <TableHead>DN</TableHead>
                 <TableHead>PB</TableHead>
@@ -224,6 +250,8 @@ const Hanseniase = () => {
             <TableBody>
               {records.map((record) => (
                 <TableRow key={record.id}>
+                  <TableCell>{record.nome}</TableCell>
+                  <TableCell>{record.cnes}</TableCell>
                   <TableCell>{record.tel}</TableCell>
                   <TableCell>{record.dn}</TableCell>
                   <TableCell>{record.pb}</TableCell>
