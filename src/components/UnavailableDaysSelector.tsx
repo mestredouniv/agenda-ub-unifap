@@ -4,6 +4,7 @@ import { ptBR } from "date-fns/locale";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
+import { Card } from "@/components/ui/card";
 
 interface TimeSlot {
   time: string;
@@ -84,23 +85,32 @@ export const UnavailableDaysSelector = ({
         locale={ptBR}
       />
       
-      <div className="space-y-4">
-        <h3 className="font-medium text-sm">Horários disponíveis para atendimento:</h3>
-        <div className="grid grid-cols-2 gap-4">
+      <Card className="p-4">
+        <h3 className="font-medium text-sm mb-4">Horários disponíveis para atendimento:</h3>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
           {timeSlots.map((slot) => (
-            <div key={slot.time} className="flex items-center space-x-2">
+            <div
+              key={slot.time}
+              className="flex items-center space-x-2 bg-white rounded-lg p-3 shadow-sm border"
+            >
               <Checkbox
                 id={`time-${slot.time}`}
                 checked={slot.available}
                 onCheckedChange={(checked) => 
                   handleTimeSlotChange(slot.time, checked as boolean)
                 }
+                className="data-[state=checked]:bg-primary"
               />
-              <Label htmlFor={`time-${slot.time}`}>{slot.time}</Label>
+              <Label
+                htmlFor={`time-${slot.time}`}
+                className="text-sm font-medium cursor-pointer"
+              >
+                {slot.time}
+              </Label>
             </div>
           ))}
         </div>
-      </div>
+      </Card>
 
       <div className="text-sm text-muted-foreground">
         Clique nos dias para marcar/desmarcar ausências e selecione os horários disponíveis

@@ -79,7 +79,7 @@ const AppointmentRequest = () => {
     preferredTime: "",
   });
 
-  const { data: availableSlots, isLoading } = useAvailableSlots(
+  const { slots: availableSlots, isLoading } = useAvailableSlots(
     formData.professionalId,
     formData.preferredDate
   );
