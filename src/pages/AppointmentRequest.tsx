@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Header } from "@/components/Header";
 import {
   Card,
   CardContent,
@@ -97,11 +96,9 @@ const AppointmentRequest = () => {
   const isMinor = parseInt(formData.age) < 18;
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header onAddClick={() => {}} onRemoveClick={() => {}} />
-      <div className="py-8 px-4 sm:px-6 lg:px-8">
-        <BackToHomeButton />
-        <div className="max-w-3xl mx-auto">
+    <div className="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
+      <BackToHomeButton />
+      <div className="max-w-3xl mx-auto">
         <Card className="shadow-lg">
           <CardHeader>
             <CardTitle className="text-2xl font-bold text-center">
@@ -312,8 +309,6 @@ const AppointmentRequest = () => {
           </div>
         </DialogContent>
       </Dialog>
-        </div>
-      </div>
     </div>
   );
 };
