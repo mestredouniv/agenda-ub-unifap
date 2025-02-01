@@ -11,7 +11,6 @@ import { Info } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { PersonalDataForm } from "@/components/PersonalDataForm";
 import { AppointmentSelection } from "@/components/AppointmentSelection";
-import { AppointmentRequestsReport } from "@/components/AppointmentRequestsReport";
 
 interface AppointmentRequest {
   id: string;
@@ -54,7 +53,6 @@ const generateId = () => {
 
 const AppointmentRequest = () => {
   const { toast } = useToast();
-  const [showReport, setShowReport] = useState(false);
   const [formData, setFormData] = useState<Omit<AppointmentRequest, "id" | "status" | "createdAt">>({
     professionalId: "",
     patientName: "",
@@ -71,7 +69,7 @@ const AppointmentRequest = () => {
   };
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault(); // Prevent form submission from refreshing the page
+    e.preventDefault();
     
     const appointment: AppointmentRequest = {
       id: generateId(),
@@ -86,10 +84,8 @@ const AppointmentRequest = () => {
 
     toast({
       title: "Solicitação enviada",
-      description: "Sua solicitação de agendamento foi enviada com sucesso!",
+      description: "Sua solicitação foi enviada e está aguardando aprovação do profissional.",
     });
-
-    setShowReport(true);
   };
 
   return (
@@ -140,12 +136,6 @@ const AppointmentRequest = () => {
             </form>
           </CardContent>
         </Card>
-
-        {showReport && (
-          <div className="mt-8">
-            <AppointmentRequestsReport />
-          </div>
-        )}
       </div>
     </div>
   );
