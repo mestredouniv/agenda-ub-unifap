@@ -37,8 +37,11 @@ export const AppointmentSelection = ({
     formData.preferredDate
   );
 
-  // Filtra apenas os slots disponíveis
-  const availableTimeSlots = availableSlots.filter(slot => slot.available);
+  // Filtra apenas os slots que ainda têm vagas disponíveis
+  const availableTimeSlots = availableSlots.filter(slot => 
+    slot.available && 
+    (!slot.currentAppointments || slot.currentAppointments < (slot.maxAppointments || 3))
+  );
 
   return (
     <div className="space-y-4">
@@ -48,7 +51,7 @@ export const AppointmentSelection = ({
           value={formData.professionalId}
           onValueChange={(value) => {
             onChange("professionalId", value);
-            onChange("preferredTime", ""); // Reseta o horário ao trocar de profissional
+            onChange("preferredTime", "");
           }}
         >
           <SelectTrigger>
@@ -72,15 +75,12 @@ export const AppointmentSelection = ({
             selected={formData.preferredDate}
             onSelect={(date) => {
               onChange("preferredDate", date);
-              onChange("preferredTime", ""); // Reseta o horário ao trocar a data
+              onChange("preferredTime", "");
             }}
             className="rounded-md border"
             locale={ptBR}
             disabled={(date) => {
-              // Verifica se a data é anterior a hoje
               const isBeforeToday = date < new Date(new Date().setHours(0, 0, 0, 0));
-              
-              // Verifica se a data está nos dias indisponíveis do profissional
               const unavailableDays = JSON.parse(
                 localStorage.getItem(`unavailableDays-${formData.professionalId}`) || '[]'
               );
@@ -88,7 +88,6 @@ export const AppointmentSelection = ({
                 (unavailableDate: string) =>
                   new Date(unavailableDate).toDateString() === date.toDateString()
               );
-              
               return isBeforeToday || isUnavailable;
             }}
           />
@@ -107,7 +106,7 @@ export const AppointmentSelection = ({
             <SelectContent>
               {availableTimeSlots.map((slot) => (
                 <SelectItem key={slot.time} value={slot.time}>
-                  {slot.time}
+                  {slot.time} ({slot.currentAppointments || 0}/{slot.maxAppointments || 3} agendamentos)
                 </SelectItem>
               ))}
             </SelectContent>

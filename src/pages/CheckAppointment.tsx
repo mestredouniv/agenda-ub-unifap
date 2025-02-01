@@ -60,10 +60,11 @@ const CheckAppointment = () => {
                 maxLength={6}
                 render={({ slots }) => (
                   <InputOTPGroup className="gap-2">
-                    {slots.map((slot, index) => (
+                    {slots.map((slot, i) => (
                       <InputOTPSlot
-                        key={index}
+                        key={i}
                         {...slot}
+                        index={i}
                         className="w-12 h-12 text-2xl"
                       />
                     ))}

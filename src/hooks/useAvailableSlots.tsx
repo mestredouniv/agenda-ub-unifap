@@ -3,15 +3,17 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 interface TimeSlot {
   time: string;
   available: boolean;
+  maxAppointments?: number;
+  currentAppointments?: number;
 }
 
 const DEFAULT_TIME_SLOTS = [
-  { time: "08:00", available: true },
-  { time: "09:00", available: true },
-  { time: "10:00", available: true },
-  { time: "11:00", available: true },
-  { time: "14:00", available: true },
-  { time: "15:00", available: true },
+  { time: "08:00", available: true, maxAppointments: 3, currentAppointments: 0 },
+  { time: "09:00", available: true, maxAppointments: 3, currentAppointments: 0 },
+  { time: "10:00", available: true, maxAppointments: 3, currentAppointments: 0 },
+  { time: "11:00", available: true, maxAppointments: 3, currentAppointments: 0 },
+  { time: "14:00", available: true, maxAppointments: 3, currentAppointments: 0 },
+  { time: "15:00", available: true, maxAppointments: 3, currentAppointments: 0 },
 ];
 
 export const useAvailableSlots = (professionalId: string, date: Date | undefined) => {
@@ -39,7 +41,23 @@ export const useAvailableSlots = (professionalId: string, date: Date | undefined
         return slots.map((slot: TimeSlot) => ({ ...slot, available: false }));
       }
 
-      return slots;
+      // Busca os agendamentos existentes para atualizar o contador
+      const appointments = JSON.parse(localStorage.getItem("appointments") || "[]");
+      const dateStr = date.toISOString().split('T')[0];
+      
+      return slots.map((slot: TimeSlot) => {
+        const slotAppointments = appointments.filter((app: any) => 
+          app.professionalId === professionalId &&
+          app.preferredDate.split('T')[0] === dateStr &&
+          app.preferredTime === slot.time
+        ).length;
+
+        return {
+          ...slot,
+          currentAppointments: slotAppointments,
+          available: slot.available && (slotAppointments < (slot.maxAppointments || 3))
+        };
+      });
     },
     enabled: !!professionalId,
   });
