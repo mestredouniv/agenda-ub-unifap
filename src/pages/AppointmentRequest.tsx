@@ -32,24 +32,24 @@ interface AppointmentRequest {
   responsible?: string;
 }
 
-const initialProfessionals = [
-  { id: 1, name: "Luciana", profession: "Psicóloga" },
-  { id: 2, name: "Janaína", profession: "Psicóloga" },
-  { id: 3, name: "Anna", profession: "Fisioterapeuta" },
-  { id: 4, name: "Anderson", profession: "Médico" },
-  { id: 5, name: "Anna", profession: "Auriculoterapeuta" },
-  { id: 6, name: "Wandervan", profession: "Enfermeiro" },
-  { id: 7, name: "Patrícia", profession: "Enfermeira" },
-  { id: 8, name: "Liliany", profession: "Médica" },
-  { id: 9, name: "Janaína", profession: "Enfermeira" },
-  { id: 10, name: "Equipe", profession: "Curativo" },
-  { id: 11, name: "André", profession: "Médico" },
-  { id: 12, name: "Ananda", profession: "Enfermeira" },
-  { id: 13, name: "Nely", profession: "Enfermeira" },
-  { id: 14, name: "Luciana", profession: "Psicóloga" },
-  { id: 15, name: "Janaína", profession: "Psicóloga" },
-  { id: 16, name: "Equipe", profession: "Laboratório" },
-  { id: 17, name: "Equipe", profession: "Gestante" },
+const professionals = [
+  { id: "1", name: "Luciana", profession: "Psicóloga" },
+  { id: "2", name: "Janaína", profession: "Psicóloga" },
+  { id: "3", name: "Anna", profession: "Fisioterapeuta" },
+  { id: "4", name: "Anderson", profession: "Médico" },
+  { id: "5", name: "Anna", profession: "Auriculoterapeuta" },
+  { id: "6", name: "Wandervan", profession: "Enfermeiro" },
+  { id: "7", name: "Patrícia", profession: "Enfermeira" },
+  { id: "8", name: "Liliany", profession: "Médica" },
+  { id: "9", name: "Janaína", profession: "Enfermeira" },
+  { id: "10", name: "Equipe", profession: "Curativo" },
+  { id: "11", name: "André", profession: "Médico" },
+  { id: "12", name: "Ananda", profession: "Enfermeira" },
+  { id: "13", name: "Nely", profession: "Enfermeira" },
+  { id: "14", name: "Luciana", profession: "Psicóloga" },
+  { id: "15", name: "Janaína", profession: "Psicóloga" },
+  { id: "16", name: "Equipe", profession: "Laboratório" },
+  { id: "17", name: "Equipe", profession: "Gestante" },
 ];
 
 const generateTicketNumber = () => {
@@ -121,7 +121,7 @@ const AppointmentRequest = () => {
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
               <AppointmentSelection
-                professionals={initialProfessionals}
+                professionals={professionals}
                 formData={formData}
                 onChange={handleFormChange}
               />

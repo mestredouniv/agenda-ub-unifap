@@ -38,10 +38,11 @@ export const AppointmentTicket = ({
             disabled
             render={({ slots }) => (
               <InputOTPGroup className="gap-2">
-                {slots.map((slot, i) => (
+                {slots.map((slot, index) => (
                   <InputOTPSlot
-                    key={i}
+                    key={index}
                     {...slot}
+                    index={index}
                     className="w-12 h-12 text-2xl"
                   />
                 ))}
