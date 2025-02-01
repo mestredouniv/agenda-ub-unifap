@@ -134,7 +134,6 @@ const Tuberculose = () => {
       ...formData,
     };
     setRecords(prev => [...prev, newRecord]);
-    // Reset form after adding record
     setFormData({
       nome: "",
       cns: "",
@@ -233,7 +232,6 @@ const Tuberculose = () => {
         <CardContent>
           <div className="grid md:grid-cols-2 gap-6">
             <div className="space-y-4">
-              {/* Basic Information */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="nome">Nome</Label>
@@ -253,7 +251,6 @@ const Tuberculose = () => {
                 </div>
               </div>
 
-              {/* Contact Information */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="tel">Telefone</Label>
@@ -273,7 +270,6 @@ const Tuberculose = () => {
                 </div>
               </div>
 
-              {/* TRM Fields */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="trmSensivel">TRM Sensível</Label>
@@ -293,7 +289,6 @@ const Tuberculose = () => {
                 </div>
               </div>
 
-              {/* BAAR Fields */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="baar1">BAAR 1</Label>
@@ -313,7 +308,6 @@ const Tuberculose = () => {
                 </div>
               </div>
 
-              {/* Cultura Fields */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="culturaEscarro">Cultura Escarro</Label>
@@ -333,7 +327,6 @@ const Tuberculose = () => {
                 </div>
               </div>
 
-              {/* Additional Tests */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="ppd">PPD</Label>
@@ -372,7 +365,6 @@ const Tuberculose = () => {
                 </div>
               </div>
 
-              {/* Clinical Information */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="hiv">HIV</Label>
@@ -392,7 +384,6 @@ const Tuberculose = () => {
                 </div>
               </div>
 
-              {/* Treatment Information */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="tipoDe">Tipo de</Label>
@@ -431,7 +422,6 @@ const Tuberculose = () => {
                 </div>
               </div>
 
-              {/* Baciloscopias de Controle */}
               <div className="space-y-2">
                 <Label>Baciloscopias de Controle (Meses)</Label>
                 <div className="grid grid-cols-6 gap-2">
@@ -449,7 +439,6 @@ const Tuberculose = () => {
                 </div>
               </div>
 
-              {/* Encerramento */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="encerramento.motivo">Motivo do Encerramento</Label>
@@ -469,7 +458,6 @@ const Tuberculose = () => {
                 </div>
               </div>
 
-              {/* Contatos */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="contatos.reg">Reg. Contatos</Label>
@@ -489,7 +477,6 @@ const Tuberculose = () => {
                 </div>
               </div>
 
-              {/* Observações */}
               <div>
                 <Label htmlFor="obs">Observações</Label>
                 <Input
@@ -537,11 +524,27 @@ const Tuberculose = () => {
                 <TableHead>Nome</TableHead>
                 <TableHead>CNS</TableHead>
                 <TableHead>Telefone</TableHead>
-                <TableHead>Data Nasc.</TableHead>
+                <TableHead>DN</TableHead>
                 <TableHead>TRM Sensível</TableHead>
                 <TableHead>TRM Resistente</TableHead>
+                <TableHead>BAAR 1</TableHead>
+                <TableHead>BAAR 2</TableHead>
+                <TableHead>Cultura Escarro</TableHead>
+                <TableHead>Cultura Outros</TableHead>
+                <TableHead>PPD</TableHead>
+                <TableHead>Histopatológico</TableHead>
+                <TableHead>Raio X</TableHead>
+                <TableHead>Outros</TableHead>
+                <TableHead>HIV</TableHead>
                 <TableHead>Forma Clínica</TableHead>
+                <TableHead>Tipo de</TableHead>
+                <TableHead>Esquema</TableHead>
                 <TableHead>Data Início</TableHead>
+                <TableHead>Forma</TableHead>
+                <TableHead>Baciloscopias</TableHead>
+                <TableHead>Encerramento</TableHead>
+                <TableHead>Contatos</TableHead>
+                <TableHead>Observações</TableHead>
                 <TableHead>Ações</TableHead>
               </TableRow>
             </TableHeader>
@@ -554,8 +557,32 @@ const Tuberculose = () => {
                   <TableCell>{record.dn}</TableCell>
                   <TableCell>{record.trmSensivel}</TableCell>
                   <TableCell>{record.trmResistente}</TableCell>
+                  <TableCell>{record.baar1}</TableCell>
+                  <TableCell>{record.baar2}</TableCell>
+                  <TableCell>{record.culturaEscarro}</TableCell>
+                  <TableCell>{record.culturaOutros}</TableCell>
+                  <TableCell>{record.ppd}</TableCell>
+                  <TableCell>{record.histo}</TableCell>
+                  <TableCell>{record.raioX}</TableCell>
+                  <TableCell>{record.outros}</TableCell>
+                  <TableCell>{record.hiv}</TableCell>
                   <TableCell>{record.formaClinica}</TableCell>
+                  <TableCell>{record.tipoDe}</TableCell>
+                  <TableCell>{record.esquema}</TableCell>
                   <TableCell>{record.dataInicio}</TableCell>
+                  <TableCell>{record.forma}</TableCell>
+                  <TableCell>
+                    {Object.entries(record.baciloscopias).map(([month, value]) => (
+                      `${month}: ${value}, `
+                    ))}
+                  </TableCell>
+                  <TableCell>
+                    {`Motivo: ${record.encerramento.motivo}, Data: ${record.encerramento.data}`}
+                  </TableCell>
+                  <TableCell>
+                    {`Reg: ${record.contatos.reg}, Exam: ${record.contatos.exam}`}
+                  </TableCell>
+                  <TableCell>{record.obs}</TableCell>
                   <TableCell>
                     <Button
                       variant="ghost"

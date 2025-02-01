@@ -7,13 +7,40 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { BackToHomeButton } from "@/components/BackToHomeButton";
 import { ConsultaHeader } from "@/components/ConsultaHeader";
-import { Download, Printer, Share2 } from "lucide-react";
+import { Download, Printer, Share2, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { ptBR } from "date-fns/locale";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+
+interface PatientRecord {
+  id: string;
+  nome: string;
+  cns: string;
+  tel: string;
+  dn: string;
+  dm: string;
+  has: string;
+  medication: string;
+  comorbidities: string;
+  notes: string;
+}
 
 const DoencasCronicas = () => {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
-  const [formData, setFormData] = useState({
+  const [records, setRecords] = useState<PatientRecord[]>([]);
+  const [formData, setFormData] = useState<Omit<PatientRecord, 'id'>>({
+    nome: "",
+    cns: "",
+    tel: "",
+    dn: "",
+    dm: "",
     has: "",
     medication: "",
     comorbidities: "",
@@ -25,6 +52,29 @@ const DoencasCronicas = () => {
       ...prev,
       [field]: value,
     }));
+  };
+
+  const handleAddRecord = () => {
+    const newRecord: PatientRecord = {
+      id: crypto.randomUUID(),
+      ...formData,
+    };
+    setRecords(prev => [...prev, newRecord]);
+    setFormData({
+      nome: "",
+      cns: "",
+      tel: "",
+      dn: "",
+      dm: "",
+      has: "",
+      medication: "",
+      comorbidities: "",
+      notes: "",
+    });
+  };
+
+  const handleDeleteRecord = (id: string) => {
+    setRecords(prev => prev.filter(record => record.id !== id));
   };
 
   const handlePrint = () => {
@@ -83,7 +133,54 @@ const DoencasCronicas = () => {
         </CardHeader>
         <CardContent>
           <div className="grid md:grid-cols-2 gap-6">
-            <div className="space-y-6">
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="nome">Nome</Label>
+                  <Input
+                    id="nome"
+                    value={formData.nome}
+                    onChange={(e) => handleInputChange("nome", e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="cns">CNS</Label>
+                  <Input
+                    id="cns"
+                    value={formData.cns}
+                    onChange={(e) => handleInputChange("cns", e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="tel">Telefone</Label>
+                  <Input
+                    id="tel"
+                    value={formData.tel}
+                    onChange={(e) => handleInputChange("tel", e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="dn">Data de Nascimento</Label>
+                  <Input
+                    id="dn"
+                    value={formData.dn}
+                    onChange={(e) => handleInputChange("dn", e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="dm">DM</Label>
+                <Input
+                  id="dm"
+                  value={formData.dm}
+                  onChange={(e) => handleInputChange("dm", e.target.value)}
+                />
+              </div>
+
               <div>
                 <Label htmlFor="has">HAS (Hipertensão Arterial Sistêmica)</Label>
                 <Input
@@ -119,6 +216,10 @@ const DoencasCronicas = () => {
                   onChange={(e) => handleInputChange("notes", e.target.value)}
                 />
               </div>
+
+              <Button onClick={handleAddRecord} className="w-full">
+                Adicionar Registro
+              </Button>
             </div>
 
             <div className="space-y-4">
@@ -144,34 +245,46 @@ const DoencasCronicas = () => {
 
       <Card>
         <CardHeader>
-          <CardTitle>Relatório de Dados</CardTitle>
+          <CardTitle>Registros</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <h4 className="font-medium mb-2">HAS:</h4>
-                <p className="text-gray-600">{formData.has || 'Não informado'}</p>
-              </div>
-              <div>
-                <h4 className="font-medium mb-2">Medicação:</h4>
-                <p className="text-gray-600">{formData.medication || 'Não informado'}</p>
-              </div>
-            </div>
-            <div>
-              <h4 className="font-medium mb-2">Comorbidades:</h4>
-              <p className="text-gray-600">{formData.comorbidities || 'Não informado'}</p>
-            </div>
-            <div>
-              <h4 className="font-medium mb-2">Anotações:</h4>
-              <p className="text-gray-600">{formData.notes || 'Não informado'}</p>
-            </div>
-            {selectedDate && (
-              <div>
-                <h4 className="font-medium mb-2">Data do Registro:</h4>
-                <p className="text-gray-600">{selectedDate.toLocaleDateString('pt-BR')}</p>
-              </div>
-            )}
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Nome</TableHead>
+                  <TableHead>CNS</TableHead>
+                  <TableHead>Telefone</TableHead>
+                  <TableHead>Data Nasc.</TableHead>
+                  <TableHead>DM</TableHead>
+                  <TableHead>HAS</TableHead>
+                  <TableHead>Medicação</TableHead>
+                  <TableHead>Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {records.map((record) => (
+                  <TableRow key={record.id}>
+                    <TableCell>{record.nome}</TableCell>
+                    <TableCell>{record.cns}</TableCell>
+                    <TableCell>{record.tel}</TableCell>
+                    <TableCell>{record.dn}</TableCell>
+                    <TableCell>{record.dm}</TableCell>
+                    <TableCell>{record.has}</TableCell>
+                    <TableCell>{record.medication}</TableCell>
+                    <TableCell>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleDeleteRecord(record.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           </div>
         </CardContent>
       </Card>
