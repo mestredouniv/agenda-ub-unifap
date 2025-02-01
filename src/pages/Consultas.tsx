@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useDisplayState } from "@/hooks/useDisplayState";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
@@ -13,6 +14,13 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface Patient {
   id: number;
@@ -23,9 +31,16 @@ interface Patient {
   priority: 'normal' | 'priority';
 }
 
+const professionals = [
+  { id: "all", name: "Todos os Profissionais" },
+  { id: "1", name: "Dr. Anderson" },
+  { id: "2", name: "Dra. Liliany" },
+];
+
 const Consultas = () => {
   const { toast } = useToast();
   const setCurrentPatient = useDisplayState((state) => state.setCurrentPatient);
+  const [selectedProfessional, setSelectedProfessional] = useState("all");
 
   const initialPatients: Patient[] = [
     {
@@ -53,6 +68,11 @@ const Consultas = () => {
       priority: 'normal',
     },
   ];
+
+  const filteredPatients = initialPatients.filter(patient => 
+    selectedProfessional === "all" || 
+    patient.professional === professionals.find(p => p.id === selectedProfessional)?.name
+  );
 
   const handleCallNext = (patient: Patient) => {
     setCurrentPatient({
@@ -107,9 +127,26 @@ const Consultas = () => {
       <BackToHomeButton />
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Consultas do Dia</h1>
-        <p className="text-sm text-muted-foreground">
-          {format(new Date(), "EEEE, dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
-        </p>
+        <div className="flex items-center gap-4">
+          <Select
+            value={selectedProfessional}
+            onValueChange={setSelectedProfessional}
+          >
+            <SelectTrigger className="w-[250px]">
+              <SelectValue placeholder="Filtrar por profissional" />
+            </SelectTrigger>
+            <SelectContent>
+              {professionals.map((prof) => (
+                <SelectItem key={prof.id} value={prof.id}>
+                  {prof.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <p className="text-sm text-muted-foreground">
+            {format(new Date(), "EEEE, dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+          </p>
+        </div>
       </div>
       
       <div className="bg-white rounded-lg shadow">
@@ -125,7 +162,7 @@ const Consultas = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {initialPatients.map((patient) => (
+            {filteredPatients.map((patient) => (
               <TableRow key={patient.id}>
                 <TableCell>{patient.time}</TableCell>
                 <TableCell>{patient.name}</TableCell>
