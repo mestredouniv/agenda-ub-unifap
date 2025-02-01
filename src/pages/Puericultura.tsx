@@ -184,6 +184,110 @@ const Puericultura = () => {
       <div className="grid md:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
+            <CardTitle>Dados do Paciente</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid md:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="nome">Nome</Label>
+                  <Input
+                    id="nome"
+                    value={formData.nome}
+                    onChange={(e) => handleInputChange("nome", e.target.value)}
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="nomeMae">Nome da Mãe</Label>
+                  <Input
+                    id="nomeMae"
+                    value={formData.nomeMae}
+                    onChange={(e) => handleInputChange("nomeMae", e.target.value)}
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="cnsCpf">CNS/CPF</Label>
+                  <Input
+                    id="cnsCpf"
+                    value={formData.cnsCpf}
+                    onChange={(e) => handleInputChange("cnsCpf", e.target.value)}
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="telefone">Telefone</Label>
+                  <Input
+                    id="telefone"
+                    value={formData.telefone}
+                    onChange={(e) => handleInputChange("telefone", e.target.value)}
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="dataNascimento">Data de Nascimento</Label>
+                  <Input
+                    id="dataNascimento"
+                    value={formData.dataNascimento}
+                    onChange={(e) => handleInputChange("dataNascimento", e.target.value)}
+                    type="date"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="tipoParto">Tipo de Parto</Label>
+                  <Input
+                    id="tipoParto"
+                    value={formData.tipoParto}
+                    onChange={(e) => handleInputChange("tipoParto", e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <h3 className="font-medium">Aleitamento</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="ame">AME</Label>
+                    <Input
+                      id="ame"
+                      value={formData.aleitamento.ame}
+                      onChange={(e) => handleInputChange("aleitamento", "ame", e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="pred">PRED.</Label>
+                    <Input
+                      id="pred"
+                      value={formData.aleitamento.pred}
+                      onChange={(e) => handleInputChange("aleitamento", "pred", e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="comp">COMP.</Label>
+                    <Input
+                      id="comp"
+                      value={formData.aleitamento.comp}
+                      onChange={(e) => handleInputChange("aleitamento", "comp", e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="form">FORM.</Label>
+                    <Input
+                      id="form"
+                      value={formData.aleitamento.form}
+                      onChange={(e) => handleInputChange("aleitamento", "form", e.target.value)}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
             <CardTitle>Triagens e Consultas</CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -348,24 +452,6 @@ const Puericultura = () => {
             </Button>
           </CardContent>
         </Card>
-
-        <div className="space-y-4">
-          <h3 className="text-lg font-medium">Calendário de Acompanhamento</h3>
-          <Calendar
-            mode="single"
-            selected={selectedDate}
-            onSelect={setSelectedDate}
-            locale={ptBR}
-            className="rounded-md border"
-            fromDate={new Date()}
-            toDate={new Date(new Date().getFullYear(), 11, 31)}
-          />
-          {selectedDate && (
-            <p className="text-sm text-muted-foreground">
-              Data selecionada: {selectedDate.toLocaleDateString('pt-BR')}
-            </p>
-          )}
-        </div>
       </div>
 
       <Card>
@@ -383,16 +469,10 @@ const Puericultura = () => {
                   <TableHead>Telefone</TableHead>
                   <TableHead>Data de Nascimento</TableHead>
                   <TableHead>Tipo de Parto</TableHead>
-                  <TableHead colSpan={4}>Aleitamento</TableHead>
-                  <TableHead colSpan={3}>Triagens</TableHead>
-                  <TableHead colSpan={19}>Consultas</TableHead>
-                </TableRow>
-                <TableRow>
-                  <TableHead></TableHead>
                   <TableHead>AME</TableHead>
-                  <TableHead>PRED</TableHead>
-                  <TableHead>COMP</TableHead>
-                  <TableHead>FORM</TableHead>
+                  <TableHead>PRED.</TableHead>
+                  <TableHead>COMP.</TableHead>
+                  <TableHead>FORM.</TableHead>
                   <TableHead>Pezinho</TableHead>
                   <TableHead>Olhinho</TableHead>
                   <TableHead>Orelhinha</TableHead>
