@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Calendar } from "@/components/ui/calendar";
 import { Label } from "@/components/ui/label";
 import {
@@ -32,6 +32,16 @@ export const AppointmentSelection = ({
   formData,
   onChange,
 }: AppointmentSelectionProps) => {
+  const [localProfessionals, setLocalProfessionals] = useState<Professional[]>([]);
+
+  useEffect(() => {
+    // Load professionals from localStorage
+    const storedProfessionals = localStorage.getItem("professionals");
+    if (storedProfessionals) {
+      setLocalProfessionals(JSON.parse(storedProfessionals));
+    }
+  }, []);
+
   const { slots: availableSlots, isLoading } = useAvailableSlots(
     formData.professionalId,
     formData.preferredDate
@@ -57,7 +67,7 @@ export const AppointmentSelection = ({
             <SelectValue placeholder="Selecione o profissional" />
           </SelectTrigger>
           <SelectContent>
-            {professionals.map((prof) => (
+            {localProfessionals.map((prof) => (
               <SelectItem key={prof.id} value={prof.id.toString()}>
                 {prof.name} - {prof.profession}
               </SelectItem>
