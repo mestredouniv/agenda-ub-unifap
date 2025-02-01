@@ -10,7 +10,7 @@ export const Header = ({ onAddClick, onRemoveClick }: HeaderProps) => {
     <div className="w-full flex flex-col items-center justify-center py-6 px-4 animate-fade-in">
       <div className="flex flex-col items-center gap-4 mb-6">
         <img 
-          src="/unifap-logo.png" 
+          src="unifap-logo.png" 
           alt="UNIFAP Logo" 
           className="h-24 w-auto"
         />

@@ -10,6 +10,7 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
 } from "@/components/ui/dialog";
 import { useToast } from "@/components/ui/use-toast";
 import { Bold, Italic, Underline, Image as ImageIcon, Youtube, Eye, Send, Plus } from "lucide-react";
@@ -100,6 +101,22 @@ const Display = () => {
     return (
       <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
         <div className="container mx-auto p-8">
+          <div className="mb-8 flex flex-col items-center gap-4">
+            <img 
+              src="unifap-logo.png" 
+              alt="UNIFAP Logo" 
+              className="h-24 w-auto"
+            />
+            <div className="text-center">
+              <h1 className="text-xl font-bold text-gray-900 mb-1">
+                UNIVERSIDADE FEDERAL DO AMAPÁ
+              </h1>
+              <h2 className="text-lg font-semibold text-gray-800 mb-1">
+                UNIDADE BÁSICA DE SAÚDE
+              </h2>
+            </div>
+          </div>
+
           {currentPatient && (
             <Card className="mb-8 p-8 bg-white shadow-lg rounded-xl border-2 border-primary/20">
               <div className="grid grid-cols-2 gap-8 text-center">
