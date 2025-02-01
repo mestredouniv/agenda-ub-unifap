@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -12,6 +12,12 @@ import { useToast } from "@/hooks/use-toast";
 import { PersonalDataForm } from "@/components/PersonalDataForm";
 import { AppointmentSelection } from "@/components/AppointmentSelection";
 import { AppointmentRequestsReport } from "./AppointmentRequestsReport";
+
+interface Professional {
+  id: string;
+  name: string;
+  profession: string;
+}
 
 interface AppointmentRequest {
   id: string;
@@ -28,32 +34,13 @@ interface AppointmentRequest {
   createdAt: string;
 }
 
-const professionals = [
-  { id: "1", name: "Luciana", profession: "Psicóloga" },
-  { id: "2", name: "Janaína", profession: "Psicóloga" },
-  { id: "3", name: "Anna", profession: "Fisioterapeuta" },
-  { id: "4", name: "Anderson", profession: "Médico" },
-  { id: "5", name: "Anna", profession: "Auriculoterapeuta" },
-  { id: "6", name: "Wandervan", profession: "Enfermeiro" },
-  { id: "7", name: "Patrícia", profession: "Enfermeira" },
-  { id: "8", name: "Liliany", profession: "Médica" },
-  { id: "9", name: "Janaína", profession: "Enfermeira" },
-  { id: "10", name: "Equipe", profession: "Curativo" },
-  { id: "11", name: "André", profession: "Médico" },
-  { id: "12", name: "Ananda", profession: "Enfermeira" },
-  { id: "13", name: "Nely", profession: "Enfermeira" },
-  { id: "14", name: "Luciana", profession: "Psicóloga" },
-  { id: "15", name: "Janaína", profession: "Psicóloga" },
-  { id: "16", name: "Equipe", profession: "Laboratório" },
-  { id: "17", name: "Equipe", profession: "Gestante" },
-];
-
 const generateId = () => {
   return Math.random().toString(36).substring(2, 15);
 };
 
 const AppointmentRequest = () => {
   const { toast } = useToast();
+  const [professionals, setProfessionals] = useState<Professional[]>([]);
   const [formData, setFormData] = useState<Omit<AppointmentRequest, "id" | "status" | "createdAt">>({
     professionalId: "",
     patientName: "",
@@ -64,6 +51,17 @@ const AppointmentRequest = () => {
     preferredDate: undefined,
     preferredTime: "",
   });
+
+  useEffect(() => {
+    const loadProfessionals = () => {
+      const storedProfessionals = JSON.parse(localStorage.getItem("professionals") || "[]");
+      setProfessionals(storedProfessionals);
+    };
+
+    loadProfessionals();
+    window.addEventListener("storage", loadProfessionals);
+    return () => window.removeEventListener("storage", loadProfessionals);
+  }, []);
 
   const handleFormChange = (field: string, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
