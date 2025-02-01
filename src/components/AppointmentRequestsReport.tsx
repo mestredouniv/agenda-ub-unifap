@@ -37,11 +37,15 @@ export const AppointmentRequestsReport = () => {
       const storedAppointments = JSON.parse(localStorage.getItem("appointments") || "[]");
       const currentDate = new Date();
       
-      // Filter out past appointments
-      const activeAppointments = storedAppointments.filter((app: AppointmentRequest) => {
-        const appointmentDate = new Date(app.preferredDate);
-        return appointmentDate >= currentDate;
-      });
+      // Filter out past appointments and sort by date
+      const activeAppointments = storedAppointments
+        .filter((app: AppointmentRequest) => {
+          const appointmentDate = new Date(app.preferredDate);
+          return appointmentDate >= currentDate;
+        })
+        .sort((a: AppointmentRequest, b: AppointmentRequest) => {
+          return new Date(a.preferredDate).getTime() - new Date(b.preferredDate).getTime();
+        });
 
       setAppointments(activeAppointments);
     };
@@ -76,7 +80,7 @@ export const AppointmentRequestsReport = () => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Relatório de Solicitações</CardTitle>
+        <CardTitle>Lista de Espera - Solicitações Ativas</CardTitle>
       </CardHeader>
       <CardContent>
         <Table>

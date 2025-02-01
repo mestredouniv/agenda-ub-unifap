@@ -11,6 +11,7 @@ import { Info } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { PersonalDataForm } from "@/components/PersonalDataForm";
 import { AppointmentSelection } from "@/components/AppointmentSelection";
+import { AppointmentRequestsReport } from "./AppointmentRequestsReport";
 
 interface AppointmentRequest {
   id: string;
@@ -86,6 +87,18 @@ const AppointmentRequest = () => {
       title: "Solicitação enviada",
       description: "Sua solicitação foi enviada e está aguardando aprovação do profissional.",
     });
+
+    // Reset form
+    setFormData({
+      professionalId: "",
+      patientName: "",
+      cpf: "",
+      sus: "",
+      age: "",
+      phone: "",
+      preferredDate: undefined,
+      preferredTime: "",
+    });
   };
 
   return (
@@ -136,6 +149,10 @@ const AppointmentRequest = () => {
             </form>
           </CardContent>
         </Card>
+
+        <div className="mt-8">
+          <AppointmentRequestsReport />
+        </div>
       </div>
     </div>
   );

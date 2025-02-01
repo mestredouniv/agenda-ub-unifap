@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Check, X, Calendar } from "lucide-react";
@@ -33,14 +33,34 @@ interface AppointmentApprovalListProps {
 
 export const AppointmentApprovalList = ({ professionalId }: AppointmentApprovalListProps) => {
   const { toast } = useToast();
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
   const [showRescheduleDialog, setShowRescheduleDialog] = useState(false);
   const [suggestedDate, setSuggestedDate] = useState<Date | undefined>();
   const [suggestedTime, setSuggestedTime] = useState("");
   const [message, setMessage] = useState("");
 
-  const appointments = JSON.parse(localStorage.getItem("appointments") || "[]")
-    .filter((app: Appointment) => app.professionalId === professionalId && app.status === "pending");
+  useEffect(() => {
+    const loadAppointments = () => {
+      const allAppointments = JSON.parse(localStorage.getItem("appointments") || "[]");
+      const currentDate = new Date();
+      
+      const filteredAppointments = allAppointments.filter((app: Appointment) => {
+        const appointmentDate = new Date(app.preferredDate);
+        return (
+          app.professionalId === professionalId &&
+          app.status === "pending" &&
+          appointmentDate >= currentDate
+        );
+      });
+      
+      setAppointments(filteredAppointments);
+    };
+
+    loadAppointments();
+    const interval = setInterval(loadAppointments, 60000);
+    return () => clearInterval(interval);
+  }, [professionalId]);
 
   const handleApproval = (appointmentId: string, approved: boolean) => {
     const allAppointments = JSON.parse(localStorage.getItem("appointments") || "[]");
@@ -57,7 +77,9 @@ export const AppointmentApprovalList = ({ professionalId }: AppointmentApprovalL
       description: `A solicitação de consulta foi ${approved ? "aprovada" : "rejeitada"} com sucesso.`,
     });
 
-    window.location.reload();
+    setAppointments(prevAppointments => 
+      prevAppointments.filter(app => app.id !== appointmentId)
+    );
   };
 
   const handleReschedule = (appointment: Appointment) => {
@@ -101,7 +123,9 @@ export const AppointmentApprovalList = ({ professionalId }: AppointmentApprovalL
     setSuggestedTime("");
     setMessage("");
     
-    window.location.reload();
+    setAppointments(prevAppointments => 
+      prevAppointments.filter(app => app.id !== selectedAppointment.id)
+    );
   };
 
   if (appointments.length === 0) {
@@ -117,7 +141,7 @@ export const AppointmentApprovalList = ({ professionalId }: AppointmentApprovalL
   return (
     <div className="space-y-4">
       <h3 className="text-lg font-medium">Solicitações Pendentes</h3>
-      {appointments.map((appointment: Appointment) => (
+      {appointments.map((appointment) => (
         <Card key={appointment.id} className="p-4">
           <div className="flex items-center justify-between">
             <div>
