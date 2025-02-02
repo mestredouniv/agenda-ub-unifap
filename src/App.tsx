@@ -1,49 +1,48 @@
-import { useEffect } from "react";
-import { Routes, Route, BrowserRouter } from "react-router-dom";
-import { initializeDataCleanup } from "./utils/dataCleanup";
 import { Toaster } from "@/components/ui/toaster";
-import { ThemeProvider } from "@/components/theme-provider";
-import Home from "@/pages/Home";
-import AppointmentRequest from "@/pages/AppointmentRequest";
-import CheckAppointment from "@/pages/CheckAppointment";
-import Display from "@/pages/Display";
-import ProfessionalSchedule from "@/pages/ProfessionalSchedule";
-import Reports from "@/pages/Reports";
-import Hanseniase from "@/pages/Hanseniase";
-import PreNatal from "@/pages/PreNatal";
-import Tuberculose from "@/pages/Tuberculose";
-import Prep from "@/pages/Prep";
-import DoencasCronicas from "@/pages/DoencasCronicas";
-import Puericultura from "@/pages/Puericultura";
-import SolicitarConsulta from "@/pages/SolicitarConsulta";
+import { Toaster as Sonner } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import Index from "./pages/Index";
+import NotFound from "./pages/NotFound";
+import ProfessionalSchedule from "./pages/ProfessionalSchedule";
+import Reports from "./pages/Reports";
+import Consultas from "./pages/Consultas";
+import Display from "./pages/Display";
+import SolicitarConsulta from "./pages/SolicitarConsulta";
+import Hanseniase from "./pages/Hanseniase";
+import PreNatal from "./pages/PreNatal";
+import Tuberculose from "./pages/Tuberculose";
+import Prep from "./pages/Prep";
+import DoencasCronicas from "./pages/DoencasCronicas";
+import Puericultura from "./pages/Puericultura";
 
-const App = () => {
-  useEffect(() => {
-    initializeDataCleanup();
-  }, []);
+const queryClient = new QueryClient();
 
-  return (
-    <BrowserRouter>
-      <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
+const App = () => (
+  <QueryClientProvider client={queryClient}>
+    <TooltipProvider>
+      <Toaster />
+      <Sonner />
+      <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/solicitar" element={<AppointmentRequest />} />
-          <Route path="/consultar-agendamento" element={<CheckAppointment />} />
-          <Route path="/display" element={<Display />} />
-          <Route path="/agenda/:professionalId" element={<ProfessionalSchedule />} />
+          <Route path="/" element={<Index />} />
+          <Route path="/agenda/:id" element={<ProfessionalSchedule />} />
           <Route path="/relatorios" element={<Reports />} />
+          <Route path="/consultas" element={<Consultas />} />
+          <Route path="/display" element={<Display />} />
+          <Route path="/solicitar" element={<SolicitarConsulta />} />
           <Route path="/hanseniase" element={<Hanseniase />} />
           <Route path="/pre-natal" element={<PreNatal />} />
           <Route path="/tuberculose" element={<Tuberculose />} />
           <Route path="/prep" element={<Prep />} />
           <Route path="/doencas-cronicas" element={<DoencasCronicas />} />
           <Route path="/puericultura" element={<Puericultura />} />
-          <Route path="/consultas" element={<SolicitarConsulta />} />
+          <Route path="*" element={<NotFound />} />
         </Routes>
-        <Toaster />
-      </ThemeProvider>
-    </BrowserRouter>
-  );
-};
+      </BrowserRouter>
+    </TooltipProvider>
+  </QueryClientProvider>
+);
 
 export default App;

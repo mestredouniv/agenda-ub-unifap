@@ -12,10 +12,9 @@ interface PersonalDataFormProps {
     responsible?: string;
   };
   onChange: (field: string, value: string) => void;
-  errors?: Record<string, boolean>;
 }
 
-export const PersonalDataForm = ({ formData, onChange, errors = {} }: PersonalDataFormProps) => {
+export const PersonalDataForm = ({ formData, onChange }: PersonalDataFormProps) => {
   const isMinor = parseInt(formData.age) < 18;
 
   return (
@@ -27,12 +26,8 @@ export const PersonalDataForm = ({ formData, onChange, errors = {} }: PersonalDa
             id="patientName"
             value={formData.patientName}
             onChange={(e) => onChange("patientName", e.target.value)}
-            className={errors.patientName ? "border-red-500" : ""}
             required
           />
-          {errors.patientName && (
-            <span className="text-sm text-red-500">Campo obrigatório</span>
-          )}
         </div>
 
         <div>
@@ -42,12 +37,8 @@ export const PersonalDataForm = ({ formData, onChange, errors = {} }: PersonalDa
             type="number"
             value={formData.age}
             onChange={(e) => onChange("age", e.target.value)}
-            className={errors.age ? "border-red-500" : ""}
             required
           />
-          {errors.age && (
-            <span className="text-sm text-red-500">Campo obrigatório</span>
-          )}
         </div>
       </div>
 
@@ -58,12 +49,8 @@ export const PersonalDataForm = ({ formData, onChange, errors = {} }: PersonalDa
             id="responsible"
             value={formData.responsible}
             onChange={(e) => onChange("responsible", e.target.value)}
-            className={errors.responsible ? "border-red-500" : ""}
             required
           />
-          {errors.responsible && (
-            <span className="text-sm text-red-500">Campo obrigatório</span>
-          )}
         </div>
       )}
 
@@ -74,12 +61,8 @@ export const PersonalDataForm = ({ formData, onChange, errors = {} }: PersonalDa
             id="cpf"
             value={formData.cpf}
             onChange={(e) => onChange("cpf", e.target.value)}
-            className={errors.cpf ? "border-red-500" : ""}
             required
           />
-          {errors.cpf && (
-            <span className="text-sm text-red-500">Campo obrigatório</span>
-          )}
         </div>
 
         <div>
@@ -88,12 +71,8 @@ export const PersonalDataForm = ({ formData, onChange, errors = {} }: PersonalDa
             id="sus"
             value={formData.sus}
             onChange={(e) => onChange("sus", e.target.value)}
-            className={errors.sus ? "border-red-500" : ""}
             required
           />
-          {errors.sus && (
-            <span className="text-sm text-red-500">Campo obrigatório</span>
-          )}
         </div>
       </div>
 
@@ -103,12 +82,8 @@ export const PersonalDataForm = ({ formData, onChange, errors = {} }: PersonalDa
           id="phone"
           value={formData.phone}
           onChange={(e) => onChange("phone", e.target.value)}
-          className={errors.phone ? "border-red-500" : ""}
           required
         />
-        {errors.phone && (
-          <span className="text-sm text-red-500">Campo obrigatório</span>
-        )}
       </div>
     </div>
   );
