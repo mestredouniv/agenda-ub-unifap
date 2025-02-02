@@ -16,7 +16,6 @@ import Tuberculose from "./pages/Tuberculose";
 import Prep from "./pages/Prep";
 import DoencasCronicas from "./pages/DoencasCronicas";
 import Puericultura from "./pages/Puericultura";
-import RelatoriosCientificos from "./pages/RelatoriosCientificos";
 
 const queryClient = new QueryClient();
 
@@ -39,7 +38,6 @@ const App = () => (
           <Route path="/prep" element={<Prep />} />
           <Route path="/doencas-cronicas" element={<DoencasCronicas />} />
           <Route path="/puericultura" element={<Puericultura />} />
-          <Route path="/relatorios-cientificos" element={<RelatoriosCientificos />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
