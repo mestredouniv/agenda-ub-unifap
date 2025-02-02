@@ -1,4 +1,3 @@
-// Same structure as PreNatal.tsx, just change the title to "PREP" and the download filename to "prep"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar } from "@/components/ui/calendar";
 import { Input } from "@/components/ui/input";
@@ -14,10 +13,12 @@ import { ptBR } from "date-fns/locale";
 const Prep = () => {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [formData, setFormData] = useState({
-    has: "",
-    medication: "",
-    comorbidities: "",
-    notes: "",
+    name: "",
+    cns: "",
+    tel: "",
+    birthDate: "",
+    creatinina: "",
+    comorbidades: "",
   });
 
   const handleInputChange = (field: string, value: string) => {
@@ -85,38 +86,57 @@ const Prep = () => {
           <div className="grid md:grid-cols-2 gap-6">
             <div className="space-y-6">
               <div>
-                <Label htmlFor="has">HAS (Hipertensão Arterial Sistêmica)</Label>
+                <Label htmlFor="name">Nome</Label>
                 <Input
-                  id="has"
-                  value={formData.has}
-                  onChange={(e) => handleInputChange("has", e.target.value)}
+                  id="name"
+                  value={formData.name}
+                  onChange={(e) => handleInputChange("name", e.target.value)}
                 />
               </div>
 
               <div>
-                <Label htmlFor="medication">Medicação</Label>
+                <Label htmlFor="cns">CNS</Label>
                 <Input
-                  id="medication"
-                  value={formData.medication}
-                  onChange={(e) => handleInputChange("medication", e.target.value)}
+                  id="cns"
+                  value={formData.cns}
+                  onChange={(e) => handleInputChange("cns", e.target.value)}
                 />
               </div>
 
               <div>
-                <Label htmlFor="comorbidities">Comorbidades</Label>
-                <Textarea
-                  id="comorbidities"
-                  value={formData.comorbidities}
-                  onChange={(e) => handleInputChange("comorbidities", e.target.value)}
+                <Label htmlFor="tel">Telefone</Label>
+                <Input
+                  id="tel"
+                  value={formData.tel}
+                  onChange={(e) => handleInputChange("tel", e.target.value)}
                 />
               </div>
 
               <div>
-                <Label htmlFor="notes">Anotações para a data selecionada</Label>
+                <Label htmlFor="birthDate">Data de Nascimento</Label>
+                <Input
+                  id="birthDate"
+                  value={formData.birthDate}
+                  onChange={(e) => handleInputChange("birthDate", e.target.value)}
+                  type="date"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="creatinina">Creatinina Anual</Label>
+                <Input
+                  id="creatinina"
+                  value={formData.creatinina}
+                  onChange={(e) => handleInputChange("creatinina", e.target.value)}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="comorbidades">Comorbidades</Label>
                 <Textarea
-                  id="notes"
-                  value={formData.notes}
-                  onChange={(e) => handleInputChange("notes", e.target.value)}
+                  id="comorbidades"
+                  value={formData.comorbidades}
+                  onChange={(e) => handleInputChange("comorbidades", e.target.value)}
                 />
               </div>
             </div>
@@ -150,21 +170,29 @@ const Prep = () => {
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <h4 className="font-medium mb-2">HAS:</h4>
-                <p className="text-gray-600">{formData.has || 'Não informado'}</p>
+                <h4 className="font-medium mb-2">Nome:</h4>
+                <p className="text-gray-600">{formData.name || 'Não informado'}</p>
               </div>
               <div>
-                <h4 className="font-medium mb-2">Medicação:</h4>
-                <p className="text-gray-600">{formData.medication || 'Não informado'}</p>
+                <h4 className="font-medium mb-2">CNS:</h4>
+                <p className="text-gray-600">{formData.cns || 'Não informado'}</p>
+              </div>
+              <div>
+                <h4 className="font-medium mb-2">Telefone:</h4>
+                <p className="text-gray-600">{formData.tel || 'Não informado'}</p>
+              </div>
+              <div>
+                <h4 className="font-medium mb-2">Data de Nascimento:</h4>
+                <p className="text-gray-600">{formData.birthDate || 'Não informado'}</p>
+              </div>
+              <div>
+                <h4 className="font-medium mb-2">Creatinina Anual:</h4>
+                <p className="text-gray-600">{formData.creatinina || 'Não informado'}</p>
               </div>
             </div>
             <div>
               <h4 className="font-medium mb-2">Comorbidades:</h4>
-              <p className="text-gray-600">{formData.comorbidities || 'Não informado'}</p>
-            </div>
-            <div>
-              <h4 className="font-medium mb-2">Anotações:</h4>
-              <p className="text-gray-600">{formData.notes || 'Não informado'}</p>
+              <p className="text-gray-600">{formData.comorbidades || 'Não informado'}</p>
             </div>
             {selectedDate && (
               <div>
