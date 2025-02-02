@@ -22,6 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { professionals } from "@/data/professionals";
+import { Card } from "@/components/ui/card";
 
 interface Patient {
   id: string;
@@ -80,6 +81,7 @@ const Consultas = () => {
       title: "Paciente chamado",
       description: "O display foi atualizado com o próximo paciente.",
     });
+    window.open('/display', '_blank');
   };
 
   const handleStartTriage = (patient: Patient) => {
@@ -92,6 +94,7 @@ const Consultas = () => {
       title: "Triagem iniciada",
       description: "Paciente encaminhado para triagem.",
     });
+    window.open('/display', '_blank');
   };
 
   const handleStartAppointment = (patient: Patient) => {
@@ -104,6 +107,7 @@ const Consultas = () => {
       title: "Consulta iniciada",
       description: "Paciente em atendimento.",
     });
+    window.open('/display', '_blank');
   };
 
   const getStatusBadge = (status: Patient['status']) => {
@@ -118,17 +122,59 @@ const Consultas = () => {
     return <Badge variant={config.variant}>{config.label}</Badge>;
   };
 
+  // Mobile card view component
+  const AppointmentCard = ({ patient }: { patient: Patient }) => (
+    <Card className="p-4 mb-4">
+      <div className="space-y-2">
+        <div className="flex justify-between items-start">
+          <div>
+            <h3 className="font-medium">{patient.name}</h3>
+            <p className="text-sm text-gray-500">{patient.time}</p>
+          </div>
+          {getStatusBadge(patient.status)}
+        </div>
+        <div className="text-sm text-gray-600">
+          <p>Profissional: {patient.professional}</p>
+          {patient.responsible && <p>Responsável: {patient.responsible}</p>}
+        </div>
+        <div className="flex flex-wrap gap-2 mt-2">
+          <Button
+            size="sm"
+            onClick={() => handleCallNext(patient)}
+            disabled={patient.status !== 'waiting'}
+          >
+            Chamar
+          </Button>
+          <Button
+            size="sm"
+            onClick={() => handleStartTriage(patient)}
+            disabled={patient.status !== 'waiting'}
+          >
+            Triagem
+          </Button>
+          <Button
+            size="sm"
+            onClick={() => handleStartAppointment(patient)}
+            disabled={patient.status !== 'triage'}
+          >
+            Iniciar
+          </Button>
+        </div>
+      </div>
+    </Card>
+  );
+
   return (
-    <div className="container mx-auto p-8">
+    <div className="container mx-auto p-4 md:p-8">
       <BackToHomeButton />
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
         <h1 className="text-2xl font-bold">Consultas do Dia</h1>
-        <div className="flex items-center gap-4">
+        <div className="flex flex-col md:flex-row items-start md:items-center gap-4 w-full md:w-auto">
           <Select
             value={selectedProfessional}
             onValueChange={setSelectedProfessional}
           >
-            <SelectTrigger className="w-[250px]">
+            <SelectTrigger className="w-full md:w-[250px]">
               <SelectValue placeholder="Filtrar por profissional" />
             </SelectTrigger>
             <SelectContent>
@@ -146,7 +192,23 @@ const Consultas = () => {
         </div>
       </div>
       
-      <div className="bg-white rounded-lg shadow">
+      {/* Mobile view */}
+      <div className="md:hidden">
+        {filteredAppointments.length === 0 ? (
+          <Card className="p-4">
+            <p className="text-center text-muted-foreground">
+              Não há consultas agendadas para hoje
+            </p>
+          </Card>
+        ) : (
+          filteredAppointments.map((patient) => (
+            <AppointmentCard key={patient.id} patient={patient} />
+          ))
+        )}
+      </div>
+
+      {/* Desktop view */}
+      <div className="hidden md:block bg-white rounded-lg shadow">
         <Table>
           <TableHeader>
             <TableRow>

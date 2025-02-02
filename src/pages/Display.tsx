@@ -1,31 +1,42 @@
-import { useDisplayState } from "@/hooks/useDisplayState";
+import { useEffect, useState } from "react";
 import { DisplayHeader } from "@/components/DisplayHeader";
+import { useDisplayState } from "@/hooks/useDisplayState";
 
 const Display = () => {
   const currentPatient = useDisplayState((state) => state.currentPatient);
+  const [displayClass, setDisplayClass] = useState("");
+
+  useEffect(() => {
+    // Add animation class when patient changes
+    setDisplayClass("animate-fade-in");
+    const timer = setTimeout(() => setDisplayClass(""), 500);
+    return () => clearTimeout(timer);
+  }, [currentPatient]);
+
+  if (!currentPatient) {
+    return (
+      <div className="min-h-screen bg-black text-white flex items-center justify-center text-4xl font-bold">
+        Aguardando próximo paciente...
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
+    <div className="min-h-screen bg-black text-white">
       <DisplayHeader />
-      
-      <div className="max-w-4xl mx-auto mt-8">
-        {currentPatient ? (
-          <div className="bg-white p-8 rounded-lg shadow-lg text-center animate-fade-in">
-            <h2 className="text-3xl font-bold mb-4">
-              {currentPatient.status === 'waiting' && 'Próximo Paciente'}
-              {currentPatient.status === 'triage' && 'Paciente para Triagem'}
-              {currentPatient.status === 'in_progress' && 'Em Atendimento'}
-            </h2>
-            <p className="text-2xl mb-2">{currentPatient.name}</p>
-            <p className="text-xl text-gray-600">
-              {currentPatient.professional}
-            </p>
-          </div>
-        ) : (
-          <div className="text-center text-gray-500 text-xl">
-            Aguardando próximo paciente...
-          </div>
-        )}
+      <div className={`flex flex-col items-center justify-center min-h-[calc(100vh-80px)] ${displayClass}`}>
+        <h1 className="text-6xl font-bold mb-8">{currentPatient.name}</h1>
+        <div className="text-3xl text-gray-300">
+          {currentPatient.professional && (
+            <p className="mb-4">Dr(a). {currentPatient.professional}</p>
+          )}
+          <p>
+            Status:{" "}
+            {currentPatient.status === "waiting" && "Aguardando"}
+            {currentPatient.status === "triage" && "Em Triagem"}
+            {currentPatient.status === "in_progress" && "Em Atendimento"}
+          </p>
+        </div>
       </div>
     </div>
   );

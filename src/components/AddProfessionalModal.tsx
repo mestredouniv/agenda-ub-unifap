@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
 import { UserX, UserCog } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Professional {
   id: number;
@@ -40,7 +41,7 @@ export const AddProfessionalModal = ({
   const [profession, setProfession] = useState(professional?.profession || "");
   const { toast } = useToast();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name || !profession) {
       toast({
@@ -51,33 +52,72 @@ export const AddProfessionalModal = ({
       return;
     }
 
-    if (mode === "edit" && professional && onEdit) {
-      onEdit(professional.id, name, profession);
+    try {
+      if (mode === "edit" && professional) {
+        const { error } = await supabase
+          .from('professionals')
+          .update({ name, profession })
+          .eq('id', professional.id);
+
+        if (error) throw error;
+
+        if (onEdit) {
+          onEdit(professional.id, name, profession);
+        }
+        
+        toast({
+          title: "Sucesso",
+          description: "Profissional atualizado com sucesso",
+        });
+      } else {
+        const { error } = await supabase
+          .from('professionals')
+          .insert([{ name, profession }]);
+
+        if (error) throw error;
+
+        onAdd(name, profession);
+        toast({
+          title: "Sucesso",
+          description: "Profissional adicionado com sucesso",
+        });
+      }
+      
+      setName("");
+      setProfession("");
+      onClose();
+    } catch (error) {
       toast({
-        title: "Sucesso",
-        description: "Profissional atualizado com sucesso",
-      });
-    } else {
-      onAdd(name, profession);
-      toast({
-        title: "Sucesso",
-        description: "Profissional adicionado com sucesso",
+        title: "Erro",
+        description: "Ocorreu um erro ao salvar o profissional",
+        variant: "destructive",
       });
     }
-    
-    setName("");
-    setProfession("");
-    onClose();
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (professional && onDelete) {
-      onDelete(professional.id);
-      toast({
-        title: "Sucesso",
-        description: "Profissional removido com sucesso",
-      });
-      onClose();
+      try {
+        const { error } = await supabase
+          .from('professionals')
+          .delete()
+          .eq('id', professional.id);
+
+        if (error) throw error;
+
+        onDelete(professional.id);
+        toast({
+          title: "Sucesso",
+          description: "Profissional removido com sucesso",
+        });
+        onClose();
+      } catch (error) {
+        toast({
+          title: "Erro",
+          description: "Ocorreu um erro ao remover o profissional",
+          variant: "destructive",
+        });
+      }
     }
   };
 
