@@ -1,5 +1,3 @@
-import { Image } from "@/components/ui/image";
-
 export const UnifapHeader = () => {
   return (
     <div className="flex items-center justify-center gap-4 text-center mb-8">

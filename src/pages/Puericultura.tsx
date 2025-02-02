@@ -88,7 +88,10 @@ const Puericultura = () => {
           ...prev,
           consultas: {
             ...prev.consultas,
-            [period]: { ...prev.consultas[period as keyof typeof prev.consultas], [type]: value }
+            [period]: { 
+              ...prev.consultas[period as keyof typeof prev.consultas], 
+              [type]: value 
+            }
           }
         };
       }
