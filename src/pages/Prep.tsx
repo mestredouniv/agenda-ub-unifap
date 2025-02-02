@@ -29,7 +29,16 @@ const Prep = () => {
   };
 
   const handlePrint = () => {
-    window.print();
+    const printContent = document.getElementById('report-table');
+    if (printContent) {
+      const printWindow = window.open('', '', 'height=500,width=800');
+      printWindow?.document.write('<html><head><title>Relatório PREP</title>');
+      printWindow?.document.write('</head><body>');
+      printWindow?.document.write(printContent.innerHTML);
+      printWindow?.document.write('</body></html>');
+      printWindow?.document.close();
+      printWindow?.print();
+    }
   };
 
   const handleDownload = () => {
@@ -167,39 +176,41 @@ const Prep = () => {
           <CardTitle>Relatório de Dados</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <h4 className="font-medium mb-2">Nome:</h4>
-                <p className="text-gray-600">{formData.name || 'Não informado'}</p>
+          <div id="report-table">
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <h4 className="font-medium mb-2">Nome:</h4>
+                  <p className="text-gray-600">{formData.name || 'Não informado'}</p>
+                </div>
+                <div>
+                  <h4 className="font-medium mb-2">CNS:</h4>
+                  <p className="text-gray-600">{formData.cns || 'Não informado'}</p>
+                </div>
+                <div>
+                  <h4 className="font-medium mb-2">Telefone:</h4>
+                  <p className="text-gray-600">{formData.tel || 'Não informado'}</p>
+                </div>
+                <div>
+                  <h4 className="font-medium mb-2">Data de Nascimento:</h4>
+                  <p className="text-gray-600">{formData.birthDate || 'Não informado'}</p>
+                </div>
+                <div>
+                  <h4 className="font-medium mb-2">Creatinina Anual:</h4>
+                  <p className="text-gray-600">{formData.creatinina || 'Não informado'}</p>
+                </div>
               </div>
               <div>
-                <h4 className="font-medium mb-2">CNS:</h4>
-                <p className="text-gray-600">{formData.cns || 'Não informado'}</p>
+                <h4 className="font-medium mb-2">Comorbidades:</h4>
+                <p className="text-gray-600">{formData.comorbidades || 'Não informado'}</p>
               </div>
-              <div>
-                <h4 className="font-medium mb-2">Telefone:</h4>
-                <p className="text-gray-600">{formData.tel || 'Não informado'}</p>
-              </div>
-              <div>
-                <h4 className="font-medium mb-2">Data de Nascimento:</h4>
-                <p className="text-gray-600">{formData.birthDate || 'Não informado'}</p>
-              </div>
-              <div>
-                <h4 className="font-medium mb-2">Creatinina Anual:</h4>
-                <p className="text-gray-600">{formData.creatinina || 'Não informado'}</p>
-              </div>
+              {selectedDate && (
+                <div>
+                  <h4 className="font-medium mb-2">Data do Registro:</h4>
+                  <p className="text-gray-600">{selectedDate.toLocaleDateString('pt-BR')}</p>
+                </div>
+              )}
             </div>
-            <div>
-              <h4 className="font-medium mb-2">Comorbidades:</h4>
-              <p className="text-gray-600">{formData.comorbidades || 'Não informado'}</p>
-            </div>
-            {selectedDate && (
-              <div>
-                <h4 className="font-medium mb-2">Data do Registro:</h4>
-                <p className="text-gray-600">{selectedDate.toLocaleDateString('pt-BR')}</p>
-              </div>
-            )}
           </div>
         </CardContent>
       </Card>

@@ -1,4 +1,3 @@
-// Same structure as PreNatal.tsx, just change the title to "Doenças Crônicas" and the download filename to "doencas-cronicas"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar } from "@/components/ui/calendar";
 import { Input } from "@/components/ui/input";
@@ -78,7 +77,10 @@ const DoencasCronicas = () => {
   };
 
   const handlePrint = () => {
-    window.print();
+    const printContent = document.getElementById('report-table');
+    if (printContent) {
+      window.print();
+    }
   };
 
   const handleDownload = () => {
@@ -249,42 +251,44 @@ const DoencasCronicas = () => {
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Nome</TableHead>
-                  <TableHead>CNS</TableHead>
-                  <TableHead>Telefone</TableHead>
-                  <TableHead>Data Nasc.</TableHead>
-                  <TableHead>DM</TableHead>
-                  <TableHead>HAS</TableHead>
-                  <TableHead>Medicação</TableHead>
-                  <TableHead>Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {records.map((record) => (
-                  <TableRow key={record.id}>
-                    <TableCell>{record.nome}</TableCell>
-                    <TableCell>{record.cns}</TableCell>
-                    <TableCell>{record.tel}</TableCell>
-                    <TableCell>{record.dn}</TableCell>
-                    <TableCell>{record.dm}</TableCell>
-                    <TableCell>{record.has}</TableCell>
-                    <TableCell>{record.medication}</TableCell>
-                    <TableCell>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleDeleteRecord(record.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </TableCell>
+            <div id="report-table">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Nome</TableHead>
+                    <TableHead>CNS</TableHead>
+                    <TableHead>Telefone</TableHead>
+                    <TableHead>Data Nasc.</TableHead>
+                    <TableHead>DM</TableHead>
+                    <TableHead>HAS</TableHead>
+                    <TableHead>Medicação</TableHead>
+                    <TableHead>Ações</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {records.map((record) => (
+                    <TableRow key={record.id}>
+                      <TableCell>{record.nome}</TableCell>
+                      <TableCell>{record.cns}</TableCell>
+                      <TableCell>{record.tel}</TableCell>
+                      <TableCell>{record.dn}</TableCell>
+                      <TableCell>{record.dm}</TableCell>
+                      <TableCell>{record.has}</TableCell>
+                      <TableCell>{record.medication}</TableCell>
+                      <TableCell>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleDeleteRecord(record.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           </div>
         </CardContent>
       </Card>

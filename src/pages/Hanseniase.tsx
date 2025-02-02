@@ -73,7 +73,16 @@ const Hanseniase = () => {
   };
 
   const handlePrint = () => {
-    window.print();
+    const printContent = document.getElementById('report-table');
+    if (printContent) {
+      const printWindow = window.open('', '', 'height=500,width=800');
+      printWindow?.document.write('<html><head><title>Relatório Hanseníase</title>');
+      printWindow?.document.write('</head><body>');
+      printWindow?.document.write(printContent.innerHTML);
+      printWindow?.document.write('</body></html>');
+      printWindow?.document.close();
+      printWindow?.print();
+    }
   };
 
   const handleDownload = () => {
@@ -233,44 +242,46 @@ const Hanseniase = () => {
           <CardTitle>Relatório de Dados</CardTitle>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>NOME</TableHead>
-                <TableHead>CNES</TableHead>
-                <TableHead>TEL</TableHead>
-                <TableHead>DN</TableHead>
-                <TableHead>PB</TableHead>
-                <TableHead>MB</TableHead>
-                <TableHead>CLASSIFICAÇÃO</TableHead>
-                <TableHead>INÍCIO</TableHead>
-                <TableHead>Ações</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {records.map((record) => (
-                <TableRow key={record.id}>
-                  <TableCell>{record.nome}</TableCell>
-                  <TableCell>{record.cnes}</TableCell>
-                  <TableCell>{record.tel}</TableCell>
-                  <TableCell>{record.dn}</TableCell>
-                  <TableCell>{record.pb}</TableCell>
-                  <TableCell>{record.mb}</TableCell>
-                  <TableCell>{record.classificacao}</TableCell>
-                  <TableCell>{record.inicio}</TableCell>
-                  <TableCell>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleDeleteRecord(record.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </TableCell>
+          <div id="report-table">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>NOME</TableHead>
+                  <TableHead>CNES</TableHead>
+                  <TableHead>TEL</TableHead>
+                  <TableHead>DN</TableHead>
+                  <TableHead>PB</TableHead>
+                  <TableHead>MB</TableHead>
+                  <TableHead>CLASSIFICAÇÃO</TableHead>
+                  <TableHead>INÍCIO</TableHead>
+                  <TableHead>Ações</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {records.map((record) => (
+                  <TableRow key={record.id}>
+                    <TableCell>{record.nome}</TableCell>
+                    <TableCell>{record.cnes}</TableCell>
+                    <TableCell>{record.tel}</TableCell>
+                    <TableCell>{record.dn}</TableCell>
+                    <TableCell>{record.pb}</TableCell>
+                    <TableCell>{record.mb}</TableCell>
+                    <TableCell>{record.classificacao}</TableCell>
+                    <TableCell>{record.inicio}</TableCell>
+                    <TableCell>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleDeleteRecord(record.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
     </div>

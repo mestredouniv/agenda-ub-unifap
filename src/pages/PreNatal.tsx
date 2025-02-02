@@ -118,7 +118,16 @@ const PreNatal = () => {
   };
 
   const handlePrint = () => {
-    window.print();
+    const printContent = document.getElementById('report-table');
+    if (printContent) {
+      const printWindow = window.open('', '', 'height=500,width=800');
+      printWindow?.document.write('<html><head><title>Relatório Pré-Natal</title>');
+      printWindow?.document.write('</head><body>');
+      printWindow?.document.write(printContent.innerHTML);
+      printWindow?.document.write('</body></html>');
+      printWindow?.document.close();
+      printWindow?.print();
+    }
   };
 
   const handleDownload = () => {
@@ -297,7 +306,7 @@ const PreNatal = () => {
           <CardTitle>Relatório de Dados</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto" id="report-table">
             <Table>
               <TableHeader>
                 <TableRow>

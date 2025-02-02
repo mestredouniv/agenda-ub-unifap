@@ -1,0 +1,24 @@
+@media print {
+  /* Hide everything by default */
+  body * {
+    visibility: hidden;
+  }
+  
+  /* Show only the report table and its contents */
+  #report-table,
+  #report-table * {
+    visibility: visible;
+  }
+  
+  /* Position the report at the start of the printed page */
+  #report-table {
+    position: absolute;
+    left: 0;
+    top: 0;
+  }
+  
+  /* Hide buttons during print */
+  button {
+    display: none !important;
+  }
+}
