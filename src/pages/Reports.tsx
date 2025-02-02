@@ -1,7 +1,12 @@
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
+import { 
+  ChartBar, 
+  FileText, 
+  Trash2,
+  Download
+} from "lucide-react";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
   ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell
@@ -55,11 +60,23 @@ const Reports = () => {
     satisfacao: "4.8/5.0",
   };
 
+  const handleDownloadReport = () => {
+    // Implementação futura para download do relatório
+    console.log("Download do relatório iniciado");
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 p-8">
       <BackToHomeButton />
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">Relatórios e Estatísticas</h1>
+        <Button
+          onClick={handleDownloadReport}
+          className="flex items-center gap-2"
+        >
+          <Download className="h-4 w-4" />
+          Exportar Relatório
+        </Button>
       </div>
       
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-6">
@@ -177,9 +194,9 @@ const Reports = () => {
         </Card>
       </div>
 
-      <Card>
+      <Card className="mt-6">
         <CardHeader>
-          <CardTitle>Relatório de Dados</CardTitle>
+          <CardTitle>Relatório Detalhado</CardTitle>
         </CardHeader>
         <CardContent>
           <Table>
