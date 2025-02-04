@@ -4,7 +4,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,7 +13,7 @@ import { UserX, UserCog } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 interface Professional {
-  id: string;
+  id: number;
   name: string;
   profession: string;
 }
@@ -23,8 +22,8 @@ interface AddProfessionalModalProps {
   isOpen: boolean;
   onClose: () => void;
   onAdd: (name: string, profession: string) => void;
-  onEdit?: (id: string, name: string, profession: string) => void;
-  onDelete?: (id: string) => void;
+  onEdit?: (id: number, name: string, profession: string) => void;
+  onDelete?: (id: number) => void;
   professional?: Professional;
   mode?: "add" | "edit";
 }
@@ -129,11 +128,6 @@ export const AddProfessionalModal = ({
           <DialogTitle>
             {mode === "add" ? "Adicionar Novo Profissional" : "Editar Profissional"}
           </DialogTitle>
-          <DialogDescription>
-            {mode === "add" 
-              ? "Preencha os dados do novo profissional"
-              : "Atualize os dados do profissional"}
-          </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 mt-4">
           <div className="space-y-2">

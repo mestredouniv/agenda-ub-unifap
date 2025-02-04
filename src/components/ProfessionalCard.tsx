@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 
 interface Professional {
-  id: string;
+  id: number;
   name: string;
   profession: string;
 }

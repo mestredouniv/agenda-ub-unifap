@@ -3,7 +3,7 @@ import { UserRound } from "lucide-react";
 import { format, addDays } from "date-fns";
 
 interface Professional {
-  id: string;
+  id: number;
   name: string;
   profession: string;
   schedules?: {
