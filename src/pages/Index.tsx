@@ -7,6 +7,8 @@ import { Header } from "@/components/Header";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Button } from "@/components/ui/button";
 import { BarChart3 } from "lucide-react";
+import { useToast } from "@/components/ui/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Professional {
   id: number;
@@ -18,55 +20,121 @@ interface Professional {
   }[];
 }
 
-const initialProfessionals: Professional[] = [
-  { id: 1, name: "Luciana", profession: "Psicóloga" },
-  { id: 2, name: "Janaína", profession: "Psicóloga" },
-  { id: 3, name: "Anna", profession: "Fisioterapeuta" },
-  { id: 4, name: "Anderson", profession: "Médico" },
-  { id: 5, name: "Anna", profession: "Auriculoterapeuta" },
-  { id: 6, name: "Wandervan", profession: "Enfermeiro" },
-  { id: 7, name: "Patrícia", profession: "Enfermeira" },
-  { id: 8, name: "Liliany", profession: "Médica" },
-  { id: 9, name: "Janaína", profession: "Enfermeira" },
-  { id: 10, name: "Equipe", profession: "Curativo" },
-  { id: 11, name: "André", profession: "Médico" },
-  { id: 12, name: "Ananda", profession: "Enfermeira" },
-  { id: 13, name: "Nely", profession: "Enfermeira" },
-  { id: 14, name: "Luciana", profession: "Psicóloga" },
-  { id: 15, name: "Janaína", profession: "Psicóloga" },
-  { id: 16, name: "Equipe", profession: "Laboratório" },
-  { id: 17, name: "Equipe", profession: "Gestante" },
-];
-
 const Index = () => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedProfessional, setSelectedProfessional] = useState<Professional | null>(null);
   const [modalMode, setModalMode] = useState<"add" | "edit">("add");
-  const [professionals, setProfessionals] = useState<Professional[]>(initialProfessionals);
+  const [professionals, setProfessionals] = useState<Professional[]>([]);
+  const { toast } = useToast();
+
+  // Carregar profissionais ao montar o componente
+  const loadProfessionals = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('professionals')
+        .select('*')
+        .order('name');
+      
+      if (error) throw error;
+      setProfessionals(data || []);
+    } catch (error) {
+      console.error('Erro ao carregar profissionais:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível carregar os profissionais",
+        variant: "destructive",
+      });
+    }
+  };
 
   const handleProfessionalClick = (professional: Professional) => {
     navigate(`/agenda/${professional.id}`);
   };
 
-  const handleAddProfessional = (name: string, profession: string) => {
-    const newProfessional = {
-      id: professionals.length + 1,
-      name,
-      profession,
-    };
-    setProfessionals([...professionals, newProfessional]);
+  const handleAddProfessional = async (name: string, profession: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('professionals')
+        .insert([{ name, profession }])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setProfessionals([...professionals, data]);
+      toast({
+        title: "Sucesso",
+        description: "Profissional adicionado com sucesso",
+      });
+    } catch (error) {
+      console.error('Erro ao adicionar profissional:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível adicionar o profissional",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleEditProfessional = (id: number, name: string, profession: string) => {
-    setProfessionals(professionals.map(p => 
-      p.id === id ? { ...p, name, profession } : p
-    ));
+  const handleEditProfessional = async (id: number, name: string, profession: string) => {
+    try {
+      const { error } = await supabase
+        .from('professionals')
+        .update({ name, profession })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setProfessionals(professionals.map(p => 
+        p.id === id ? { ...p, name, profession } : p
+      ));
+      toast({
+        title: "Sucesso",
+        description: "Profissional atualizado com sucesso",
+      });
+    } catch (error) {
+      console.error('Erro ao atualizar profissional:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível atualizar o profissional",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleDeleteProfessional = (id: number) => {
-    setProfessionals(professionals.filter(p => p.id !== id));
+  const handleDeleteProfessional = async (id: number) => {
+    try {
+      // Primeiro, excluir todas as consultas associadas ao profissional
+      const { error: appointmentsError } = await supabase
+        .from('appointments')
+        .delete()
+        .eq('professional_id', id);
+
+      if (appointmentsError) throw appointmentsError;
+
+      // Depois, excluir o profissional
+      const { error: professionalError } = await supabase
+        .from('professionals')
+        .delete()
+        .eq('id', id);
+
+      if (professionalError) throw professionalError;
+
+      setProfessionals(professionals.filter(p => p.id !== id));
+      toast({
+        title: "Sucesso",
+        description: "Profissional removido com sucesso",
+      });
+    } catch (error) {
+      console.error('Erro ao remover profissional:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível remover o profissional",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleEditClick = (professional: Professional) => {
@@ -84,7 +152,14 @@ const Index = () => {
           setIsModalOpen(true);
         }}
         onRemoveClick={() => {
-          console.log("Remove functionality to be implemented");
+          if (selectedProfessional) {
+            handleDeleteProfessional(selectedProfessional.id);
+          } else {
+            toast({
+              title: "Aviso",
+              description: "Selecione um profissional para remover",
+            });
+          }
         }}
       />
       

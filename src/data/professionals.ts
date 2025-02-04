@@ -12,8 +12,6 @@ export const professionals = [
   { id: "MED003", name: "André", profession: "Médico" },
   { id: "ENF004", name: "Ananda", profession: "Enfermeira" },
   { id: "ENF005", name: "Nely", profession: "Enfermeira" },
-  { id: "PSI003", name: "Luciana", profession: "Psicóloga" },
-  { id: "PSI004", name: "Janaína", profession: "Psicóloga" },
   { id: "LAB001", name: "Equipe", profession: "Laboratório" },
   { id: "GES001", name: "Equipe", profession: "Gestante" },
 ];
