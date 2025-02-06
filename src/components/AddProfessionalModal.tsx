@@ -13,7 +13,6 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { UserX, UserCog } from "lucide-react";
 import { Professional } from "@/types/professional";
-import { supabase } from "@/integrations/supabase/client";
 
 interface AddProfessionalModalProps {
   isOpen: boolean;
@@ -51,9 +50,9 @@ export const AddProfessionalModal = ({
 
     try {
       if (mode === "edit" && professional && onEdit) {
-        onEdit(professional.id, name, profession);
+        await onEdit(professional.id, name, profession);
       } else {
-        onAdd(name, profession);
+        await onAdd(name, profession);
       }
       
       setName("");
@@ -70,8 +69,10 @@ export const AddProfessionalModal = ({
 
   const handleDelete = async () => {
     if (professional && onDelete) {
-      onDelete(professional.id);
-      onClose();
+      const success = await onDelete(professional.id);
+      if (success) {
+        onClose();
+      }
     }
   };
 
