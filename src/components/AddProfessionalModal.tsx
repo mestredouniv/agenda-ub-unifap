@@ -1,30 +1,27 @@
+
 import { useState } from "react";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { UserX, UserCog } from "lucide-react";
+import { Professional } from "@/types/professional";
 import { supabase } from "@/integrations/supabase/client";
-
-interface Professional {
-  id: number;
-  name: string;
-  profession: string;
-}
 
 interface AddProfessionalModalProps {
   isOpen: boolean;
   onClose: () => void;
   onAdd: (name: string, profession: string) => void;
-  onEdit?: (id: number, name: string, profession: string) => void;
-  onDelete?: (id: number) => void;
-  professional?: Professional;
+  onEdit?: (id: string, name: string, profession: string) => void;
+  onDelete?: (id: string) => void;
+  professional?: Professional | null;
   mode?: "add" | "edit";
 }
 
@@ -53,34 +50,10 @@ export const AddProfessionalModal = ({
     }
 
     try {
-      if (mode === "edit" && professional) {
-        const { error } = await supabase
-          .from('professionals')
-          .update({ name, profession })
-          .eq('id', professional.id);
-
-        if (error) throw error;
-
-        if (onEdit) {
-          onEdit(professional.id, name, profession);
-        }
-        
-        toast({
-          title: "Sucesso",
-          description: "Profissional atualizado com sucesso",
-        });
+      if (mode === "edit" && professional && onEdit) {
+        onEdit(professional.id, name, profession);
       } else {
-        const { error } = await supabase
-          .from('professionals')
-          .insert([{ name, profession }]);
-
-        if (error) throw error;
-
         onAdd(name, profession);
-        toast({
-          title: "Sucesso",
-          description: "Profissional adicionado com sucesso",
-        });
       }
       
       setName("");
@@ -97,27 +70,8 @@ export const AddProfessionalModal = ({
 
   const handleDelete = async () => {
     if (professional && onDelete) {
-      try {
-        const { error } = await supabase
-          .from('professionals')
-          .delete()
-          .eq('id', professional.id);
-
-        if (error) throw error;
-
-        onDelete(professional.id);
-        toast({
-          title: "Sucesso",
-          description: "Profissional removido com sucesso",
-        });
-        onClose();
-      } catch (error) {
-        toast({
-          title: "Erro",
-          description: "Ocorreu um erro ao remover o profissional",
-          variant: "destructive",
-        });
-      }
+      onDelete(professional.id);
+      onClose();
     }
   };
 
@@ -128,6 +82,11 @@ export const AddProfessionalModal = ({
           <DialogTitle>
             {mode === "add" ? "Adicionar Novo Profissional" : "Editar Profissional"}
           </DialogTitle>
+          <DialogDescription>
+            {mode === "add" 
+              ? "Preencha os dados do novo profissional" 
+              : "Edite os dados do profissional ou remova-o"}
+          </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 mt-4">
           <div className="space-y-2">

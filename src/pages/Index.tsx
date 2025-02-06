@@ -1,4 +1,5 @@
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ProfessionalCard } from "@/components/ProfessionalCard";
 import { AddProfessionalModal } from "@/components/AddProfessionalModal";
@@ -7,36 +8,9 @@ import { Header } from "@/components/Header";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Button } from "@/components/ui/button";
 import { BarChart3 } from "lucide-react";
-
-interface Professional {
-  id: number;
-  name: string;
-  profession: string;
-  schedules?: {
-    date: Date;
-    appointments: number;
-  }[];
-}
-
-const initialProfessionals: Professional[] = [
-  { id: 1, name: "Luciana", profession: "Psicóloga" },
-  { id: 2, name: "Janaína", profession: "Psicóloga" },
-  { id: 3, name: "Anna", profession: "Fisioterapeuta" },
-  { id: 4, name: "Anderson", profession: "Médico" },
-  { id: 5, name: "Anna", profession: "Auriculoterapeuta" },
-  { id: 6, name: "Wandervan", profession: "Enfermeiro" },
-  { id: 7, name: "Patrícia", profession: "Enfermeira" },
-  { id: 8, name: "Liliany", profession: "Médica" },
-  { id: 9, name: "Janaína", profession: "Enfermeira" },
-  { id: 10, name: "Equipe", profession: "Curativo" },
-  { id: 11, name: "André", profession: "Médico" },
-  { id: 12, name: "Ananda", profession: "Enfermeira" },
-  { id: 13, name: "Nely", profession: "Enfermeira" },
-  { id: 14, name: "Luciana", profession: "Psicóloga" },
-  { id: 15, name: "Janaína", profession: "Psicóloga" },
-  { id: 16, name: "Equipe", profession: "Laboratório" },
-  { id: 17, name: "Equipe", profession: "Gestante" },
-];
+import { Professional } from "@/types/professional";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/components/ui/use-toast";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -44,33 +18,119 @@ const Index = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedProfessional, setSelectedProfessional] = useState<Professional | null>(null);
   const [modalMode, setModalMode] = useState<"add" | "edit">("add");
-  const [professionals, setProfessionals] = useState<Professional[]>(initialProfessionals);
+  const [professionals, setProfessionals] = useState<Professional[]>([]);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    fetchProfessionals();
+  }, []);
+
+  const fetchProfessionals = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('professionals')
+        .select('*')
+        .order('name');
+
+      if (error) throw error;
+      setProfessionals(data || []);
+    } catch (error) {
+      console.error('Error fetching professionals:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível carregar a lista de profissionais.",
+        variant: "destructive",
+      });
+    }
+  };
 
   const handleProfessionalClick = (professional: Professional) => {
     navigate(`/agenda/${professional.id}`);
   };
 
-  const handleAddProfessional = (name: string, profession: string) => {
-    const newProfessional = {
-      id: professionals.length + 1,
-      name,
-      profession,
-    };
-    setProfessionals([...professionals, newProfessional]);
+  const handleAddProfessional = async (name: string, profession: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('professionals')
+        .insert([{ name, profession }])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setProfessionals([...professionals, data]);
+      toast({
+        title: "Sucesso",
+        description: "Profissional adicionado com sucesso.",
+      });
+    } catch (error) {
+      console.error('Error adding professional:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível adicionar o profissional.",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleEditProfessional = (id: number, name: string, profession: string) => {
-    setProfessionals(professionals.map(p => 
-      p.id === id ? { ...p, name, profession } : p
-    ));
+  const handleEditProfessional = async (id: string, name: string, profession: string) => {
+    try {
+      const { error } = await supabase
+        .from('professionals')
+        .update({ name, profession })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setProfessionals(professionals.map(p => 
+        p.id === id ? { ...p, name, profession } : p
+      ));
+      toast({
+        title: "Sucesso",
+        description: "Dados do profissional atualizados com sucesso.",
+      });
+    } catch (error) {
+      console.error('Error updating professional:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível atualizar os dados do profissional.",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleDeleteProfessional = (id: number) => {
-    setProfessionals(professionals.filter(p => p.id !== id));
+  const handleDeleteProfessional = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('professionals')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setProfessionals(professionals.filter(p => p.id !== id));
+      toast({
+        title: "Sucesso",
+        description: "Profissional removido com sucesso.",
+      });
+    } catch (error) {
+      console.error('Error deleting professional:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível remover o profissional.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleEditClick = (professional: Professional) => {
     setSelectedProfessional(professional);
+    setModalMode("edit");
+    setIsModalOpen(true);
+  };
+
+  const handleRemoveProfessionals = () => {
+    // Esta função será chamada pelo botão "Remover Profissionais"
     setModalMode("edit");
     setIsModalOpen(true);
   };
@@ -83,9 +143,7 @@ const Index = () => {
           setModalMode("add");
           setIsModalOpen(true);
         }}
-        onRemoveClick={() => {
-          console.log("Remove functionality to be implemented");
-        }}
+        onRemoveClick={handleRemoveProfessionals}
       />
       
       <main className="container mx-auto px-4 py-6">
@@ -123,7 +181,7 @@ const Index = () => {
         onAdd={handleAddProfessional}
         onEdit={handleEditProfessional}
         onDelete={handleDeleteProfessional}
-        professional={selectedProfessional || undefined}
+        professional={selectedProfessional}
         mode={modalMode}
       />
     </div>

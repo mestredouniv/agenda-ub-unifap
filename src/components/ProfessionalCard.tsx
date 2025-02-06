@@ -1,3 +1,4 @@
+
 import { Card } from "@/components/ui/card";
 import { 
   UserRound, 
@@ -7,12 +8,7 @@ import {
   FlaskConical,
   UserCheck
 } from "lucide-react";
-
-interface Professional {
-  id: number;
-  name: string;
-  profession: string;
-}
+import { Professional } from "@/types/professional";
 
 interface ProfessionalCardProps {
   professional: Professional;
