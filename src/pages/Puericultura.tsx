@@ -194,7 +194,7 @@ const Puericultura = () => {
                   <Input
                     id="nome"
                     value={formData.nome}
-                    onChange={(e) => handleInputChange("nome", e.target.value)}
+                    onChange={(e) => handleInputChange("dados", "nome", e.target.value)}
                   />
                 </div>
 
@@ -203,7 +203,7 @@ const Puericultura = () => {
                   <Input
                     id="nomeMae"
                     value={formData.nomeMae}
-                    onChange={(e) => handleInputChange("nomeMae", e.target.value)}
+                    onChange={(e) => handleInputChange("dados", "nomeMae", e.target.value)}
                   />
                 </div>
 
@@ -212,7 +212,7 @@ const Puericultura = () => {
                   <Input
                     id="cnsCpf"
                     value={formData.cnsCpf}
-                    onChange={(e) => handleInputChange("cnsCpf", e.target.value)}
+                    onChange={(e) => handleInputChange("dados", "cnsCpf", e.target.value)}
                   />
                 </div>
 
@@ -221,7 +221,7 @@ const Puericultura = () => {
                   <Input
                     id="telefone"
                     value={formData.telefone}
-                    onChange={(e) => handleInputChange("telefone", e.target.value)}
+                    onChange={(e) => handleInputChange("dados", "telefone", e.target.value)}
                   />
                 </div>
 
@@ -230,7 +230,7 @@ const Puericultura = () => {
                   <Input
                     id="dataNascimento"
                     value={formData.dataNascimento}
-                    onChange={(e) => handleInputChange("dataNascimento", e.target.value)}
+                    onChange={(e) => handleInputChange("dados", "dataNascimento", e.target.value)}
                     type="date"
                   />
                 </div>
@@ -240,7 +240,7 @@ const Puericultura = () => {
                   <Input
                     id="tipoParto"
                     value={formData.tipoParto}
-                    onChange={(e) => handleInputChange("tipoParto", e.target.value)}
+                    onChange={(e) => handleInputChange("dados", "tipoParto", e.target.value)}
                   />
                 </div>
               </div>
