@@ -10,12 +10,18 @@ export const useProfessionals = () => {
 
   const fetchProfessionals = async () => {
     try {
+      console.log("Fetching professionals...");
       const { data, error } = await supabase
         .from('professionals')
         .select('*')
         .order('name');
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error details:', error);
+        throw error;
+      }
+      
+      console.log("Fetched professionals:", data);
       setProfessionals(data || []);
     } catch (error) {
       console.error('Error fetching professionals:', error);
@@ -29,15 +35,25 @@ export const useProfessionals = () => {
 
   const addProfessional = async (name: string, profession: string) => {
     try {
+      console.log("Adding professional:", { name, profession });
       const { data, error } = await supabase
         .from('professionals')
-        .insert([{ name, profession }])
+        .insert([{ 
+          name, 
+          profession,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }])
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Insert error details:', error);
+        throw error;
+      }
 
-      setProfessionals([...professionals, data]);
+      console.log("Added professional:", data);
+      setProfessionals(prev => [...prev, data]);
       toast({
         title: "Sucesso",
         description: "Profissional adicionado com sucesso.",
@@ -56,12 +72,20 @@ export const useProfessionals = () => {
 
   const updateProfessional = async (id: string, name: string, profession: string) => {
     try {
+      console.log("Updating professional:", { id, name, profession });
       const { error } = await supabase
         .from('professionals')
-        .update({ name, profession })
+        .update({ 
+          name, 
+          profession,
+          updated_at: new Date().toISOString()
+        })
         .eq('id', id);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Update error details:', error);
+        throw error;
+      }
 
       setProfessionals(professionals.map(p => 
         p.id === id ? { ...p, name, profession } : p
@@ -84,12 +108,16 @@ export const useProfessionals = () => {
 
   const deleteProfessional = async (id: string) => {
     try {
+      console.log("Deleting professional:", id);
       const { error } = await supabase
         .from('professionals')
         .delete()
         .eq('id', id);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Delete error details:', error);
+        throw error;
+      }
 
       setProfessionals(professionals.filter(p => p.id !== id));
       toast({
@@ -117,5 +145,6 @@ export const useProfessionals = () => {
     addProfessional,
     updateProfessional,
     deleteProfessional,
+    refetch: fetchProfessionals
   };
 };
