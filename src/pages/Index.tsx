@@ -7,23 +7,12 @@ import { Header } from "@/components/Header";
 import { Professional } from "@/types/professional";
 import { ProfessionalList } from "@/components/ProfessionalList";
 import { useProfessionals } from "@/hooks/useProfessionals";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 
 const Index = () => {
   const navigate = useNavigate();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedProfessional, setSelectedProfessional] = useState<Professional | null>(null);
   const [modalMode, setModalMode] = useState<"add" | "edit">("add");
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   
   const {
     professionals,
@@ -43,18 +32,8 @@ const Index = () => {
   };
 
   const handleRemoveProfessionals = () => {
-    setIsDeleteDialogOpen(true);
-  };
-
-  const handleDeleteConfirmed = async () => {
-    if (selectedProfessional) {
-      const success = await deleteProfessional(selectedProfessional.id);
-      if (success) {
-        setSelectedProfessional(null);
-        setIsDeleteDialogOpen(false);
-        setIsModalOpen(false);
-      }
-    }
+    setModalMode("edit");
+    setIsModalOpen(true);
   };
 
   return (
@@ -91,23 +70,6 @@ const Index = () => {
         professional={selectedProfessional}
         mode={modalMode}
       />
-
-      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Remover Profissional</AlertDialogTitle>
-            <AlertDialogDescription>
-              Tem certeza que deseja remover este profissional? Esta ação não pode ser desfeita.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteConfirmed}>
-              Confirmar
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 };
