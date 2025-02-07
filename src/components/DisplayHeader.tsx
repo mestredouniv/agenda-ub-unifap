@@ -1,7 +1,7 @@
 
 export const DisplayHeader = () => {
   return (
-    <div className="bg-purple-900/50 p-4 text-center text-white">
+    <div className="bg-gray-50 border-b border-gray-100 p-4 text-center text-gray-900">
       <h1 className="text-3xl font-bold mb-2">
         UNIVERSIDADE FEDERAL DO AMAPÁ
       </h1>

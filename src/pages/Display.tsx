@@ -5,6 +5,7 @@ import { useDisplayState } from "@/hooks/useDisplayState";
 import { useDisplayContent, DisplayContent } from "@/hooks/useDisplayContent";
 import { Button } from "@/components/ui/button";
 import { Settings2 } from "lucide-react";
+import { DisplayEditPanel } from "@/components/DisplayEditPanel";
 
 const Display = () => {
   const currentPatient = useDisplayState((state) => state.currentPatient);
@@ -79,48 +80,51 @@ const Display = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black text-white flex items-center justify-center">
+      <div className="min-h-screen bg-white text-gray-900 flex items-center justify-center">
         <div className="text-4xl font-bold">Carregando...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="min-h-screen bg-white text-gray-900">
       <DisplayHeader />
       
       {settings?.is_edit_mode && (
-        <Button
-          variant="ghost"
-          size="icon"
-          className="fixed top-4 right-4 z-50"
-          onClick={toggleEditMode}
-        >
-          <Settings2 className="h-6 w-6" />
-        </Button>
+        <>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="fixed top-4 right-4 z-50"
+            onClick={toggleEditMode}
+          >
+            <Settings2 className="h-6 w-6" />
+          </Button>
+          <DisplayEditPanel />
+        </>
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4">
         {/* Patient Name Box */}
-        <div className="bg-purple-900/50 p-6 rounded-lg shadow-lg">
-          <h2 className="text-2xl font-semibold mb-2">Paciente</h2>
-          <p className="text-3xl font-bold">
+        <div className="bg-gray-50 border border-gray-100 p-6 rounded-lg shadow-sm">
+          <h2 className="text-2xl font-semibold mb-2 text-gray-700">Paciente</h2>
+          <p className="text-3xl font-bold text-gray-900">
             {currentPatient?.name || "Aguardando..."}
           </p>
         </div>
 
         {/* Room Number Box */}
-        <div className="bg-purple-900/50 p-6 rounded-lg shadow-lg">
-          <h2 className="text-2xl font-semibold mb-2">Consultório</h2>
-          <p className="text-3xl font-bold">
+        <div className="bg-gray-50 border border-gray-100 p-6 rounded-lg shadow-sm">
+          <h2 className="text-2xl font-semibold mb-2 text-gray-700">Consultório</h2>
+          <p className="text-3xl font-bold text-gray-900">
             {currentPatient?.professional || "Aguardando..."}
           </p>
         </div>
 
         {/* Status Box */}
-        <div className="bg-purple-900/50 p-6 rounded-lg shadow-lg">
-          <h2 className="text-2xl font-semibold mb-2">Status</h2>
-          <p className="text-3xl font-bold">
+        <div className="bg-gray-50 border border-gray-100 p-6 rounded-lg shadow-sm">
+          <h2 className="text-2xl font-semibold mb-2 text-gray-700">Status</h2>
+          <p className="text-3xl font-bold text-gray-900">
             {currentPatient?.status === "waiting" && "Aguardando"}
             {currentPatient?.status === "triage" && "Em Triagem"}
             {currentPatient?.status === "in_progress" && "Em Atendimento"}
@@ -128,7 +132,7 @@ const Display = () => {
         </div>
 
         {/* Dynamic Content Box */}
-        <div className={`col-span-1 md:col-span-3 bg-purple-900/30 p-6 rounded-lg shadow-lg min-h-[50vh] flex items-center justify-center ${displayClass}`}>
+        <div className={`col-span-1 md:col-span-3 bg-gray-50 border border-gray-100 p-6 rounded-lg shadow-sm min-h-[50vh] flex items-center justify-center ${displayClass}`}>
           {contents.length > 0 ? (
             renderContent(contents[currentContentIndex])
           ) : (
