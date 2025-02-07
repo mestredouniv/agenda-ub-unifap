@@ -77,6 +77,60 @@ export type Database = {
           },
         ]
       }
+      display_content: {
+        Row: {
+          active: boolean | null
+          content: string
+          created_at: string | null
+          display_order: number | null
+          display_time: number
+          id: string
+          type: string
+          updated_at: string | null
+        }
+        Insert: {
+          active?: boolean | null
+          content: string
+          created_at?: string | null
+          display_order?: number | null
+          display_time?: number
+          id?: string
+          type: string
+          updated_at?: string | null
+        }
+        Update: {
+          active?: boolean | null
+          content?: string
+          created_at?: string | null
+          display_order?: number | null
+          display_time?: number
+          id?: string
+          type?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      display_settings: {
+        Row: {
+          id: string
+          is_edit_mode: boolean | null
+          rotation_mode: string
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          is_edit_mode?: boolean | null
+          rotation_mode?: string
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          is_edit_mode?: boolean | null
+          rotation_mode?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       professionals: {
         Row: {
           created_at: string | null
