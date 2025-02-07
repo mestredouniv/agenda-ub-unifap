@@ -30,10 +30,17 @@ export const useDisplayContent = () => {
         .from('display_content')
         .select('*')
         .eq('active', true)
-        .order('display_order', { ascending: true, nullsLast: true });
+        .order('display_order', { ascending: true, nullsFirst: true });
 
       if (error) throw error;
-      setContents(data || []);
+      
+      // Type assertion to ensure the data matches our DisplayContent interface
+      const typedData = data?.map(item => ({
+        ...item,
+        type: item.type as DisplayContent['type']
+      })) || [];
+      
+      setContents(typedData);
     } catch (error) {
       console.error('Error fetching display contents:', error);
       toast({
@@ -56,20 +63,29 @@ export const useDisplayContent = () => {
       }
 
       if (data) {
-        setSettings(data);
+        // Type assertion to ensure the data matches our DisplaySettings interface
+        setSettings({
+          ...data,
+          rotation_mode: data.rotation_mode as DisplaySettings['rotation_mode']
+        });
       } else {
         // Create default settings if none exist
         const { data: newSettings, error: createError } = await supabase
           .from('display_settings')
           .insert([{
-            rotation_mode: 'sequential',
+            rotation_mode: 'sequential' as const,
             is_edit_mode: false,
           }])
           .select()
           .single();
 
         if (createError) throw createError;
-        setSettings(newSettings);
+        if (newSettings) {
+          setSettings({
+            ...newSettings,
+            rotation_mode: newSettings.rotation_mode as DisplaySettings['rotation_mode']
+          });
+        }
       }
     } catch (error) {
       console.error('Error fetching display settings:', error);
@@ -90,7 +106,14 @@ export const useDisplayContent = () => {
         .single();
 
       if (error) throw error;
-      setContents(prev => [...prev, data]);
+      
+      // Type assertion for the new content
+      const typedData = {
+        ...data,
+        type: data.type as DisplayContent['type']
+      };
+      
+      setContents(prev => [...prev, typedData]);
       toast({
         title: "Sucesso",
         description: "Conteúdo adicionado com sucesso.",
@@ -119,7 +142,12 @@ export const useDisplayContent = () => {
         .single();
 
       if (error) throw error;
-      setSettings(data);
+      if (data) {
+        setSettings({
+          ...data,
+          rotation_mode: data.rotation_mode as DisplaySettings['rotation_mode']
+        });
+      }
       return true;
     } catch (error) {
       console.error('Error updating settings:', error);
