@@ -31,20 +31,25 @@ const Index = () => {
     setIsModalOpen(true);
   };
 
-  const handleRemoveProfessionals = () => {
-    setModalMode("edit");
+  const handleAddClick = () => {
+    setSelectedProfessional(null);
+    setModalMode("add");
     setIsModalOpen(true);
+  };
+
+  const handleRemoveClick = () => {
+    if (professionals.length > 0) {
+      setSelectedProfessional(professionals[0]);
+      setModalMode("edit");
+      setIsModalOpen(true);
+    }
   };
 
   return (
     <div className="min-h-screen bg-gray-50">
       <Header 
-        onAddClick={() => {
-          setSelectedProfessional(null);
-          setModalMode("add");
-          setIsModalOpen(true);
-        }}
-        onRemoveClick={handleRemoveProfessionals}
+        onAddClick={handleAddClick}
+        onRemoveClick={handleRemoveClick}
       />
       
       <main className="container mx-auto px-4 py-6">

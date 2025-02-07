@@ -1,37 +1,22 @@
+
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus } from "lucide-react";
-
-interface Announcement {
-  id: number;
-  text: string;
-  createdAt: Date;
-}
+import { Plus, X } from "lucide-react";
+import { useAnnouncements } from "@/hooks/useAnnouncements";
+import { format } from "date-fns";
 
 export const DailyAnnouncements = () => {
-  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [newAnnouncement, setNewAnnouncement] = useState("");
+  const { announcements, addAnnouncement, removeAnnouncement } = useAnnouncements();
 
-  const addAnnouncement = () => {
+  const handleAddAnnouncement = async () => {
     if (!newAnnouncement.trim()) return;
-
-    const announcement: Announcement = {
-      id: Date.now(),
-      text: newAnnouncement,
-      createdAt: new Date(),
-    };
-
-    setAnnouncements([announcement, ...announcements]);
-    setNewAnnouncement("");
-
-    // Remove announcement after 12 hours
-    setTimeout(() => {
-      setAnnouncements(current => 
-        current.filter(a => a.id !== announcement.id)
-      );
-    }, 12 * 60 * 60 * 1000); // 12 hours in milliseconds
+    const success = await addAnnouncement(newAnnouncement);
+    if (success) {
+      setNewAnnouncement("");
+    }
   };
 
   return (
@@ -45,9 +30,14 @@ export const DailyAnnouncements = () => {
             onChange={(e) => setNewAnnouncement(e.target.value)}
             placeholder="Digite um novo aviso..."
             className="flex-1"
+            onKeyPress={(e) => {
+              if (e.key === 'Enter') {
+                handleAddAnnouncement();
+              }
+            }}
           />
           <Button
-            onClick={addAnnouncement}
+            onClick={handleAddAnnouncement}
             className="bg-primary hover:bg-primary/90 text-white"
           >
             <Plus className="h-4 w-4" />
@@ -58,9 +48,24 @@ export const DailyAnnouncements = () => {
           {announcements.map((announcement) => (
             <div
               key={announcement.id}
-              className="p-3 bg-gray-50 rounded-md text-sm"
+              className="p-3 bg-gray-50 rounded-md text-sm relative group"
             >
-              {announcement.text}
+              <div className="flex justify-between items-start gap-2">
+                <div className="flex-1">
+                  <p>{announcement.content}</p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Expira em: {format(new Date(announcement.expires_at), "HH:mm")}
+                  </p>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="opacity-0 group-hover:opacity-100 transition-opacity"
+                  onClick={() => removeAnnouncement(announcement.id)}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
           ))}
           
