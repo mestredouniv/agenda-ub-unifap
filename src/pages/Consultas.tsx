@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useDisplayState } from "@/hooks/useDisplayState";
 import { Button } from "@/components/ui/button";
@@ -21,7 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { professionals } from "@/data/professionals";
+import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 
 interface Patient {
@@ -40,75 +41,243 @@ const Consultas = () => {
   const setCurrentPatient = useDisplayState((state) => state.setCurrentPatient);
   const [selectedProfessional, setSelectedProfessional] = useState("all");
   const [appointments, setAppointments] = useState<Patient[]>([]);
+  const [professionals, setProfessionals] = useState<any[]>([]);
 
   useEffect(() => {
-    const loadAppointments = () => {
-      const storedAppointments = JSON.parse(localStorage.getItem("appointments") || "[]");
-      const today = new Date().toISOString().split('T')[0];
-      
-      const activeAppointments = storedAppointments
-        .filter((app: any) => app.preferredDate?.split('T')[0] === today && app.status === "approved")
-        .map((app: any) => ({
-          id: app.id,
-          name: app.patientName,
-          professional: professionals.find(p => p.id === app.professionalId)?.name || "Não encontrado",
-          professionalId: app.professionalId,
-          time: app.preferredTime,
-          status: 'waiting' as const,
-          priority: 'normal' as const,
-          responsible: app.responsible,
-        }));
-
-      setAppointments(activeAppointments);
+    const fetchProfessionals = async () => {
+      const { data } = await supabase
+        .from('professionals')
+        .select('*');
+      if (data) {
+        setProfessionals(data);
+      }
     };
 
-    loadAppointments();
-    window.addEventListener("storage", loadAppointments);
-    return () => window.removeEventListener("storage", loadAppointments);
+    fetchProfessionals();
+
+    // Subscribe to professionals changes
+    const professionalChannel = supabase
+      .channel('professionals_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'professionals'
+        },
+        () => {
+          fetchProfessionals();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(professionalChannel);
+    };
   }, []);
+
+  useEffect(() => {
+    const fetchAppointments = async () => {
+      const today = new Date().toISOString().split('T')[0];
+      const { data } = await supabase
+        .from('appointments')
+        .select(`
+          id,
+          patient_name,
+          appointment_time,
+          patient_status,
+          priority,
+          professional_id,
+          display_status,
+          professionals (
+            name
+          )
+        `)
+        .eq('appointment_date', today)
+        .order('appointment_time', { ascending: true });
+
+      if (data) {
+        const formattedAppointments = data.map(app => ({
+          id: app.id,
+          name: app.patient_name,
+          professional: app.professionals?.name || 'Não encontrado',
+          professionalId: app.professional_id,
+          time: app.appointment_time,
+          status: app.display_status,
+          priority: app.priority || 'normal',
+        }));
+        setAppointments(formattedAppointments);
+      }
+    };
+
+    fetchAppointments();
+
+    // Subscribe to appointments changes
+    const appointmentChannel = supabase
+      .channel('appointments_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'appointments'
+        },
+        () => {
+          fetchAppointments();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(appointmentChannel);
+    };
+  }, []);
+
+  const handleCallNext = async (patient: Patient) => {
+    try {
+      // Update appointment status
+      const { error: appointmentError } = await supabase
+        .from('appointments')
+        .update({ display_status: 'called' })
+        .eq('id', patient.id);
+
+      if (appointmentError) throw appointmentError;
+
+      // Add to last_calls
+      const { error: lastCallError } = await supabase
+        .from('last_calls')
+        .insert([{
+          patient_name: patient.name,
+          professional_name: patient.professional,
+          status: 'called'
+        }]);
+
+      if (lastCallError) throw lastCallError;
+
+      setCurrentPatient({
+        name: patient.name,
+        status: 'waiting',
+        professional: patient.professional,
+      });
+
+      toast({
+        title: "Paciente chamado",
+        description: "O display foi atualizado com o próximo paciente.",
+      });
+    } catch (error) {
+      console.error('Error calling next patient:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível chamar o próximo paciente.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleStartTriage = async (patient: Patient) => {
+    try {
+      const { error: appointmentError } = await supabase
+        .from('appointments')
+        .update({ display_status: 'in_progress' })
+        .eq('id', patient.id);
+
+      if (appointmentError) throw appointmentError;
+
+      const { error: lastCallError } = await supabase
+        .from('last_calls')
+        .insert([{
+          patient_name: patient.name,
+          professional_name: patient.professional,
+          status: 'triage'
+        }]);
+
+      if (lastCallError) throw lastCallError;
+
+      setCurrentPatient({
+        name: patient.name,
+        status: 'triage',
+        professional: patient.professional,
+      });
+
+      toast({
+        title: "Triagem iniciada",
+        description: "Paciente encaminhado para triagem.",
+      });
+    } catch (error) {
+      console.error('Error starting triage:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível iniciar a triagem.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleStartAppointment = async (patient: Patient) => {
+    try {
+      const { error: appointmentError } = await supabase
+        .from('appointments')
+        .update({ display_status: 'in_progress' })
+        .eq('id', patient.id);
+
+      if (appointmentError) throw appointmentError;
+
+      const { error: lastCallError } = await supabase
+        .from('last_calls')
+        .insert([{
+          patient_name: patient.name,
+          professional_name: patient.professional,
+          status: 'in_progress'
+        }]);
+
+      if (lastCallError) throw lastCallError;
+
+      setCurrentPatient({
+        name: patient.name,
+        status: 'in_progress',
+        professional: patient.professional,
+      });
+
+      toast({
+        title: "Consulta iniciada",
+        description: "Paciente em atendimento.",
+      });
+    } catch (error) {
+      console.error('Error starting appointment:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível iniciar a consulta.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleCompleteAppointment = async (patient: Patient) => {
+    try {
+      const { error } = await supabase
+        .from('appointments')
+        .update({ display_status: 'completed' })
+        .eq('id', patient.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Consulta finalizada",
+        description: "O atendimento foi concluído com sucesso.",
+      });
+    } catch (error) {
+      console.error('Error completing appointment:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível finalizar a consulta.",
+        variant: "destructive",
+      });
+    }
+  };
 
   const filteredAppointments = appointments.filter(appointment => 
     selectedProfessional === "all" || appointment.professionalId === selectedProfessional
   );
-
-  const handleCallNext = (patient: Patient) => {
-    setCurrentPatient({
-      name: patient.name,
-      status: 'waiting',
-      professional: patient.professional,
-    });
-    toast({
-      title: "Paciente chamado",
-      description: "O display foi atualizado com o próximo paciente.",
-    });
-    window.open('/display', '_blank');
-  };
-
-  const handleStartTriage = (patient: Patient) => {
-    setCurrentPatient({
-      name: patient.name,
-      status: 'triage',
-      professional: patient.professional,
-    });
-    toast({
-      title: "Triagem iniciada",
-      description: "Paciente encaminhado para triagem.",
-    });
-    window.open('/display', '_blank');
-  };
-
-  const handleStartAppointment = (patient: Patient) => {
-    setCurrentPatient({
-      name: patient.name,
-      status: 'in_progress',
-      professional: patient.professional,
-    });
-    toast({
-      title: "Consulta iniciada",
-      description: "Paciente em atendimento.",
-    });
-    window.open('/display', '_blank');
-  };
 
   const getStatusBadge = (status: Patient['status']) => {
     const statusConfig = {
@@ -158,6 +327,14 @@ const Consultas = () => {
             disabled={patient.status !== 'triage'}
           >
             Iniciar
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => handleCompleteAppointment(patient)}
+            disabled={patient.status !== 'in_progress'}
+          >
+            Finalizar
           </Button>
         </div>
       </div>
@@ -263,6 +440,14 @@ const Consultas = () => {
                         disabled={patient.status !== 'triage'}
                       >
                         Iniciar
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleCompleteAppointment(patient)}
+                        disabled={patient.status !== 'in_progress'}
+                      >
+                        Finalizar
                       </Button>
                     </div>
                   </TableCell>

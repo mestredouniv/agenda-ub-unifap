@@ -39,6 +39,7 @@ export type Database = {
           appointment_time: string
           created_at: string | null
           deleted_at: string | null
+          display_status: string | null
           id: string
           medical_record_type: string | null
           notification_status: string | null
@@ -54,6 +55,7 @@ export type Database = {
           appointment_time: string
           created_at?: string | null
           deleted_at?: string | null
+          display_status?: string | null
           id?: string
           medical_record_type?: string | null
           notification_status?: string | null
@@ -69,6 +71,7 @@ export type Database = {
           appointment_time?: string
           created_at?: string | null
           deleted_at?: string | null
+          display_status?: string | null
           id?: string
           medical_record_type?: string | null
           notification_status?: string | null
@@ -140,6 +143,30 @@ export type Database = {
           is_edit_mode?: boolean | null
           rotation_mode?: string
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      last_calls: {
+        Row: {
+          called_at: string | null
+          id: string
+          patient_name: string
+          professional_name: string
+          status: string
+        }
+        Insert: {
+          called_at?: string | null
+          id?: string
+          patient_name: string
+          professional_name: string
+          status: string
+        }
+        Update: {
+          called_at?: string | null
+          id?: string
+          patient_name?: string
+          professional_name?: string
+          status?: string
         }
         Relationships: []
       }

@@ -6,6 +6,7 @@ import { useDisplayContent, DisplayContent } from "@/hooks/useDisplayContent";
 import { Button } from "@/components/ui/button";
 import { Settings2 } from "lucide-react";
 import { DisplayEditPanel } from "@/components/DisplayEditPanel";
+import { supabase } from "@/integrations/supabase/client";
 
 const Display = () => {
   const currentPatient = useDisplayState((state) => state.currentPatient);
@@ -13,6 +14,7 @@ const Display = () => {
   const [currentContentIndex, setCurrentContentIndex] = useState(0);
   const [displayClass, setDisplayClass] = useState("");
   const [isEditPanelOpen, setIsEditPanelOpen] = useState(false);
+  const [lastCalls, setLastCalls] = useState<any[]>([]);
 
   const getNextContentIndex = (current: number, total: number, mode: 'sequential' | 'random') => {
     if (mode === 'random') {
@@ -24,6 +26,43 @@ const Display = () => {
     }
     return (current + 1) % total;
   };
+
+  useEffect(() => {
+    // Fetch initial last calls
+    const fetchLastCalls = async () => {
+      const { data, error } = await supabase
+        .from('last_calls')
+        .select('*')
+        .order('called_at', { ascending: false })
+        .limit(5);
+      
+      if (!error && data) {
+        setLastCalls(data);
+      }
+    };
+
+    fetchLastCalls();
+
+    // Subscribe to last_calls changes
+    const channel = supabase
+      .channel('last_calls_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'last_calls'
+        },
+        (payload) => {
+          fetchLastCalls(); // Refetch last calls when changes occur
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
 
   useEffect(() => {
     if (contents.length === 0) return;
@@ -51,6 +90,26 @@ const Display = () => {
     }
   };
 
+  const renderLastCalls = () => {
+    return (
+      <div className="space-y-4">
+        <h3 className="text-2xl font-bold mb-4">Últimas Chamadas</h3>
+        {lastCalls.map((call, index) => (
+          <div 
+            key={call.id} 
+            className={`p-4 rounded-lg border ${index === 0 ? 'bg-primary/10 border-primary' : 'bg-white border-gray-200'}`}
+          >
+            <p className="text-xl font-semibold">{call.patient_name}</p>
+            <p className="text-gray-600">{call.professional_name}</p>
+            <p className="text-sm text-gray-500">
+              {new Date(call.called_at).toLocaleTimeString('pt-BR')}
+            </p>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
   const renderContent = (content: DisplayContent) => {
     switch (content.type) {
       case 'text':
@@ -68,11 +127,7 @@ const Display = () => {
           />
         );
       case 'last_calls':
-        return (
-          <div className="text-4xl font-bold">
-            Últimas Chamadas
-          </div>
-        );
+        return renderLastCalls();
       default:
         return null;
     }
@@ -90,7 +145,6 @@ const Display = () => {
     <div className="min-h-screen bg-white text-gray-900 relative">
       <DisplayHeader />
       
-      {/* Edit Button - Always visible but conditionally enabled */}
       <Button
         variant="outline"
         size="icon"
@@ -100,7 +154,6 @@ const Display = () => {
         <Settings2 className="h-6 w-6" />
       </Button>
 
-      {/* Edit Panel */}
       {isEditPanelOpen && <DisplayEditPanel onClose={() => setIsEditPanelOpen(false)} />}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4">
