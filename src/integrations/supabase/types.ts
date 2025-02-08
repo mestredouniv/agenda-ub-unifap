@@ -38,9 +38,13 @@ export type Database = {
           appointment_date: string
           appointment_time: string
           created_at: string | null
+          deleted_at: string | null
           id: string
           medical_record_type: string | null
+          notification_status: string | null
           patient_name: string
+          patient_status: string | null
+          priority: string | null
           professional_id: string | null
           status: string | null
           updated_at: string | null
@@ -49,9 +53,13 @@ export type Database = {
           appointment_date: string
           appointment_time: string
           created_at?: string | null
+          deleted_at?: string | null
           id?: string
           medical_record_type?: string | null
+          notification_status?: string | null
           patient_name: string
+          patient_status?: string | null
+          priority?: string | null
           professional_id?: string | null
           status?: string | null
           updated_at?: string | null
@@ -60,9 +68,13 @@ export type Database = {
           appointment_date?: string
           appointment_time?: string
           created_at?: string | null
+          deleted_at?: string | null
           id?: string
           medical_record_type?: string | null
+          notification_status?: string | null
           patient_name?: string
+          patient_status?: string | null
+          priority?: string | null
           professional_id?: string | null
           status?: string | null
           updated_at?: string | null
