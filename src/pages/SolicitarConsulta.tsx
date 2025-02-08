@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,6 +8,7 @@ import { ConsultaHeader } from "@/components/ConsultaHeader";
 import { ConsultaRequestsList } from "@/components/ConsultaRequestsList";
 import { PersonalDataForm } from "@/components/PersonalDataForm";
 import { AppointmentSelection } from "@/components/AppointmentSelection";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Professional {
   id: string;
@@ -18,29 +20,9 @@ const RequiredField = () => (
   <Asterisk className="inline-block h-2 w-2 text-red-500 ml-1" />
 );
 
-const initialProfessionals = [
-  { id: "1", name: "Luciana", profession: "Psicóloga" },
-  { id: "2", name: "Janaína", profession: "Psicóloga" },
-  { id: "3", name: "Anna", profession: "Fisioterapeuta" },
-  { id: "4", name: "Anderson", profession: "Médico" },
-  { id: "5", name: "Anna", profession: "Auriculoterapeuta" },
-  { id: "6", name: "Wandervan", profession: "Enfermeiro" },
-  { id: "7", name: "Patrícia", profession: "Enfermeira" },
-  { id: "8", name: "Liliany", profession: "Médica" },
-  { id: "9", name: "Janaína", profession: "Enfermeira" },
-  { id: "10", name: "Equipe", profession: "Curativo" },
-  { id: "11", name: "André", profession: "Médico" },
-  { id: "12", name: "Ananda", profession: "Enfermeira" },
-  { id: "13", name: "Nely", profession: "Enfermeira" },
-  { id: "14", name: "Luciana", profession: "Psicóloga" },
-  { id: "15", name: "Janaína", profession: "Psicóloga" },
-  { id: "16", name: "Equipe", profession: "Laboratório" },
-  { id: "17", name: "Equipe", profession: "Gestante" },
-];
-
-const SolicitarConsulta = () => {
+export const SolicitarConsulta = () => {
   const { toast } = useToast();
-  const [professionals, setProfessionals] = useState<Professional[]>(initialProfessionals);
+  const [professionals, setProfessionals] = useState<Professional[]>([]);
   const [errors, setErrors] = useState<Record<string, boolean>>({});
   const [formData, setFormData] = useState({
     patientName: "",
@@ -55,7 +37,20 @@ const SolicitarConsulta = () => {
   });
 
   useEffect(() => {
-    localStorage.setItem("professionals", JSON.stringify(initialProfessionals));
+    const fetchProfessionals = async () => {
+      const { data, error } = await supabase
+        .from('professionals')
+        .select('*');
+      
+      if (error) {
+        console.error('Error fetching professionals:', error);
+        return;
+      }
+
+      setProfessionals(data);
+    };
+
+    fetchProfessionals();
   }, []);
 
   const validateForm = () => {
@@ -80,7 +75,7 @@ const SolicitarConsulta = () => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!validateForm()) {
@@ -92,16 +87,28 @@ const SolicitarConsulta = () => {
       return;
     }
 
-    const newAppointment = {
-      id: crypto.randomUUID(),
-      ...formData,
-      status: "pending",
-      preferredDate: formData.preferredDate?.toISOString(),
-    };
+    const { data, error } = await supabase
+      .from('appointments')
+      .insert([{
+        professional_id: formData.professionalId,
+        patient_name: formData.patientName,
+        appointment_date: formData.preferredDate?.toISOString().split('T')[0],
+        appointment_time: formData.preferredTime,
+        status: 'pending',
+        medical_record_type: `CPF: ${formData.cpf}, SUS: ${formData.sus}, Idade: ${formData.age}, Telefone: ${formData.phone}${formData.responsible ? `, Responsável: ${formData.responsible}` : ''}`
+      }])
+      .select()
+      .single();
 
-    const appointments = JSON.parse(localStorage.getItem("appointments") || "[]");
-    appointments.push(newAppointment);
-    localStorage.setItem("appointments", JSON.stringify(appointments));
+    if (error) {
+      toast({
+        title: "Erro",
+        description: "Ocorreu um erro ao enviar a solicitação. Por favor, tente novamente.",
+        variant: "destructive",
+      });
+      console.error('Error submitting appointment request:', error);
+      return;
+    }
 
     toast({
       title: "Solicitação enviada",

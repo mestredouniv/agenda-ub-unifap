@@ -1,8 +1,10 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { supabase } from "@/integrations/supabase/client";
 
 interface AppointmentRequest {
   id: string;
@@ -18,14 +20,50 @@ export const ConsultaRequestsList = () => {
   const [requests, setRequests] = useState<AppointmentRequest[]>([]);
 
   useEffect(() => {
-    const loadRequests = () => {
-      const storedRequests = JSON.parse(localStorage.getItem("appointments") || "[]");
-      setRequests(storedRequests);
+    // Initial fetch of appointment requests
+    const fetchRequests = async () => {
+      const { data, error } = await supabase
+        .from('appointments')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (error) {
+        console.error('Error fetching requests:', error);
+        return;
+      }
+
+      setRequests(data.map(appointment => ({
+        id: appointment.id,
+        professionalId: appointment.professional_id || '',
+        patientName: appointment.patient_name,
+        preferredDate: appointment.appointment_date,
+        preferredTime: appointment.appointment_time,
+        status: appointment.status as AppointmentRequest['status'],
+        message: appointment.medical_record_type
+      })));
     };
 
-    loadRequests();
-    window.addEventListener("storage", loadRequests);
-    return () => window.removeEventListener("storage", loadRequests);
+    fetchRequests();
+
+    // Subscribe to realtime updates
+    const channel = supabase
+      .channel('appointment-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'appointments'
+        },
+        () => {
+          fetchRequests(); // Refetch data when changes occur
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const getStatusBadge = (status: AppointmentRequest["status"]) => {
