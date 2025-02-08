@@ -14,7 +14,11 @@ import { useDisplayContent } from "@/hooks/useDisplayContent";
 import { X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
-export const DisplayEditPanel = () => {
+interface DisplayEditPanelProps {
+  onClose: () => void;
+}
+
+export const DisplayEditPanel = ({ onClose }: DisplayEditPanelProps) => {
   const { addContent, removeContent, contents } = useDisplayContent();
   const { toast } = useToast();
   const [newContent, setNewContent] = useState({
@@ -47,16 +51,25 @@ export const DisplayEditPanel = () => {
         content: "",
         display_time: 10,
       });
+      toast({
+        title: "Sucesso",
+        description: "Conteúdo adicionado com sucesso",
+      });
     }
   };
 
   return (
-    <div className="fixed right-0 top-0 h-screen w-80 bg-white/95 shadow-lg p-4 overflow-y-auto">
+    <div className="fixed right-0 top-0 h-screen w-80 bg-white shadow-lg p-4 overflow-y-auto z-40">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-lg font-semibold">Painel de Edição</h3>
+        <Button variant="ghost" size="icon" onClick={onClose}>
+          <X className="h-4 w-4" />
+        </Button>
+      </div>
+
       <form onSubmit={handleSubmit} className="space-y-4">
-        <h3 className="text-lg font-semibold">Adicionar Conteúdo</h3>
-        
         <div className="space-y-2">
-          <label className="text-sm font-medium">Tipo</label>
+          <label className="text-sm font-medium">Tipo de Conteúdo</label>
           <Select
             value={newContent.type}
             onValueChange={(value) => setNewContent({ ...newContent, type: value })}
@@ -110,7 +123,7 @@ export const DisplayEditPanel = () => {
         </div>
 
         <Button type="submit" className="w-full">
-          Adicionar
+          Adicionar Conteúdo
         </Button>
       </form>
 
@@ -122,7 +135,7 @@ export const DisplayEditPanel = () => {
             className="bg-gray-50 p-3 rounded-lg flex items-center justify-between"
           >
             <div>
-              <p className="font-medium">{content.type}</p>
+              <p className="font-medium capitalize">{content.type}</p>
               <p className="text-sm text-gray-500 truncate max-w-[180px]">
                 {content.content}
               </p>
@@ -130,7 +143,13 @@ export const DisplayEditPanel = () => {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => removeContent(content.id)}
+              onClick={() => {
+                removeContent(content.id);
+                toast({
+                  title: "Sucesso",
+                  description: "Conteúdo removido com sucesso",
+                });
+              }}
             >
               <X className="h-4 w-4" />
             </Button>

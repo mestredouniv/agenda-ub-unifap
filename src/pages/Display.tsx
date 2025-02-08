@@ -12,8 +12,8 @@ const Display = () => {
   const { contents, settings, loading, updateSettings } = useDisplayContent();
   const [currentContentIndex, setCurrentContentIndex] = useState(0);
   const [displayClass, setDisplayClass] = useState("");
+  const [isEditPanelOpen, setIsEditPanelOpen] = useState(false);
 
-  // Function to get next content index based on rotation mode
   const getNextContentIndex = (current: number, total: number, mode: 'sequential' | 'random') => {
     if (mode === 'random') {
       let next = Math.floor(Math.random() * total);
@@ -45,6 +45,7 @@ const Display = () => {
   }, [currentPatient, currentContentIndex]);
 
   const toggleEditMode = () => {
+    setIsEditPanelOpen(!isEditPanelOpen);
     if (settings) {
       updateSettings({ is_edit_mode: !settings.is_edit_mode });
     }
@@ -70,7 +71,6 @@ const Display = () => {
         return (
           <div className="text-4xl font-bold">
             Últimas Chamadas
-            {/* Add last calls content here */}
           </div>
         );
       default:
@@ -87,42 +87,38 @@ const Display = () => {
   }
 
   return (
-    <div className="min-h-screen bg-white text-gray-900">
+    <div className="min-h-screen bg-white text-gray-900 relative">
       <DisplayHeader />
       
-      {settings?.is_edit_mode && (
-        <>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="fixed top-4 right-4 z-50"
-            onClick={toggleEditMode}
-          >
-            <Settings2 className="h-6 w-6" />
-          </Button>
-          <DisplayEditPanel />
-        </>
-      )}
+      {/* Edit Button - Always visible but conditionally enabled */}
+      <Button
+        variant="outline"
+        size="icon"
+        className="fixed top-4 right-4 z-50 bg-white shadow-md hover:bg-gray-100"
+        onClick={toggleEditMode}
+      >
+        <Settings2 className="h-6 w-6" />
+      </Button>
+
+      {/* Edit Panel */}
+      {isEditPanelOpen && <DisplayEditPanel onClose={() => setIsEditPanelOpen(false)} />}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4">
-        {/* Patient Name Box */}
-        <div className="bg-gray-50 border border-gray-100 p-6 rounded-lg shadow-sm">
+        <div className="bg-white border border-gray-200 p-6 rounded-lg shadow-sm">
           <h2 className="text-2xl font-semibold mb-2 text-gray-700">Paciente</h2>
           <p className="text-3xl font-bold text-gray-900">
             {currentPatient?.name || "Aguardando..."}
           </p>
         </div>
 
-        {/* Room Number Box */}
-        <div className="bg-gray-50 border border-gray-100 p-6 rounded-lg shadow-sm">
+        <div className="bg-white border border-gray-200 p-6 rounded-lg shadow-sm">
           <h2 className="text-2xl font-semibold mb-2 text-gray-700">Consultório</h2>
           <p className="text-3xl font-bold text-gray-900">
             {currentPatient?.professional || "Aguardando..."}
           </p>
         </div>
 
-        {/* Status Box */}
-        <div className="bg-gray-50 border border-gray-100 p-6 rounded-lg shadow-sm">
+        <div className="bg-white border border-gray-200 p-6 rounded-lg shadow-sm">
           <h2 className="text-2xl font-semibold mb-2 text-gray-700">Status</h2>
           <p className="text-3xl font-bold text-gray-900">
             {currentPatient?.status === "waiting" && "Aguardando"}
@@ -131,8 +127,7 @@ const Display = () => {
           </p>
         </div>
 
-        {/* Dynamic Content Box */}
-        <div className={`col-span-1 md:col-span-3 bg-gray-50 border border-gray-100 p-6 rounded-lg shadow-sm min-h-[50vh] flex items-center justify-center ${displayClass}`}>
+        <div className={`col-span-1 md:col-span-3 bg-white border border-gray-200 p-6 rounded-lg shadow-sm min-h-[50vh] flex items-center justify-center ${displayClass}`}>
           {contents.length > 0 ? (
             renderContent(contents[currentContentIndex])
           ) : (
