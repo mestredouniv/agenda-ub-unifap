@@ -58,6 +58,12 @@ const Hanseniase = () => {
 
   const handleRegisterPatient = async () => {
     try {
+      // Ensure we have a treatment start date before proceeding
+      if (!treatmentData.treatment_start_date) {
+        toast.error("Por favor, selecione uma data de início do tratamento");
+        return;
+      }
+
       const { data: patientData, error: patientError } = await supabase
         .from('patients')
         .insert([{
@@ -77,7 +83,10 @@ const Hanseniase = () => {
           .from('hanseniase_records')
           .insert([{
             patient_id: patientData.id,
-            ...treatmentData,
+            pb: treatmentData.pb,
+            mb: treatmentData.mb,
+            classification: treatmentData.classification,
+            treatment_start_date: treatmentData.treatment_start_date,
           }]);
 
         if (recordError) throw recordError;

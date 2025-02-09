@@ -30,6 +30,13 @@ export const TreatmentDataForm = ({
   onChange,
   onSubmit,
 }: TreatmentDataFormProps) => {
+  const handleDateSelect = (date: Date | undefined) => {
+    // Only update if we have a valid date
+    if (date) {
+      onChange("treatment_start_date", date.toISOString());
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -81,13 +88,17 @@ export const TreatmentDataForm = ({
             <Calendar
               mode="single"
               selected={formData.treatment_start_date ? new Date(formData.treatment_start_date) : undefined}
-              onSelect={(date) => onChange("treatment_start_date", date ? date.toISOString() : "")}
+              onSelect={handleDateSelect}
               initialFocus
             />
           </PopoverContent>
         </Popover>
       </div>
-      <Button onClick={onSubmit} className="w-full">
+      <Button 
+        onClick={onSubmit} 
+        className="w-full"
+        disabled={!formData.treatment_start_date} // Disable button if no date is selected
+      >
         <Plus className="mr-2" />
         Registrar Paciente
       </Button>
