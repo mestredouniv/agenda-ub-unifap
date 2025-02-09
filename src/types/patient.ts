@@ -17,3 +17,12 @@ export interface HanseniaseRecord {
   classification: string;
   treatment_start_date: string;
 }
+
+export interface HanseniaseTreatment {
+  id: string;
+  record_id: string;
+  treatment_month: number;
+  treatment_date: string;
+  treatment_status: string;
+  notes?: string;
+}
