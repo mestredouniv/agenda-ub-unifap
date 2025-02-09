@@ -1,26 +1,13 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Calendar } from "@/components/ui/calendar";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { BackToHomeButton } from "@/components/BackToHomeButton";
 import { ConsultaHeader } from "@/components/ConsultaHeader";
-import { Download, Plus, Printer, Search, Share2, Trash2, UserPlus } from "lucide-react";
+import { Download, Printer, Search, Share2, UserPlus } from "lucide-react";
 import { useState } from "react";
-import { ptBR } from "date-fns/locale";
-import { PersonalDataForm } from "@/components/PersonalDataForm";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import {
   Dialog,
   DialogContent,
@@ -29,28 +16,14 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-
-interface Patient {
-  id: string;
-  full_name: string;
-  address: string;
-  sus_number: string;
-  phone: string;
-  cpf: string;
-  birth_date: string;
-}
-
-interface HanseniaseRecord {
-  id: string;
-  patient_id: string;
-  pb: string;
-  mb: string;
-  classification: string;
-  treatment_start_date: string;
-}
+import { SearchResultsTable } from "@/components/hanseniase/SearchResultsTable";
+import { TreatmentDataForm } from "@/components/hanseniase/TreatmentDataForm";
+import { PatientDetails } from "@/components/hanseniase/PatientDetails";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { PersonalDataForm } from "@/components/PersonalDataForm";
+import { Patient, HanseniaseRecord } from "@/types/patient";
 
 const Hanseniase = () => {
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [patients, setPatients] = useState<Patient[]>([]);
@@ -200,7 +173,7 @@ const Hanseniase = () => {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `hanseniase-${selectedDate ? selectedDate.toISOString().split('T')[0] : 'dados'}.json`;
+    link.download = "hanseniase-dados.json";
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -280,45 +253,11 @@ const Hanseniase = () => {
                 />
               </TabsContent>
               <TabsContent value="treatment">
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="pb">PB</Label>
-                    <Input
-                      id="pb"
-                      value={treatmentData.pb}
-                      onChange={(e) => handleTreatmentDataChange("pb", e.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="mb">MB</Label>
-                    <Input
-                      id="mb"
-                      value={treatmentData.mb}
-                      onChange={(e) => handleTreatmentDataChange("mb", e.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="classification">Classificação</Label>
-                    <Input
-                      id="classification"
-                      value={treatmentData.classification}
-                      onChange={(e) => handleTreatmentDataChange("classification", e.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="treatment_start_date">Data de Início</Label>
-                    <Input
-                      id="treatment_start_date"
-                      type="date"
-                      value={treatmentData.treatment_start_date}
-                      onChange={(e) => handleTreatmentDataChange("treatment_start_date", e.target.value)}
-                    />
-                  </div>
-                  <Button onClick={handleRegisterPatient} className="w-full">
-                    <Plus className="mr-2" />
-                    Registrar Paciente
-                  </Button>
-                </div>
+                <TreatmentDataForm
+                  formData={treatmentData}
+                  onChange={handleTreatmentDataChange}
+                  onSubmit={handleRegisterPatient}
+                />
               </TabsContent>
             </Tabs>
           </DialogContent>
@@ -331,73 +270,22 @@ const Hanseniase = () => {
             <CardTitle>Resultados da Busca</CardTitle>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Nome</TableHead>
-                  <TableHead>CPF</TableHead>
-                  <TableHead>SUS</TableHead>
-                  <TableHead>Telefone</TableHead>
-                  <TableHead>Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {patients.map((patient) => (
-                  <TableRow key={patient.id}>
-                    <TableCell>{patient.full_name}</TableCell>
-                    <TableCell>{patient.cpf}</TableCell>
-                    <TableCell>{patient.sus_number}</TableCell>
-                    <TableCell>{patient.phone}</TableCell>
-                    <TableCell>
-                      <div className="flex gap-2">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleSelectPatient(patient)}
-                        >
-                          <Search className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleDeletePatient(patient.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            <SearchResultsTable
+              patients={patients}
+              onSelectPatient={handleSelectPatient}
+              onDeletePatient={handleDeletePatient}
+            />
           </CardContent>
         </Card>
       )}
 
       {selectedPatient && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Dados do Paciente: {selectedPatient.full_name}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Tabs defaultValue="edit">
-              <TabsList>
-                <TabsTrigger value="edit">Editar Dados</TabsTrigger>
-                <TabsTrigger value="treatment">Acompanhamento</TabsTrigger>
-              </TabsList>
-              <TabsContent value="edit">
-                <div className="space-y-4">
-                  {/* Patient edit form will go here */}
-                </div>
-              </TabsContent>
-              <TabsContent value="treatment">
-                <div className="space-y-4">
-                  {/* Treatment tracking table will go here */}
-                </div>
-              </TabsContent>
-            </Tabs>
-          </CardContent>
-        </Card>
+        <PatientDetails
+          patient={selectedPatient}
+          treatmentData={treatmentData}
+          onTreatmentDataChange={handleTreatmentDataChange}
+          onPersonalDataChange={handlePersonalDataChange}
+        />
       )}
     </div>
   );

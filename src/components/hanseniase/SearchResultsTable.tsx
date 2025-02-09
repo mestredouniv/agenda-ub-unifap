@@ -1,0 +1,59 @@
+
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { Search, Trash2 } from "lucide-react";
+import { Patient } from "@/types/patient";
+
+interface SearchResultsTableProps {
+  patients: Patient[];
+  onSelectPatient: (patient: Patient) => void;
+  onDeletePatient: (patientId: string) => void;
+}
+
+export const SearchResultsTable = ({
+  patients,
+  onSelectPatient,
+  onDeletePatient,
+}: SearchResultsTableProps) => {
+  return (
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead>Nome</TableHead>
+          <TableHead>CPF</TableHead>
+          <TableHead>SUS</TableHead>
+          <TableHead>Telefone</TableHead>
+          <TableHead>Ações</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {patients.map((patient) => (
+          <TableRow key={patient.id}>
+            <TableCell>{patient.full_name}</TableCell>
+            <TableCell>{patient.cpf}</TableCell>
+            <TableCell>{patient.sus_number}</TableCell>
+            <TableCell>{patient.phone}</TableCell>
+            <TableCell>
+              <div className="flex gap-2">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => onSelectPatient(patient)}
+                >
+                  <Search className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => onDeletePatient(patient.id)}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            </TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
+  );
+};
