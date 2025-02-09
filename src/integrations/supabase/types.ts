@@ -146,6 +146,88 @@ export type Database = {
         }
         Relationships: []
       }
+      hanseniase_records: {
+        Row: {
+          classification: string | null
+          created_at: string | null
+          id: string
+          mb: string | null
+          patient_id: string | null
+          pb: string | null
+          treatment_start_date: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          classification?: string | null
+          created_at?: string | null
+          id?: string
+          mb?: string | null
+          patient_id?: string | null
+          pb?: string | null
+          treatment_start_date?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          classification?: string | null
+          created_at?: string | null
+          id?: string
+          mb?: string | null
+          patient_id?: string | null
+          pb?: string | null
+          treatment_start_date?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hanseniase_records_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "patients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hanseniase_treatments: {
+        Row: {
+          created_at: string | null
+          id: string
+          notes: string | null
+          record_id: string | null
+          treatment_date: string | null
+          treatment_month: number | null
+          treatment_status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          record_id?: string | null
+          treatment_date?: string | null
+          treatment_month?: number | null
+          treatment_status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          record_id?: string | null
+          treatment_date?: string | null
+          treatment_month?: number | null
+          treatment_status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hanseniase_treatments_record_id_fkey"
+            columns: ["record_id"]
+            isOneToOne: false
+            referencedRelation: "hanseniase_records"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       last_calls: {
         Row: {
           called_at: string | null
@@ -167,6 +249,42 @@ export type Database = {
           patient_name?: string
           professional_name?: string
           status?: string
+        }
+        Relationships: []
+      }
+      patients: {
+        Row: {
+          address: string | null
+          birth_date: string | null
+          cpf: string | null
+          created_at: string | null
+          full_name: string
+          id: string
+          phone: string | null
+          sus_number: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          address?: string | null
+          birth_date?: string | null
+          cpf?: string | null
+          created_at?: string | null
+          full_name: string
+          id?: string
+          phone?: string | null
+          sus_number?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          address?: string | null
+          birth_date?: string | null
+          cpf?: string | null
+          created_at?: string | null
+          full_name?: string
+          id?: string
+          phone?: string | null
+          sus_number?: string | null
+          updated_at?: string | null
         }
         Relationships: []
       }
