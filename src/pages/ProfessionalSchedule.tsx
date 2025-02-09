@@ -40,8 +40,9 @@ interface Appointment {
   time: string;
   appointmentType: string;
   birthDate: string;
-  hasRecord: boolean;
+  hasRecord: "yes" | "no" | "electronic";
   responsible: string;
+  phone: string;
 }
 
 interface AppointmentFormData {
@@ -49,7 +50,7 @@ interface AppointmentFormData {
   time: string;
   appointmentType: string;
   birthDate: string;
-  hasRecord: boolean;
+  hasRecord: "yes" | "no" | "electronic";
   responsible: string;
 }
 
@@ -147,6 +148,19 @@ const ProfessionalSchedule = () => {
       (unavailableDate) =>
         format(unavailableDate, "yyyy-MM-dd") === format(date, "yyyy-MM-dd")
     );
+  };
+
+  const getRecordStatus = (hasRecord: "yes" | "no" | "electronic") => {
+    switch (hasRecord) {
+      case "yes":
+        return "Sim";
+      case "no":
+        return "Não";
+      case "electronic":
+        return "Prontuário Eletrônico";
+      default:
+        return "Não";
+    }
   };
 
   return (
@@ -256,7 +270,7 @@ const ProfessionalSchedule = () => {
                     <TableCell>{appointment.appointmentType}</TableCell>
                     <TableCell>{appointment.birthDate}</TableCell>
                     <TableCell>
-                      {appointment.hasRecord ? "Sim" : "Não"}
+                      {getRecordStatus(appointment.hasRecord)}
                     </TableCell>
                     <TableCell>{appointment.responsible}</TableCell>
                     <TableCell>
@@ -374,8 +388,9 @@ const AppointmentForm = ({
     time: initialData?.time || "",
     appointmentType: initialData?.appointmentType || "",
     birthDate: initialData?.birthDate || "",
-    hasRecord: initialData?.hasRecord || false,
+    hasRecord: initialData?.hasRecord || "no",
     responsible: initialData?.responsible || "",
+    phone: initialData?.phone || "",
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -413,9 +428,9 @@ const AppointmentForm = ({
         <div className="space-y-2">
           <label className="text-sm font-medium">Prontuário</label>
           <Select
-            value={formData.hasRecord ? "yes" : "no"}
+            value={formData.hasRecord}
             onValueChange={(value) =>
-              setFormData({ ...formData, hasRecord: value === "yes" })
+              setFormData({ ...formData, hasRecord: value })
             }
           >
             <SelectTrigger>
@@ -424,6 +439,7 @@ const AppointmentForm = ({
             <SelectContent>
               <SelectItem value="yes">Sim</SelectItem>
               <SelectItem value="no">Não</SelectItem>
+              <SelectItem value="electronic">Prontuário Eletrônico</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -433,6 +449,11 @@ const AppointmentForm = ({
           onChange={(e) =>
             setFormData({ ...formData, responsible: e.target.value })
           }
+        />
+        <Input
+          placeholder="Telefone"
+          value={formData.phone}
+          onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
         />
       </div>
       <Button type="submit" className="w-full">

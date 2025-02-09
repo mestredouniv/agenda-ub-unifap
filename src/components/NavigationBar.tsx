@@ -1,3 +1,4 @@
+
 import {
   NavigationMenu,
   NavigationMenuItem,
@@ -5,7 +6,7 @@ import {
   NavigationMenuTrigger,
   NavigationMenuContent,
 } from "@/components/ui/navigation-menu";
-import { Plus, Trash2, Calendar, FileText, Volume2, Stethoscope, FileSignature, Heart } from "lucide-react";
+import { Plus, Calendar, FileText, Volume2, Stethoscope, FileSignature, Heart } from "lucide-react";
 import { Link } from "react-router-dom";
 
 interface NavigationBarProps {
@@ -15,7 +16,6 @@ interface NavigationBarProps {
 
 export const NavigationBar = ({
   onAddProfessional,
-  onRemoveProfessional,
 }: NavigationBarProps) => {
   return (
     <NavigationMenu className="mb-4">
@@ -30,13 +30,6 @@ export const NavigationBar = ({
               >
                 <Plus className="h-4 w-4" />
                 Adicionar Profissional
-              </button>
-              <button
-                onClick={onRemoveProfessional}
-                className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-accent"
-              >
-                <Trash2 className="h-4 w-4" />
-                Remover Profissional
               </button>
               <a
                 href="/display"
