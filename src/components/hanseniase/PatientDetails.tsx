@@ -90,11 +90,31 @@ export const PatientDetails = ({
         </Button>
       </CardHeader>
       <CardContent>
-        <Tabs defaultValue="edit">
+        <Tabs defaultValue="treatment">
           <TabsList>
-            <TabsTrigger value="edit">Editar Dados</TabsTrigger>
             <TabsTrigger value="treatment">Acompanhamento</TabsTrigger>
+            <TabsTrigger value="edit">Editar Dados</TabsTrigger>
           </TabsList>
+          <TabsContent value="treatment">
+            <div className="space-y-6">
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">PB (Paucibacilar)</label>
+                    <TreatmentDataForm
+                      formData={treatmentData}
+                      onChange={onTreatmentDataChange}
+                      mode="edit"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">MB (Multibacilar)</label>
+                  </div>
+                </div>
+              </div>
+              <TreatmentTable patientId={patient.id} />
+            </div>
+          </TabsContent>
           <TabsContent value="edit">
             <div className="space-y-4">
               <PersonalDataForm
@@ -110,16 +130,6 @@ export const PatientDetails = ({
               <Button onClick={handleUpdatePatient} className="w-full">
                 Atualizar Dados
               </Button>
-            </div>
-          </TabsContent>
-          <TabsContent value="treatment">
-            <div className="space-y-6">
-              <TreatmentDataForm
-                formData={treatmentData}
-                onChange={onTreatmentDataChange}
-                mode="edit"
-              />
-              <TreatmentTable patientId={patient.id} />
             </div>
           </TabsContent>
         </Tabs>

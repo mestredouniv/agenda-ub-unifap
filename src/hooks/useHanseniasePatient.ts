@@ -39,7 +39,6 @@ export const useHanseniasePatient = () => {
           treatment_start_date: data.treatment_start_date,
         });
       } else {
-        // Reset treatment data if no record exists
         setTreatmentData({
           pb: "",
           mb: "",
@@ -57,16 +56,33 @@ export const useHanseniasePatient = () => {
     if (!selectedPatient) return;
     
     try {
-      const { data: treatments, error } = await supabase
+      const { data: record, error: recordError } = await supabase
+        .from('hanseniase_records')
+        .select('*')
+        .eq('patient_id', selectedPatient.id)
+        .single();
+
+      if (recordError) throw recordError;
+
+      const { data: treatments, error: treatmentsError } = await supabase
         .from('hanseniase_treatments')
         .select('*')
-        .eq('patient_id', selectedPatient.id);
+        .eq('record_id', record.id);
 
-      if (error) throw error;
+      if (treatmentsError) throw treatmentsError;
 
       const reportData = {
-        patient: selectedPatient,
-        treatment: treatmentData,
+        patient: {
+          name: selectedPatient.full_name,
+          cpf: selectedPatient.cpf,
+          sus_number: selectedPatient.sus_number,
+        },
+        treatment: {
+          pb: record.pb,
+          mb: record.mb,
+          classification: record.classification,
+          treatment_start_date: record.treatment_start_date,
+        },
         followups: treatments || [],
       };
 
@@ -79,6 +95,8 @@ export const useHanseniasePatient = () => {
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
+      
+      toast.success("Relatório baixado com sucesso!");
     } catch (error) {
       console.error('Erro ao baixar relatório:', error);
       toast.error("Erro ao gerar relatório");
@@ -89,16 +107,33 @@ export const useHanseniasePatient = () => {
     if (!selectedPatient || !navigator.share) return;
     
     try {
-      const { data: treatments, error } = await supabase
+      const { data: record, error: recordError } = await supabase
+        .from('hanseniase_records')
+        .select('*')
+        .eq('patient_id', selectedPatient.id)
+        .single();
+
+      if (recordError) throw recordError;
+
+      const { data: treatments, error: treatmentsError } = await supabase
         .from('hanseniase_treatments')
         .select('*')
-        .eq('patient_id', selectedPatient.id);
+        .eq('record_id', record.id);
 
-      if (error) throw error;
+      if (treatmentsError) throw treatmentsError;
 
       const reportData = {
-        patient: selectedPatient,
-        treatment: treatmentData,
+        patient: {
+          name: selectedPatient.full_name,
+          cpf: selectedPatient.cpf,
+          sus_number: selectedPatient.sus_number,
+        },
+        treatment: {
+          pb: record.pb,
+          mb: record.mb,
+          classification: record.classification,
+          treatment_start_date: record.treatment_start_date,
+        },
         followups: treatments || [],
       };
 

@@ -3,6 +3,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { Search, Trash2 } from "lucide-react";
 import { Patient } from "@/types/patient";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface SearchResultsTableProps {
   patients: Patient[];
@@ -15,6 +17,32 @@ export const SearchResultsTable = ({
   onSelectPatient,
   onDeletePatient,
 }: SearchResultsTableProps) => {
+  const handleDelete = async (patientId: string) => {
+    if (!confirm("Tem certeza que deseja excluir este paciente?")) return;
+
+    try {
+      const { error: recordError } = await supabase
+        .from('hanseniase_records')
+        .delete()
+        .eq('patient_id', patientId);
+
+      if (recordError) throw recordError;
+
+      const { error: patientError } = await supabase
+        .from('patients')
+        .delete()
+        .eq('id', patientId);
+
+      if (patientError) throw patientError;
+
+      onDeletePatient(patientId);
+      toast.success("Paciente excluído com sucesso");
+    } catch (error) {
+      console.error('Erro ao excluir paciente:', error);
+      toast.error("Erro ao excluir paciente");
+    }
+  };
+
   return (
     <Table>
       <TableHeader>
@@ -45,7 +73,7 @@ export const SearchResultsTable = ({
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={() => onDeletePatient(patient.id)}
+                  onClick={() => handleDelete(patient.id)}
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>
