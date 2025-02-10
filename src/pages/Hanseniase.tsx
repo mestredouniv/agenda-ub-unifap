@@ -1,217 +1,43 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { BackToHomeButton } from "@/components/BackToHomeButton";
 import { ConsultaHeader } from "@/components/ConsultaHeader";
-import { Download, Search, Share2, UserPlus } from "lucide-react";
-import { useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import { Download, Share2 } from "lucide-react";
 import { SearchResultsTable } from "@/components/hanseniase/SearchResultsTable";
-import { TreatmentDataForm } from "@/components/hanseniase/TreatmentDataForm";
 import { PatientDetails } from "@/components/hanseniase/PatientDetails";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { PersonalDataForm } from "@/components/PersonalDataForm";
-import { Patient, HanseniaseRecord } from "@/types/patient";
+import { PatientRegistrationDialog } from "@/components/hanseniase/PatientRegistrationDialog";
+import { SearchBar } from "@/components/hanseniase/SearchBar";
+import { useHanseniasePatient } from "@/hooks/useHanseniasePatient";
+import { usePatientSearch } from "@/hooks/usePatientSearch";
+import { usePatientRegistration } from "@/hooks/usePatientRegistration";
 
 const Hanseniase = () => {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
-  const [patients, setPatients] = useState<Patient[]>([]);
-  const [showSearchResults, setShowSearchResults] = useState(false);
-  const [personalData, setPersonalData] = useState({
-    patientName: "",
-    cpf: "",
-    sus: "",
-    age: "",
-    phone: "",
-  });
-  const [treatmentData, setTreatmentData] = useState<Omit<HanseniaseRecord, 'id' | 'patient_id'>>({
-    pb: "",
-    mb: "",
-    classification: "",
-    treatment_start_date: "",
-  });
+  const {
+    selectedPatient,
+    treatmentData,
+    handleTreatmentDataChange,
+    handleSelectPatient,
+    handleDownload,
+    handleShare,
+  } = useHanseniasePatient();
 
-  const handlePersonalDataChange = (field: string, value: string) => {
-    setPersonalData((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
-  };
+  const {
+    searchTerm,
+    setSearchTerm,
+    patients,
+    showSearchResults,
+    setShowSearchResults,
+    handleSearch,
+  } = usePatientSearch();
 
-  const handleTreatmentDataChange = (field: string, value: string) => {
-    setTreatmentData((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
-  };
-
-  const handleRegisterPatient = async () => {
-    try {
-      if (!treatmentData.treatment_start_date) {
-        toast.error("Por favor, selecione uma data de início do tratamento");
-        return;
-      }
-
-      const { data: patientData, error: patientError } = await supabase
-        .from('patients')
-        .insert([{
-          full_name: personalData.patientName,
-          cpf: personalData.cpf,
-          sus_number: personalData.sus,
-          birth_date: new Date().toISOString(),
-          phone: personalData.phone,
-        }])
-        .select()
-        .single();
-
-      if (patientError) throw patientError;
-
-      if (patientData) {
-        const { error: recordError } = await supabase
-          .from('hanseniase_records')
-          .insert([{
-            patient_id: patientData.id,
-            pb: treatmentData.pb,
-            mb: treatmentData.mb,
-            classification: treatmentData.classification,
-            treatment_start_date: treatmentData.treatment_start_date,
-          }]);
-
-        if (recordError) throw recordError;
-
-        toast.success("Paciente registrado com sucesso!");
-        setPersonalData({
-          patientName: "",
-          cpf: "",
-          sus: "",
-          age: "",
-          phone: "",
-        });
-        setTreatmentData({
-          pb: "",
-          mb: "",
-          classification: "",
-          treatment_start_date: "",
-        });
-      }
-    } catch (error) {
-      console.error('Erro ao registrar paciente:', error);
-      toast.error("Erro ao registrar paciente");
-    }
-  };
-
-  const handleSearch = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('patients')
-        .select()
-        .or(`full_name.ilike.%${searchTerm}%,cpf.eq.${searchTerm},sus_number.eq.${searchTerm}`);
-
-      if (error) throw error;
-
-      setPatients(data || []);
-      setShowSearchResults(true);
-    } catch (error) {
-      console.error('Erro na busca:', error);
-      toast.error("Erro ao buscar pacientes");
-    }
-  };
-
-  const handleSelectPatient = async (patient: Patient) => {
-    setSelectedPatient(patient);
-    setShowSearchResults(false);
-    try {
-      const { data, error } = await supabase
-        .from('hanseniase_records')
-        .select()
-        .eq('patient_id', patient.id)
-        .single();
-
-      if (error && error.code !== 'PGRST116') throw error;
-
-      if (data) {
-        setTreatmentData({
-          pb: data.pb,
-          mb: data.mb,
-          classification: data.classification,
-          treatment_start_date: data.treatment_start_date,
-        });
-      }
-    } catch (error) {
-      console.error('Erro ao carregar registro:', error);
-      toast.error("Erro ao carregar dados do paciente");
-    }
-  };
-
-  const handleDownload = async () => {
-    if (!selectedPatient) return;
-    
-    try {
-      const { data: treatments, error } = await supabase
-        .from('hanseniase_treatments')
-        .select('*')
-        .eq('patient_id', selectedPatient.id);
-
-      if (error) throw error;
-
-      const reportData = {
-        patient: selectedPatient,
-        treatment: treatmentData,
-        followups: treatments || [],
-      };
-
-      const blob = new Blob([JSON.stringify(reportData, null, 2)], { type: "application/json" });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `hanseniase-${selectedPatient.full_name}.json`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error('Erro ao baixar relatório:', error);
-      toast.error("Erro ao gerar relatório");
-    }
-  };
-
-  const handleShare = async () => {
-    if (!selectedPatient || !navigator.share) return;
-    
-    try {
-      const { data: treatments, error } = await supabase
-        .from('hanseniase_treatments')
-        .select('*')
-        .eq('patient_id', selectedPatient.id);
-
-      if (error) throw error;
-
-      const reportData = {
-        patient: selectedPatient,
-        treatment: treatmentData,
-        followups: treatments || [],
-      };
-
-      await navigator.share({
-        title: `Relatório Hanseníase - ${selectedPatient.full_name}`,
-        text: JSON.stringify(reportData, null, 2),
-      });
-    } catch (error) {
-      console.error('Erro ao compartilhar:', error);
-      toast.error("Erro ao compartilhar relatório");
-    }
-  };
+  const {
+    personalData,
+    treatmentData: registrationTreatmentData,
+    handlePersonalDataChange,
+    handleTreatmentDataChange: handleRegistrationTreatmentDataChange,
+    handleRegisterPatient,
+  } = usePatientRegistration();
 
   return (
     <div className="container mx-auto p-6 space-y-6">
@@ -233,53 +59,19 @@ const Hanseniase = () => {
 
       <div className="flex gap-4 mb-6">
         <div className="flex-1">
-          <div className="flex gap-2">
-            <Input
-              placeholder="Buscar por nome, CPF ou número do SUS"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-            <Button onClick={handleSearch}>
-              <Search className="mr-2" />
-              Buscar
-            </Button>
-          </div>
+          <SearchBar
+            searchTerm={searchTerm}
+            onSearchTermChange={setSearchTerm}
+            onSearch={handleSearch}
+          />
         </div>
-        <Dialog>
-          <DialogTrigger asChild>
-            <Button>
-              <UserPlus className="mr-2" />
-              Novo Paciente
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-3xl">
-            <DialogHeader>
-              <DialogTitle>Cadastrar Novo Paciente</DialogTitle>
-              <DialogDescription>
-                Preencha os dados do paciente para criar um novo registro.
-              </DialogDescription>
-            </DialogHeader>
-            <Tabs defaultValue="personal" className="w-full">
-              <TabsList>
-                <TabsTrigger value="personal">Dados Pessoais</TabsTrigger>
-                <TabsTrigger value="treatment">Dados do Tratamento</TabsTrigger>
-              </TabsList>
-              <TabsContent value="personal">
-                <PersonalDataForm
-                  formData={personalData}
-                  onChange={handlePersonalDataChange}
-                />
-              </TabsContent>
-              <TabsContent value="treatment">
-                <TreatmentDataForm
-                  formData={treatmentData}
-                  onChange={handleTreatmentDataChange}
-                  onSubmit={handleRegisterPatient}
-                />
-              </TabsContent>
-            </Tabs>
-          </DialogContent>
-        </Dialog>
+        <PatientRegistrationDialog
+          personalData={personalData}
+          treatmentData={registrationTreatmentData}
+          onPersonalDataChange={handlePersonalDataChange}
+          onTreatmentDataChange={handleRegistrationTreatmentDataChange}
+          onSubmit={handleRegisterPatient}
+        />
       </div>
 
       {showSearchResults && (
@@ -291,6 +83,7 @@ const Hanseniase = () => {
             <SearchResultsTable
               patients={patients}
               onSelectPatient={handleSelectPatient}
+              onDeletePatient={() => {}}
             />
           </CardContent>
         </Card>
@@ -303,7 +96,6 @@ const Hanseniase = () => {
           onTreatmentDataChange={handleTreatmentDataChange}
           onPersonalDataChange={handlePersonalDataChange}
           onBack={() => {
-            setSelectedPatient(null);
             setShowSearchResults(true);
           }}
         />
