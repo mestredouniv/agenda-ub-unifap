@@ -27,9 +27,9 @@ export const useHanseniasePatient = () => {
         .from('hanseniase_records')
         .select()
         .eq('patient_id', patient.id)
-        .single();
+        .maybeSingle();
 
-      if (error && error.code !== 'PGRST116') throw error;
+      if (error) throw error;
 
       if (data) {
         setTreatmentData({
@@ -37,6 +37,14 @@ export const useHanseniasePatient = () => {
           mb: data.mb,
           classification: data.classification,
           treatment_start_date: data.treatment_start_date,
+        });
+      } else {
+        // Reset treatment data if no record exists
+        setTreatmentData({
+          pb: "",
+          mb: "",
+          classification: "",
+          treatment_start_date: "",
         });
       }
     } catch (error) {
