@@ -7,10 +7,9 @@ import { Patient, HanseniaseTreatment } from "@/types/patient";
 import { TreatmentDataForm } from "./TreatmentDataForm";
 import { TreatmentTable } from "./TreatmentTable";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Trash2 } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { useNavigate } from "react-router-dom";
 
 interface PatientDetailsProps {
   patient: Patient;
@@ -33,7 +32,6 @@ export const PatientDetails = ({
   onBack,
 }: PatientDetailsProps) => {
   const [treatments, setTreatments] = useState<HanseniaseTreatment[]>([]);
-  const navigate = useNavigate();
 
   const handleUpdatePatient = async () => {
     try {
@@ -56,24 +54,6 @@ export const PatientDetails = ({
     }
   };
 
-  const handleDeletePatient = async () => {
-    if (!confirm("Tem certeza que deseja excluir este paciente?")) return;
-
-    try {
-      const { error } = await supabase
-        .from('patients')
-        .delete()
-        .eq('id', patient.id);
-
-      if (error) throw error;
-      toast.success("Paciente excluído com sucesso");
-      navigate("/hanseniase");
-    } catch (error) {
-      console.error('Erro ao excluir paciente:', error);
-      toast.error("Erro ao excluir paciente");
-    }
-  };
-
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
@@ -84,10 +64,6 @@ export const PatientDetails = ({
           </Button>
           <CardTitle className="inline">Dados do Paciente: {patient.full_name}</CardTitle>
         </div>
-        <Button variant="destructive" onClick={handleDeletePatient}>
-          <Trash2 className="h-4 w-4 mr-2" />
-          Excluir Paciente
-        </Button>
       </CardHeader>
       <CardContent>
         <Tabs defaultValue="treatment">
@@ -100,7 +76,7 @@ export const PatientDetails = ({
               <div className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium mb-1">PB (Paucibacilar)</label>
+                    <label className="block text-sm font-medium mb-1">PB (Pronto para Baixar)</label>
                     <TreatmentDataForm
                       formData={treatmentData}
                       onChange={onTreatmentDataChange}
@@ -108,7 +84,7 @@ export const PatientDetails = ({
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium mb-1">MB (Multibacilar)</label>
+                    <label className="block text-sm font-medium mb-1">MB (Mantenha Baixado)</label>
                   </div>
                 </div>
               </div>

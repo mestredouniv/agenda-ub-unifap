@@ -58,15 +58,20 @@ export const useHanseniasePatient = () => {
     try {
       const { data: record, error: recordError } = await supabase
         .from('hanseniase_records')
-        .select('*')
+        .select()
         .eq('patient_id', selectedPatient.id)
-        .single();
+        .maybeSingle();
 
       if (recordError) throw recordError;
 
+      if (!record) {
+        toast.error("Nenhum registro encontrado para este paciente");
+        return;
+      }
+
       const { data: treatments, error: treatmentsError } = await supabase
         .from('hanseniase_treatments')
-        .select('*')
+        .select()
         .eq('record_id', record.id);
 
       if (treatmentsError) throw treatmentsError;
@@ -104,20 +109,28 @@ export const useHanseniasePatient = () => {
   };
 
   const handleShare = async () => {
-    if (!selectedPatient || !navigator.share) return;
+    if (!selectedPatient || !navigator.share) {
+      toast.error("Compartilhamento não suportado neste dispositivo");
+      return;
+    }
     
     try {
       const { data: record, error: recordError } = await supabase
         .from('hanseniase_records')
-        .select('*')
+        .select()
         .eq('patient_id', selectedPatient.id)
-        .single();
+        .maybeSingle();
 
       if (recordError) throw recordError;
 
+      if (!record) {
+        toast.error("Nenhum registro encontrado para este paciente");
+        return;
+      }
+
       const { data: treatments, error: treatmentsError } = await supabase
         .from('hanseniase_treatments')
-        .select('*')
+        .select()
         .eq('record_id', record.id);
 
       if (treatmentsError) throw treatmentsError;
@@ -141,6 +154,8 @@ export const useHanseniasePatient = () => {
         title: `Relatório Hanseníase - ${selectedPatient.full_name}`,
         text: JSON.stringify(reportData, null, 2),
       });
+      
+      toast.success("Relatório compartilhado com sucesso!");
     } catch (error) {
       console.error('Erro ao compartilhar:', error);
       toast.error("Erro ao compartilhar relatório");

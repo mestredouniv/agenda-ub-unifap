@@ -42,7 +42,7 @@ export const TreatmentDataForm = ({
     <div className="space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <Label htmlFor="pb">PB</Label>
+          <Label htmlFor="pb">PB (Pronto para Baixar)</Label>
           <Input
             id="pb"
             value={formData.pb}
@@ -50,7 +50,7 @@ export const TreatmentDataForm = ({
           />
         </div>
         <div>
-          <Label htmlFor="mb">MB</Label>
+          <Label htmlFor="mb">MB (Mantenha Baixado)</Label>
           <Input
             id="mb"
             value={formData.mb}

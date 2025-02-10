@@ -34,10 +34,42 @@ export const usePatientRegistration = () => {
     }));
   };
 
+  const checkDuplicatePatient = async () => {
+    const queries = [];
+    
+    if (personalData.cpf) {
+      queries.push(`cpf.eq.${personalData.cpf}`);
+    }
+    if (personalData.sus) {
+      queries.push(`sus_number.eq.${personalData.sus}`);
+    }
+    
+    if (queries.length === 0) return false;
+
+    const { data, error } = await supabase
+      .from('patients')
+      .select()
+      .or(queries.join(','))
+      .maybeSingle();
+
+    if (error) {
+      console.error('Error checking duplicate:', error);
+      return false;
+    }
+
+    return !!data;
+  };
+
   const handleRegisterPatient = async () => {
     try {
       if (!treatmentData.treatment_start_date) {
         toast.error("Por favor, selecione uma data de início do tratamento");
+        return;
+      }
+
+      const isDuplicate = await checkDuplicatePatient();
+      if (isDuplicate) {
+        toast.error("Paciente já cadastrado com este CPF ou número do SUS");
         return;
       }
 
