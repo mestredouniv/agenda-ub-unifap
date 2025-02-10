@@ -7,8 +7,10 @@ import { Patient, HanseniaseTreatment } from "@/types/patient";
 import { TreatmentDataForm } from "./TreatmentDataForm";
 import { TreatmentTable } from "./TreatmentTable";
 import { Button } from "@/components/ui/button";
+import { ArrowLeft, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
 
 interface PatientDetailsProps {
   patient: Patient;
@@ -20,6 +22,7 @@ interface PatientDetailsProps {
   };
   onTreatmentDataChange: (field: string, value: string) => void;
   onPersonalDataChange: (field: string, value: string) => void;
+  onBack: () => void;
 }
 
 export const PatientDetails = ({
@@ -27,8 +30,10 @@ export const PatientDetails = ({
   treatmentData,
   onTreatmentDataChange,
   onPersonalDataChange,
+  onBack,
 }: PatientDetailsProps) => {
   const [treatments, setTreatments] = useState<HanseniaseTreatment[]>([]);
+  const navigate = useNavigate();
 
   const handleUpdatePatient = async () => {
     try {
@@ -51,14 +56,38 @@ export const PatientDetails = ({
     }
   };
 
-  const handlePrint = () => {
-    window.print();
+  const handleDeletePatient = async () => {
+    if (!confirm("Tem certeza que deseja excluir este paciente?")) return;
+
+    try {
+      const { error } = await supabase
+        .from('patients')
+        .delete()
+        .eq('id', patient.id);
+
+      if (error) throw error;
+      toast.success("Paciente excluído com sucesso");
+      navigate("/hanseniase");
+    } catch (error) {
+      console.error('Erro ao excluir paciente:', error);
+      toast.error("Erro ao excluir paciente");
+    }
   };
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Dados do Paciente: {patient.full_name}</CardTitle>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <div>
+          <Button variant="ghost" onClick={onBack} className="mr-2">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Voltar
+          </Button>
+          <CardTitle className="inline">Dados do Paciente: {patient.full_name}</CardTitle>
+        </div>
+        <Button variant="destructive" onClick={handleDeletePatient}>
+          <Trash2 className="h-4 w-4 mr-2" />
+          Excluir Paciente
+        </Button>
       </CardHeader>
       <CardContent>
         <Tabs defaultValue="edit">
@@ -88,7 +117,7 @@ export const PatientDetails = ({
               <TreatmentDataForm
                 formData={treatmentData}
                 onChange={onTreatmentDataChange}
-                onSubmit={handlePrint}
+                mode="edit"
               />
               <TreatmentTable patientId={patient.id} />
             </div>

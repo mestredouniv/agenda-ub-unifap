@@ -22,16 +22,17 @@ interface TreatmentFormData {
 interface TreatmentDataFormProps {
   formData: TreatmentFormData;
   onChange: (field: string, value: string) => void;
-  onSubmit: () => void;
+  onSubmit?: () => void;
+  mode?: "create" | "edit";
 }
 
 export const TreatmentDataForm = ({
   formData,
   onChange,
   onSubmit,
+  mode = "create"
 }: TreatmentDataFormProps) => {
   const handleDateSelect = (date: Date | undefined) => {
-    // Only update if we have a valid date
     if (date) {
       onChange("treatment_start_date", date.toISOString());
     }
@@ -78,7 +79,7 @@ export const TreatmentDataForm = ({
             >
               <CalendarIcon className="mr-2 h-4 w-4" />
               {formData.treatment_start_date ? (
-                format(new Date(formData.treatment_start_date), "PPP")
+                format(new Date(formData.treatment_start_date), "dd/MM/yyyy")
               ) : (
                 <span>Selecione uma data</span>
               )}
@@ -94,14 +95,16 @@ export const TreatmentDataForm = ({
           </PopoverContent>
         </Popover>
       </div>
-      <Button 
-        onClick={onSubmit} 
-        className="w-full"
-        disabled={!formData.treatment_start_date} // Disable button if no date is selected
-      >
-        <Plus className="mr-2" />
-        Registrar Paciente
-      </Button>
+      {mode === "create" && onSubmit && (
+        <Button 
+          onClick={onSubmit} 
+          className="w-full"
+          disabled={!formData.treatment_start_date}
+        >
+          <Plus className="mr-2" />
+          Registrar Paciente
+        </Button>
+      )}
     </div>
   );
 };

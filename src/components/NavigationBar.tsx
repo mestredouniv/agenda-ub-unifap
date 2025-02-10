@@ -1,4 +1,3 @@
-
 import {
   NavigationMenu,
   NavigationMenuItem,
@@ -11,12 +10,9 @@ import { Link } from "react-router-dom";
 
 interface NavigationBarProps {
   onAddProfessional: () => void;
-  onRemoveProfessional: () => void;
 }
 
-export const NavigationBar = ({
-  onAddProfessional,
-}: NavigationBarProps) => {
+export const NavigationBar = ({ onAddProfessional }: NavigationBarProps) => {
   return (
     <NavigationMenu className="mb-4">
       <NavigationMenuList>

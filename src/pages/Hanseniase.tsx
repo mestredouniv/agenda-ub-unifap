@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { BackToHomeButton } from "@/components/BackToHomeButton";
 import { ConsultaHeader } from "@/components/ConsultaHeader";
-import { Download, Printer, Search, Share2, UserPlus } from "lucide-react";
+import { Download, Search, Share2, UserPlus } from "lucide-react";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -58,7 +58,6 @@ const Hanseniase = () => {
 
   const handleRegisterPatient = async () => {
     try {
-      // Ensure we have a treatment start date before proceeding
       if (!treatmentData.treatment_start_date) {
         toast.error("Por favor, selecione uma data de início do tratamento");
         return;
@@ -155,50 +154,62 @@ const Hanseniase = () => {
     }
   };
 
-  const handleDeletePatient = async (patientId: string) => {
+  const handleDownload = async () => {
+    if (!selectedPatient) return;
+    
     try {
-      const { error } = await supabase
-        .from('patients')
-        .delete()
-        .eq('id', patientId);
+      const { data: treatments, error } = await supabase
+        .from('hanseniase_treatments')
+        .select('*')
+        .eq('patient_id', selectedPatient.id);
 
       if (error) throw error;
 
-      setPatients(patients.filter(p => p.id !== patientId));
-      toast.success("Paciente removido com sucesso");
+      const reportData = {
+        patient: selectedPatient,
+        treatment: treatmentData,
+        followups: treatments || [],
+      };
+
+      const blob = new Blob([JSON.stringify(reportData, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `hanseniase-${selectedPatient.full_name}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
     } catch (error) {
-      console.error('Erro ao deletar paciente:', error);
-      toast.error("Erro ao remover paciente");
+      console.error('Erro ao baixar relatório:', error);
+      toast.error("Erro ao gerar relatório");
     }
   };
 
-  const handlePrint = () => {
-    window.print();
-  };
-
-  const handleDownload = () => {
-    const data = JSON.stringify(patients, null, 2);
-    const blob = new Blob([data], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "hanseniase-dados.json";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-  };
-
   const handleShare = async () => {
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: 'Dados Hanseníase',
-          text: JSON.stringify(patients, null, 2),
-        });
-      } catch (error) {
-        console.error('Erro ao compartilhar:', error);
-      }
+    if (!selectedPatient || !navigator.share) return;
+    
+    try {
+      const { data: treatments, error } = await supabase
+        .from('hanseniase_treatments')
+        .select('*')
+        .eq('patient_id', selectedPatient.id);
+
+      if (error) throw error;
+
+      const reportData = {
+        patient: selectedPatient,
+        treatment: treatmentData,
+        followups: treatments || [],
+      };
+
+      await navigator.share({
+        title: `Relatório Hanseníase - ${selectedPatient.full_name}`,
+        text: JSON.stringify(reportData, null, 2),
+      });
+    } catch (error) {
+      console.error('Erro ao compartilhar:', error);
+      toast.error("Erro ao compartilhar relatório");
     }
   };
 
@@ -207,20 +218,18 @@ const Hanseniase = () => {
       <BackToHomeButton />
       <ConsultaHeader />
       
-      <div className="flex gap-2 mb-4">
-        <Button onClick={handlePrint} variant="outline">
-          <Printer className="mr-2" />
-          Imprimir
-        </Button>
-        <Button onClick={handleDownload} variant="outline">
-          <Download className="mr-2" />
-          Baixar
-        </Button>
-        <Button onClick={handleShare} variant="outline">
-          <Share2 className="mr-2" />
-          Compartilhar
-        </Button>
-      </div>
+      {selectedPatient && (
+        <div className="flex gap-2 mb-4">
+          <Button onClick={handleDownload} variant="outline">
+            <Download className="mr-2" />
+            Baixar Relatório
+          </Button>
+          <Button onClick={handleShare} variant="outline">
+            <Share2 className="mr-2" />
+            Compartilhar Relatório
+          </Button>
+        </div>
+      )}
 
       <div className="flex gap-4 mb-6">
         <div className="flex-1">
@@ -282,7 +291,6 @@ const Hanseniase = () => {
             <SearchResultsTable
               patients={patients}
               onSelectPatient={handleSelectPatient}
-              onDeletePatient={handleDeletePatient}
             />
           </CardContent>
         </Card>
@@ -294,6 +302,10 @@ const Hanseniase = () => {
           treatmentData={treatmentData}
           onTreatmentDataChange={handleTreatmentDataChange}
           onPersonalDataChange={handlePersonalDataChange}
+          onBack={() => {
+            setSelectedPatient(null);
+            setShowSearchResults(true);
+          }}
         />
       )}
     </div>
