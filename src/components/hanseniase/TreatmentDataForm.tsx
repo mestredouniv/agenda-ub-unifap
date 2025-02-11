@@ -68,33 +68,18 @@ export const TreatmentDataForm = ({
       </div>
       <div>
         <Label htmlFor="treatment_start_date">Data de Início</Label>
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              className={cn(
-                "w-full justify-start text-left font-normal",
-                !formData.treatment_start_date && "text-muted-foreground"
-              )}
-            >
-              <CalendarIcon className="mr-2 h-4 w-4" />
-              {formData.treatment_start_date ? (
-                format(new Date(formData.treatment_start_date), "dd/MM/yyyy")
-              ) : (
-                <span>Selecione uma data</span>
-              )}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0" align="start">
-            <Calendar
-              mode="single"
-              selected={formData.treatment_start_date ? new Date(formData.treatment_start_date) : undefined}
-              onSelect={handleDateSelect}
-              disabled={(date) => date > new Date()}
-              initialFocus
-            />
-          </PopoverContent>
-        </Popover>
+        <Input
+          type="date"
+          id="treatment_start_date"
+          value={formData.treatment_start_date ? format(new Date(formData.treatment_start_date), "yyyy-MM-dd") : ""}
+          onChange={(e) => {
+            if (e.target.value) {
+              const date = new Date(e.target.value);
+              onChange("treatment_start_date", date.toISOString());
+            }
+          }}
+          max={format(new Date(), "yyyy-MM-dd")}
+        />
       </div>
       {mode === "create" && onSubmit && (
         <Button 
