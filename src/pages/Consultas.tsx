@@ -31,7 +31,7 @@ interface Patient {
   professionalId: string;
   time: string;
   status: 'waiting' | 'triage' | 'in_progress' | 'completed';
-  priority: 'normal' | 'priority';
+  priority: 'priority' | 'normal';
   responsible?: string;
 }
 
@@ -103,7 +103,7 @@ const Consultas = () => {
           professionalId: app.professional_id,
           time: app.appointment_time,
           status: app.display_status as 'waiting' | 'triage' | 'in_progress' | 'completed',
-          priority: app.priority || 'normal',
+          priority: (app.priority || 'normal') as 'priority' | 'normal',
         }));
         setAppointments(formattedAppointments);
       }

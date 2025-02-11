@@ -82,7 +82,6 @@ const ProfessionalSchedule = () => {
   ];
 
   const handleAddAppointment = (formData: AppointmentFormData) => {
-    // Check if the selected date is marked as unavailable
     if (isDateUnavailable(selectedDate || new Date())) {
       toast({
         title: "Data Indisponível",
@@ -435,7 +434,7 @@ const AppointmentForm = ({
           <label className="text-sm font-medium">Prontuário</label>
           <Select
             value={formData.hasRecord}
-            onValueChange={(value) =>
+            onValueChange={(value: "yes" | "no" | "electronic") =>
               setFormData({ ...formData, hasRecord: value })
             }
           >
