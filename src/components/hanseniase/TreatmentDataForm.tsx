@@ -2,15 +2,8 @@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { CalendarIcon, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import { format } from "date-fns";
-import { Calendar } from "@/components/ui/calendar";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { cn } from "@/lib/utils";
 
 interface TreatmentFormData {
   pb: string;
@@ -32,12 +25,6 @@ export const TreatmentDataForm = ({
   onSubmit,
   mode = "create"
 }: TreatmentDataFormProps) => {
-  const handleDateSelect = (date: Date | undefined) => {
-    if (date) {
-      onChange("treatment_start_date", date.toISOString());
-    }
-  };
-
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -69,16 +56,24 @@ export const TreatmentDataForm = ({
       <div>
         <Label htmlFor="treatment_start_date">Data de Início</Label>
         <Input
-          type="date"
+          type="text"
+          placeholder="DD/MM/AAAA"
           id="treatment_start_date"
-          value={formData.treatment_start_date ? format(new Date(formData.treatment_start_date), "yyyy-MM-dd") : ""}
+          value={formData.treatment_start_date ? format(new Date(formData.treatment_start_date), "dd/MM/yyyy") : ""}
           onChange={(e) => {
-            if (e.target.value) {
-              const date = new Date(e.target.value);
-              onChange("treatment_start_date", date.toISOString());
+            const value = e.target.value;
+            if (value) {
+              // Convert DD/MM/YYYY to YYYY-MM-DD for Date object
+              const [day, month, year] = value.split('/');
+              if (day && month && year && year.length === 4) {
+                const dateStr = `${year}-${month}-${day}`;
+                const date = new Date(dateStr);
+                if (!isNaN(date.getTime()) && date <= new Date()) {
+                  onChange("treatment_start_date", date.toISOString());
+                }
+              }
             }
           }}
-          max={format(new Date(), "yyyy-MM-dd")}
         />
       </div>
       {mode === "create" && onSubmit && (
