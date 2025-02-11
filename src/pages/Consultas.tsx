@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useDisplayState } from "@/hooks/useDisplayState";
 import { Button } from "@/components/ui/button";
@@ -103,7 +102,7 @@ const Consultas = () => {
           professional: app.professionals?.name || 'Não encontrado',
           professionalId: app.professional_id,
           time: app.appointment_time,
-          status: app.display_status,
+          status: app.display_status as 'waiting' | 'triage' | 'in_progress' | 'completed',
           priority: app.priority || 'normal',
         }));
         setAppointments(formattedAppointments);

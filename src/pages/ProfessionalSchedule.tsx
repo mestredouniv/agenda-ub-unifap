@@ -52,6 +52,7 @@ interface AppointmentFormData {
   birthDate: string;
   hasRecord: "yes" | "no" | "electronic";
   responsible: string;
+  phone: string;
 }
 
 const ProfessionalSchedule = () => {
@@ -425,6 +426,11 @@ const AppointmentForm = ({
           value={formData.birthDate}
           onChange={(e) => setFormData({ ...formData, birthDate: e.target.value })}
         />
+        <Input
+          placeholder="Telefone"
+          value={formData.phone}
+          onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+        />
         <div className="space-y-2">
           <label className="text-sm font-medium">Prontuário</label>
           <Select
@@ -449,11 +455,6 @@ const AppointmentForm = ({
           onChange={(e) =>
             setFormData({ ...formData, responsible: e.target.value })
           }
-        />
-        <Input
-          placeholder="Telefone"
-          value={formData.phone}
-          onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
         />
       </div>
       <Button type="submit" className="w-full">

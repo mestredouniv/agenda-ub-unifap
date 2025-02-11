@@ -1,3 +1,4 @@
+
 import { NavigationBar } from "./NavigationBar";
 
 interface HeaderProps {
@@ -5,7 +6,7 @@ interface HeaderProps {
   onRemoveClick: () => void;
 }
 
-export const Header = ({ onAddClick, onRemoveClick }: HeaderProps) => {
+export const Header = ({ onAddClick }: HeaderProps) => {
   return (
     <div className="w-full flex flex-col items-center justify-center py-6 px-4 animate-fade-in">
       <div className="flex flex-col items-center gap-4 mb-6">
@@ -21,10 +22,7 @@ export const Header = ({ onAddClick, onRemoveClick }: HeaderProps) => {
           </h3>
         </div>
       </div>
-      <NavigationBar 
-        onAddProfessional={onAddClick}
-        onRemoveProfessional={onRemoveClick}
-      />
+      <NavigationBar onAddProfessional={onAddClick} />
     </div>
   );
 };
