@@ -35,6 +35,8 @@ export type Database = {
       }
       appointments: {
         Row: {
+          actual_end_time: string | null
+          actual_start_time: string | null
           appointment_date: string
           appointment_time: string
           created_at: string | null
@@ -42,15 +44,20 @@ export type Database = {
           display_status: string | null
           id: string
           medical_record_type: string | null
+          notes: string | null
           notification_status: string | null
           patient_name: string
           patient_status: string | null
           priority: string | null
-          professional_id: string | null
+          professional_id: string
+          rescheduled_from: string | null
+          rescheduled_to: string | null
           status: string | null
           updated_at: string | null
         }
         Insert: {
+          actual_end_time?: string | null
+          actual_start_time?: string | null
           appointment_date: string
           appointment_time: string
           created_at?: string | null
@@ -58,15 +65,20 @@ export type Database = {
           display_status?: string | null
           id?: string
           medical_record_type?: string | null
+          notes?: string | null
           notification_status?: string | null
           patient_name: string
           patient_status?: string | null
           priority?: string | null
-          professional_id?: string | null
+          professional_id: string
+          rescheduled_from?: string | null
+          rescheduled_to?: string | null
           status?: string | null
           updated_at?: string | null
         }
         Update: {
+          actual_end_time?: string | null
+          actual_start_time?: string | null
           appointment_date?: string
           appointment_time?: string
           created_at?: string | null
@@ -74,11 +86,14 @@ export type Database = {
           display_status?: string | null
           id?: string
           medical_record_type?: string | null
+          notes?: string | null
           notification_status?: string | null
           patient_name?: string
           patient_status?: string | null
           priority?: string | null
-          professional_id?: string | null
+          professional_id?: string
+          rescheduled_from?: string | null
+          rescheduled_to?: string | null
           status?: string | null
           updated_at?: string | null
         }
@@ -88,6 +103,20 @@ export type Database = {
             columns: ["professional_id"]
             isOneToOne: false
             referencedRelation: "professionals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_rescheduled_from_fkey"
+            columns: ["rescheduled_from"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_rescheduled_to_fkey"
+            columns: ["rescheduled_to"]
+            isOneToOne: false
+            referencedRelation: "appointments"
             referencedColumns: ["id"]
           },
         ]

@@ -1,8 +1,8 @@
+
 import { useState, useEffect } from "react";
 import { useDisplayState } from "@/hooks/useDisplayState";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
-import { BackToHomeButton } from "@/components/BackToHomeButton";
 import {
   Table,
   TableBody,
@@ -21,99 +21,103 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
+import { supabase } from "@/integrations/supabase/client";
+import { BackToHomeButton } from "@/components/BackToHomeButton";
 
-interface Patient {
+interface Appointment {
   id: string;
-  name: string;
-  professional: string;
-  professionalId: string;
-  time: string;
-  status: 'waiting' | 'triage' | 'in_progress' | 'completed';
+  patient_name: string;
+  professional_id: string;
+  professional: {
+    name: string;
+  };
+  appointment_date: string;
+  appointment_time: string;
+  display_status: 'waiting' | 'triage' | 'in_progress' | 'completed';
   priority: 'priority' | 'normal';
   responsible?: string;
+  notes?: string;
+  actual_start_time?: string;
+  actual_end_time?: string;
 }
 
 const Consultas = () => {
   const { toast } = useToast();
   const setCurrentPatient = useDisplayState((state) => state.setCurrentPatient);
   const [selectedProfessional, setSelectedProfessional] = useState("all");
-  const [appointments, setAppointments] = useState<Patient[]>([]);
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [professionals, setProfessionals] = useState<any[]>([]);
 
   useEffect(() => {
     const fetchProfessionals = async () => {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('professionals')
         .select('*');
-      if (data) {
-        setProfessionals(data);
+      
+      if (error) {
+        console.error('Erro ao buscar profissionais:', error);
+        toast({
+          title: "Erro",
+          description: "Não foi possível carregar a lista de profissionais",
+          variant: "destructive",
+        });
+        return;
       }
+
+      setProfessionals(data || []);
     };
 
     fetchProfessionals();
-
-    // Subscribe to professionals changes
-    const professionalChannel = supabase
-      .channel('professionals_changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'professionals'
-        },
-        () => {
-          fetchProfessionals();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(professionalChannel);
-    };
-  }, []);
+  }, [toast]);
 
   useEffect(() => {
     const fetchAppointments = async () => {
       const today = new Date().toISOString().split('T')[0];
-      const { data } = await supabase
+      let query = supabase
         .from('appointments')
         .select(`
           id,
           patient_name,
-          appointment_time,
-          patient_status,
-          priority,
           professional_id,
+          appointment_date,
+          appointment_time,
           display_status,
+          priority,
+          responsible,
+          notes,
+          actual_start_time,
+          actual_end_time,
           professionals (
             name
           )
         `)
-        .eq('appointment_date', today)
-        .order('appointment_time', { ascending: true });
+        .eq('appointment_date', today);
 
-      if (data) {
-        const formattedAppointments = data.map(app => ({
-          id: app.id,
-          name: app.patient_name,
-          professional: app.professionals?.name || 'Não encontrado',
-          professionalId: app.professional_id,
-          time: app.appointment_time,
-          status: app.display_status as 'waiting' | 'triage' | 'in_progress' | 'completed',
-          priority: (app.priority || 'normal') as 'priority' | 'normal',
-        }));
-        setAppointments(formattedAppointments);
+      if (selectedProfessional !== "all") {
+        query = query.eq('professional_id', selectedProfessional);
       }
+
+      const { data, error } = await query.order('appointment_time', { ascending: true });
+
+      if (error) {
+        console.error('Erro ao buscar consultas:', error);
+        toast({
+          title: "Erro",
+          description: "Não foi possível carregar as consultas",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setAppointments(data || []);
     };
 
     fetchAppointments();
 
-    // Subscribe to appointments changes
-    const appointmentChannel = supabase
-      .channel('appointments_changes')
+    // Inscrever-se para atualizações em tempo real
+    const channel = supabase
+      .channel('appointments-changes')
       .on(
         'postgres_changes',
         {
@@ -128,35 +132,36 @@ const Consultas = () => {
       .subscribe();
 
     return () => {
-      supabase.removeChannel(appointmentChannel);
+      supabase.removeChannel(channel);
     };
-  }, []);
+  }, [selectedProfessional, toast]);
 
-  const handleCallNext = async (patient: Patient) => {
+  const handleCallNext = async (appointment: Appointment) => {
     try {
-      // Update appointment status
-      const { error: appointmentError } = await supabase
+      const { error: updateError } = await supabase
         .from('appointments')
-        .update({ display_status: 'called' })
-        .eq('id', patient.id);
+        .update({ 
+          display_status: 'waiting',
+          actual_start_time: new Date().toLocaleTimeString()
+        })
+        .eq('id', appointment.id);
 
-      if (appointmentError) throw appointmentError;
+      if (updateError) throw updateError;
 
-      // Add to last_calls
       const { error: lastCallError } = await supabase
         .from('last_calls')
         .insert([{
-          patient_name: patient.name,
-          professional_name: patient.professional,
+          patient_name: appointment.patient_name,
+          professional_name: appointment.professional.name,
           status: 'called'
         }]);
 
       if (lastCallError) throw lastCallError;
 
       setCurrentPatient({
-        name: patient.name,
+        name: appointment.patient_name,
         status: 'waiting',
-        professional: patient.professional,
+        professional: appointment.professional.name,
       });
 
       toast({
@@ -164,7 +169,7 @@ const Consultas = () => {
         description: "O display foi atualizado com o próximo paciente.",
       });
     } catch (error) {
-      console.error('Error calling next patient:', error);
+      console.error('Erro ao chamar próximo paciente:', error);
       toast({
         title: "Erro",
         description: "Não foi possível chamar o próximo paciente.",
@@ -173,29 +178,32 @@ const Consultas = () => {
     }
   };
 
-  const handleStartTriage = async (patient: Patient) => {
+  const handleStartTriage = async (appointment: Appointment) => {
     try {
-      const { error: appointmentError } = await supabase
+      const { error: updateError } = await supabase
         .from('appointments')
-        .update({ display_status: 'in_progress' })
-        .eq('id', patient.id);
+        .update({ 
+          display_status: 'triage',
+          actual_start_time: new Date().toLocaleTimeString()
+        })
+        .eq('id', appointment.id);
 
-      if (appointmentError) throw appointmentError;
+      if (updateError) throw updateError;
 
       const { error: lastCallError } = await supabase
         .from('last_calls')
         .insert([{
-          patient_name: patient.name,
-          professional_name: patient.professional,
+          patient_name: appointment.patient_name,
+          professional_name: appointment.professional.name,
           status: 'triage'
         }]);
 
       if (lastCallError) throw lastCallError;
 
       setCurrentPatient({
-        name: patient.name,
+        name: appointment.patient_name,
         status: 'triage',
-        professional: patient.professional,
+        professional: appointment.professional.name,
       });
 
       toast({
@@ -203,7 +211,7 @@ const Consultas = () => {
         description: "Paciente encaminhado para triagem.",
       });
     } catch (error) {
-      console.error('Error starting triage:', error);
+      console.error('Erro ao iniciar triagem:', error);
       toast({
         title: "Erro",
         description: "Não foi possível iniciar a triagem.",
@@ -212,29 +220,32 @@ const Consultas = () => {
     }
   };
 
-  const handleStartAppointment = async (patient: Patient) => {
+  const handleStartAppointment = async (appointment: Appointment) => {
     try {
-      const { error: appointmentError } = await supabase
+      const { error: updateError } = await supabase
         .from('appointments')
-        .update({ display_status: 'in_progress' })
-        .eq('id', patient.id);
+        .update({ 
+          display_status: 'in_progress',
+          actual_start_time: new Date().toLocaleTimeString()
+        })
+        .eq('id', appointment.id);
 
-      if (appointmentError) throw appointmentError;
+      if (updateError) throw updateError;
 
       const { error: lastCallError } = await supabase
         .from('last_calls')
         .insert([{
-          patient_name: patient.name,
-          professional_name: patient.professional,
+          patient_name: appointment.patient_name,
+          professional_name: appointment.professional.name,
           status: 'in_progress'
         }]);
 
       if (lastCallError) throw lastCallError;
 
       setCurrentPatient({
-        name: patient.name,
+        name: appointment.patient_name,
         status: 'in_progress',
-        professional: patient.professional,
+        professional: appointment.professional.name,
       });
 
       toast({
@@ -242,7 +253,7 @@ const Consultas = () => {
         description: "Paciente em atendimento.",
       });
     } catch (error) {
-      console.error('Error starting appointment:', error);
+      console.error('Erro ao iniciar consulta:', error);
       toast({
         title: "Erro",
         description: "Não foi possível iniciar a consulta.",
@@ -251,12 +262,15 @@ const Consultas = () => {
     }
   };
 
-  const handleCompleteAppointment = async (patient: Patient) => {
+  const handleCompleteAppointment = async (appointment: Appointment) => {
     try {
       const { error } = await supabase
         .from('appointments')
-        .update({ display_status: 'completed' })
-        .eq('id', patient.id);
+        .update({ 
+          display_status: 'completed',
+          actual_end_time: new Date().toLocaleTimeString()
+        })
+        .eq('id', appointment.id);
 
       if (error) throw error;
 
@@ -265,7 +279,7 @@ const Consultas = () => {
         description: "O atendimento foi concluído com sucesso.",
       });
     } catch (error) {
-      console.error('Error completing appointment:', error);
+      console.error('Erro ao finalizar consulta:', error);
       toast({
         title: "Erro",
         description: "Não foi possível finalizar a consulta.",
@@ -274,11 +288,7 @@ const Consultas = () => {
     }
   };
 
-  const filteredAppointments = appointments.filter(appointment => 
-    selectedProfessional === "all" || appointment.professionalId === selectedProfessional
-  );
-
-  const getStatusBadge = (status: Patient['status']) => {
+  const getStatusBadge = (status: Appointment['display_status']) => {
     const statusConfig = {
       waiting: { label: 'Aguardando', variant: 'secondary' as const },
       triage: { label: 'Em Triagem', variant: 'outline' as const },
@@ -291,47 +301,47 @@ const Consultas = () => {
   };
 
   // Mobile card view component
-  const AppointmentCard = ({ patient }: { patient: Patient }) => (
+  const AppointmentCard = ({ appointment }: { appointment: Appointment }) => (
     <Card className="p-4 mb-4">
       <div className="space-y-2">
         <div className="flex justify-between items-start">
           <div>
-            <h3 className="font-medium">{patient.name}</h3>
-            <p className="text-sm text-gray-500">{patient.time}</p>
+            <h3 className="font-medium">{appointment.patient_name}</h3>
+            <p className="text-sm text-gray-500">{appointment.appointment_time}</p>
           </div>
-          {getStatusBadge(patient.status)}
+          {getStatusBadge(appointment.display_status)}
         </div>
         <div className="text-sm text-gray-600">
-          <p>Profissional: {patient.professional}</p>
-          {patient.responsible && <p>Responsável: {patient.responsible}</p>}
+          <p>Profissional: {appointment.professional.name}</p>
+          {appointment.responsible && <p>Responsável: {appointment.responsible}</p>}
         </div>
         <div className="flex flex-wrap gap-2 mt-2">
           <Button
             size="sm"
-            onClick={() => handleCallNext(patient)}
-            disabled={patient.status !== 'waiting'}
+            onClick={() => handleCallNext(appointment)}
+            disabled={appointment.display_status !== 'waiting'}
           >
             Chamar
           </Button>
           <Button
             size="sm"
-            onClick={() => handleStartTriage(patient)}
-            disabled={patient.status !== 'waiting'}
+            onClick={() => handleStartTriage(appointment)}
+            disabled={appointment.display_status !== 'waiting'}
           >
             Triagem
           </Button>
           <Button
             size="sm"
-            onClick={() => handleStartAppointment(patient)}
-            disabled={patient.status !== 'triage'}
+            onClick={() => handleStartAppointment(appointment)}
+            disabled={appointment.display_status !== 'triage'}
           >
             Iniciar
           </Button>
           <Button
             size="sm"
             variant="outline"
-            onClick={() => handleCompleteAppointment(patient)}
-            disabled={patient.status !== 'in_progress'}
+            onClick={() => handleCompleteAppointment(appointment)}
+            disabled={appointment.display_status !== 'in_progress'}
           >
             Finalizar
           </Button>
@@ -370,15 +380,15 @@ const Consultas = () => {
       
       {/* Mobile view */}
       <div className="md:hidden">
-        {filteredAppointments.length === 0 ? (
+        {appointments.length === 0 ? (
           <Card className="p-4">
             <p className="text-center text-muted-foreground">
               Não há consultas agendadas para hoje
             </p>
           </Card>
         ) : (
-          filteredAppointments.map((patient) => (
-            <AppointmentCard key={patient.id} patient={patient} />
+          appointments.map((appointment) => (
+            <AppointmentCard key={appointment.id} appointment={appointment} />
           ))
         )}
       </div>
@@ -398,53 +408,53 @@ const Consultas = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredAppointments.length === 0 ? (
+            {appointments.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={7} className="text-center text-muted-foreground">
                   Não há consultas agendadas para hoje
                 </TableCell>
               </TableRow>
             ) : (
-              filteredAppointments.map((patient) => (
-                <TableRow key={patient.id}>
-                  <TableCell>{patient.time}</TableCell>
-                  <TableCell>{patient.name}</TableCell>
-                  <TableCell>{patient.professional}</TableCell>
-                  <TableCell>{getStatusBadge(patient.status)}</TableCell>
+              appointments.map((appointment) => (
+                <TableRow key={appointment.id}>
+                  <TableCell>{appointment.appointment_time}</TableCell>
+                  <TableCell>{appointment.patient_name}</TableCell>
+                  <TableCell>{appointment.professional.name}</TableCell>
+                  <TableCell>{getStatusBadge(appointment.display_status)}</TableCell>
                   <TableCell>
-                    <Badge variant={patient.priority === 'priority' ? "destructive" : "secondary"}>
-                      {patient.priority === 'priority' ? 'Prioritário' : 'Normal'}
+                    <Badge variant={appointment.priority === 'priority' ? "destructive" : "secondary"}>
+                      {appointment.priority === 'priority' ? 'Prioritário' : 'Normal'}
                     </Badge>
                   </TableCell>
-                  <TableCell>{patient.responsible || "-"}</TableCell>
+                  <TableCell>{appointment.responsible || "-"}</TableCell>
                   <TableCell>
                     <div className="flex space-x-2">
                       <Button
                         size="sm"
-                        onClick={() => handleCallNext(patient)}
-                        disabled={patient.status !== 'waiting'}
+                        onClick={() => handleCallNext(appointment)}
+                        disabled={appointment.display_status !== 'waiting'}
                       >
                         Chamar
                       </Button>
                       <Button
                         size="sm"
-                        onClick={() => handleStartTriage(patient)}
-                        disabled={patient.status !== 'waiting'}
+                        onClick={() => handleStartTriage(appointment)}
+                        disabled={appointment.display_status !== 'waiting'}
                       >
                         Triagem
                       </Button>
                       <Button
                         size="sm"
-                        onClick={() => handleStartAppointment(patient)}
-                        disabled={patient.status !== 'triage'}
+                        onClick={() => handleStartAppointment(appointment)}
+                        disabled={appointment.display_status !== 'triage'}
                       >
                         Iniciar
                       </Button>
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => handleCompleteAppointment(patient)}
-                        disabled={patient.status !== 'in_progress'}
+                        onClick={() => handleCompleteAppointment(appointment)}
+                        disabled={appointment.display_status !== 'in_progress'}
                       >
                         Finalizar
                       </Button>
