@@ -30,7 +30,33 @@ interface PersonalDataFormProps {
 
 export const PersonalDataForm = ({ formData, onChange, errors = {} }: PersonalDataFormProps) => {
   const isMinor = parseInt(formData.age) < 18;
-  const currentDate = new Date();
+
+  const handleDateSelect = (date: Date | undefined) => {
+    if (date) {
+      // Ajusta a data para meio-dia UTC para evitar problemas de timezone
+      const utcDate = new Date(Date.UTC(
+        date.getFullYear(),
+        date.getMonth(),
+        date.getDate(),
+        12, 0, 0, 0
+      ));
+      onChange("birthDate", utcDate.toISOString());
+    }
+  };
+
+  const getFormattedDate = (dateString: string) => {
+    try {
+      if (!dateString) return "";
+      const date = new Date(dateString);
+      return format(date, "dd/MM/yyyy", { locale: ptBR });
+    } catch (error) {
+      console.error("Erro ao formatar data:", error);
+      return "";
+    }
+  };
+
+  // Calcula a data máxima permitida (hoje)
+  const maxDate = new Date();
 
   return (
     <div className="space-y-4">
@@ -51,6 +77,7 @@ export const PersonalDataForm = ({ formData, onChange, errors = {} }: PersonalDa
           <Popover>
             <PopoverTrigger asChild>
               <Button
+                type="button"
                 variant="outline"
                 className={cn(
                   "w-full justify-start text-left font-normal",
@@ -60,7 +87,7 @@ export const PersonalDataForm = ({ formData, onChange, errors = {} }: PersonalDa
               >
                 <CalendarIcon className="mr-2 h-4 w-4" />
                 {formData.birthDate ? (
-                  format(new Date(formData.birthDate), "dd/MM/yyyy")
+                  getFormattedDate(formData.birthDate)
                 ) : (
                   <span>Selecione uma data</span>
                 )}
@@ -70,12 +97,8 @@ export const PersonalDataForm = ({ formData, onChange, errors = {} }: PersonalDa
               <Calendar
                 mode="single"
                 selected={formData.birthDate ? new Date(formData.birthDate) : undefined}
-                onSelect={(date) => {
-                  if (date) {
-                    onChange("birthDate", date.toISOString());
-                  }
-                }}
-                disabled={(date) => date > currentDate}
+                onSelect={handleDateSelect}
+                disabled={(date) => date > maxDate}
                 initialFocus
                 locale={ptBR}
               />

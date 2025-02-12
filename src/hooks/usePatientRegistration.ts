@@ -11,6 +11,12 @@ export const usePatientRegistration = () => {
     sus: "",
     age: "",
     phone: "",
+    responsible: "",
+    address: "",
+    cep: "",
+    neighborhood: "",
+    city: "",
+    birthDate: "",
   });
 
   const [treatmentData, setTreatmentData] = useState<Omit<HanseniaseRecord, 'id' | 'patient_id'>>({
@@ -79,8 +85,12 @@ export const usePatientRegistration = () => {
           full_name: personalData.patientName,
           cpf: personalData.cpf,
           sus_number: personalData.sus,
-          birth_date: new Date().toISOString(),
+          birth_date: personalData.birthDate,
           phone: personalData.phone,
+          address: personalData.address,
+          cep: personalData.cep,
+          neighborhood: personalData.neighborhood,
+          city: personalData.city
         }])
         .select()
         .single();
@@ -107,6 +117,12 @@ export const usePatientRegistration = () => {
           sus: "",
           age: "",
           phone: "",
+          responsible: "",
+          address: "",
+          cep: "",
+          neighborhood: "",
+          city: "",
+          birthDate: "",
         });
         setTreatmentData({
           pb: "",

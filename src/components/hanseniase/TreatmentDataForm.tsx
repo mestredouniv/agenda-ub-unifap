@@ -29,7 +29,29 @@ export const TreatmentDataForm = ({
   onSubmit,
   mode = "create"
 }: TreatmentDataFormProps) => {
-  const currentDate = new Date();
+  const handleDateSelect = (date: Date | undefined) => {
+    if (date) {
+      // Ajusta a data para meio-dia UTC para evitar problemas de timezone
+      const utcDate = new Date(Date.UTC(
+        date.getFullYear(),
+        date.getMonth(),
+        date.getDate(),
+        12, 0, 0, 0
+      ));
+      onChange("treatment_start_date", utcDate.toISOString());
+    }
+  };
+
+  const getFormattedDate = (dateString: string) => {
+    try {
+      if (!dateString) return "";
+      const date = new Date(dateString);
+      return format(date, "dd/MM/yyyy", { locale: ptBR });
+    } catch (error) {
+      console.error("Erro ao formatar data:", error);
+      return "";
+    }
+  };
   
   return (
     <div className="space-y-4">
@@ -69,10 +91,11 @@ export const TreatmentDataForm = ({
                 "w-full justify-start text-left font-normal",
                 !formData.treatment_start_date && "text-muted-foreground"
               )}
+              type="button"
             >
               <CalendarIcon className="mr-2 h-4 w-4" />
               {formData.treatment_start_date ? (
-                format(new Date(formData.treatment_start_date), "dd/MM/yyyy")
+                getFormattedDate(formData.treatment_start_date)
               ) : (
                 <span>Selecione uma data</span>
               )}
@@ -82,12 +105,8 @@ export const TreatmentDataForm = ({
             <Calendar
               mode="single"
               selected={formData.treatment_start_date ? new Date(formData.treatment_start_date) : undefined}
-              onSelect={(date) => {
-                if (date) {
-                  onChange("treatment_start_date", date.toISOString());
-                }
-              }}
-              disabled={(date) => date > currentDate}
+              onSelect={handleDateSelect}
+              disabled={(date) => date > new Date()}
               initialFocus
               locale={ptBR}
             />
