@@ -412,34 +412,43 @@ export type Database = {
       }
       patients: {
         Row: {
-          address: string | null
-          birth_date: string | null
+          address: string
+          birth_date: string
+          cep: string
+          city: string
           cpf: string | null
           created_at: string | null
           full_name: string
           id: string
+          neighborhood: string
           phone: string | null
           sus_number: string | null
           updated_at: string | null
         }
         Insert: {
-          address?: string | null
-          birth_date?: string | null
+          address: string
+          birth_date: string
+          cep?: string
+          city?: string
           cpf?: string | null
           created_at?: string | null
           full_name: string
           id?: string
+          neighborhood?: string
           phone?: string | null
           sus_number?: string | null
           updated_at?: string | null
         }
         Update: {
-          address?: string | null
-          birth_date?: string | null
+          address?: string
+          birth_date?: string
+          cep?: string
+          city?: string
           cpf?: string | null
           created_at?: string | null
           full_name?: string
           id?: string
+          neighborhood?: string
           phone?: string | null
           sus_number?: string | null
           updated_at?: string | null
