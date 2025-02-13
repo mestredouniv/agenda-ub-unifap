@@ -76,6 +76,46 @@ export const useAppointments = (selectedProfessional: string) => {
     setAppointments(formattedAppointments);
   };
 
+  const updateAppointment = async (id: string, updateData: Partial<Appointment>) => {
+    console.log('Atualizando consulta:', id, updateData);
+    
+    try {
+      const { error } = await supabase
+        .from('appointments')
+        .update({
+          ...updateData,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', id);
+
+      if (error) {
+        console.error('Erro ao atualizar consulta:', error);
+        toast({
+          title: "Erro",
+          description: "Não foi possível atualizar a consulta",
+          variant: "destructive",
+        });
+        return false;
+      }
+
+      toast({
+        title: "Sucesso",
+        description: "Consulta atualizada com sucesso!",
+      });
+
+      await fetchAppointments();
+      return true;
+    } catch (error) {
+      console.error('Erro ao atualizar consulta:', error);
+      toast({
+        title: "Erro",
+        description: "Ocorreu um erro ao atualizar a consulta",
+        variant: "destructive",
+      });
+      return false;
+    }
+  };
+
   const createAppointment = async (appointmentData: Omit<Appointment, 'id' | 'professional'>) => {
     console.log('Criando nova consulta:', appointmentData);
     
@@ -169,6 +209,7 @@ export const useAppointments = (selectedProfessional: string) => {
   return { 
     appointments, 
     fetchAppointments,
-    createAppointment 
+    createAppointment,
+    updateAppointment
   };
 };
