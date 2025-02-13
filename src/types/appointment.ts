@@ -11,6 +11,6 @@ export interface Appointment {
   display_status: 'waiting' | 'triage' | 'in_progress' | 'completed';
   priority: 'priority' | 'normal';
   notes?: string;
-  actual_start_time?: string;
-  actual_end_time?: string;
+  actual_start_time?: string | null;
+  actual_end_time?: string | null;
 }

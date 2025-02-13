@@ -27,7 +27,8 @@ export const useAppointments = (selectedProfessional: string) => {
           name
         )
       `)
-      .eq('appointment_date', today);
+      .eq('appointment_date', today)
+      .eq('deleted_at', null); // Apenas consultas não deletadas
 
     if (selectedProfessional !== "all") {
       query = query.eq('professional_id', selectedProfessional);
@@ -51,12 +52,12 @@ export const useAppointments = (selectedProfessional: string) => {
       patient_name: item.patient_name,
       professional_id: item.professional_id,
       professional: {
-        name: item.professionals.name
+        name: item.professionals?.name || ''
       },
       appointment_date: item.appointment_date,
       appointment_time: item.appointment_time,
-      display_status: item.display_status,
-      priority: item.priority,
+      display_status: item.display_status || 'waiting',
+      priority: item.priority || 'normal',
       notes: item.notes,
       actual_start_time: item.actual_start_time,
       actual_end_time: item.actual_end_time
@@ -65,42 +66,16 @@ export const useAppointments = (selectedProfessional: string) => {
     setAppointments(formattedAppointments);
   };
 
-  useEffect(() => {
-    fetchAppointments();
-
-    // Configurar subscription para atualizações em tempo real
-    const channel = supabase
-      .channel('appointments-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'appointments',
-          filter: selectedProfessional !== "all" 
-            ? `professional_id=eq.${selectedProfessional}` 
-            : undefined
-        },
-        (payload) => {
-          console.log('Mudança detectada:', payload);
-          fetchAppointments();
-        }
-      )
-      .subscribe((status) => {
-        console.log('Status da subscription:', status);
-      });
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [selectedProfessional]);
-
-  // Adicionar função para criar novo agendamento
+  // Função para criar uma nova consulta
   const createAppointment = async (appointmentData: Omit<Appointment, 'id' | 'professional'>) => {
     try {
       const { data, error } = await supabase
         .from('appointments')
-        .insert([appointmentData])
+        .insert([{
+          ...appointmentData,
+          display_status: 'waiting',
+          priority: appointmentData.priority || 'normal'
+        }])
         .select(`
           id,
           patient_name,
@@ -147,6 +122,39 @@ export const useAppointments = (selectedProfessional: string) => {
       return null;
     }
   };
+
+  useEffect(() => {
+    fetchAppointments();
+
+    // Configurar subscription para atualizações em tempo real
+    const channel = supabase
+      .channel('appointments-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'appointments',
+          filter: selectedProfessional !== "all" 
+            ? `professional_id=eq.${selectedProfessional}` 
+            : undefined
+        },
+        (payload) => {
+          console.log('Mudança detectada:', payload);
+          fetchAppointments();
+        }
+      )
+      .subscribe((status) => {
+        console.log('Status da subscription:', status);
+      });
+
+    // Buscar dados iniciais
+    fetchAppointments();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [selectedProfessional]);
 
   return { 
     appointments, 
