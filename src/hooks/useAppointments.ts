@@ -52,6 +52,9 @@ export const useAppointments = (selectedProfessional: string) => {
 
     const formattedAppointments: Appointment[] = (data || []).map(item => {
       console.log('Formatando item:', item);
+      const status = item.display_status as Appointment['display_status'] || 'waiting';
+      const priority = item.priority as Appointment['priority'] || 'normal';
+      
       return {
         id: item.id,
         patient_name: item.patient_name,
@@ -61,8 +64,8 @@ export const useAppointments = (selectedProfessional: string) => {
         },
         appointment_date: item.appointment_date,
         appointment_time: item.appointment_time,
-        display_status: item.display_status || 'waiting',
-        priority: item.priority || 'normal',
+        display_status: status,
+        priority: priority,
         notes: item.notes,
         actual_start_time: item.actual_start_time,
         actual_end_time: item.actual_end_time
@@ -81,7 +84,7 @@ export const useAppointments = (selectedProfessional: string) => {
         .from('appointments')
         .insert([{
           ...appointmentData,
-          display_status: 'waiting',
+          display_status: 'waiting' as const,
           priority: appointmentData.priority || 'normal',
           deleted_at: null
         }])
