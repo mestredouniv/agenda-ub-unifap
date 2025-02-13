@@ -10,6 +10,8 @@ export const useAppointments = (selectedProfessional: string) => {
 
   const fetchAppointments = async () => {
     const today = new Date().toISOString().split('T')[0];
+    console.log('Buscando consultas para:', today);
+    
     let query = supabase
       .from('appointments')
       .select(`
@@ -28,13 +30,13 @@ export const useAppointments = (selectedProfessional: string) => {
         )
       `)
       .eq('appointment_date', today)
-      .eq('deleted_at', null); // Apenas consultas não deletadas
+      .is('deleted_at', null);
 
     if (selectedProfessional !== "all") {
       query = query.eq('professional_id', selectedProfessional);
     }
 
-    const { data, error } = await query.order('appointment_time', { ascending: true });
+    const { data, error } = await query.order('priority', { ascending: false }).order('appointment_time', { ascending: true });
 
     if (error) {
       console.error('Erro ao buscar consultas:', error);
@@ -46,35 +48,42 @@ export const useAppointments = (selectedProfessional: string) => {
       return;
     }
 
-    // Formatar os dados para garantir a consistência dos tipos
-    const formattedAppointments: Appointment[] = (data || []).map(item => ({
-      id: item.id,
-      patient_name: item.patient_name,
-      professional_id: item.professional_id,
-      professional: {
-        name: item.professionals?.name || ''
-      },
-      appointment_date: item.appointment_date,
-      appointment_time: item.appointment_time,
-      display_status: item.display_status || 'waiting',
-      priority: item.priority || 'normal',
-      notes: item.notes,
-      actual_start_time: item.actual_start_time,
-      actual_end_time: item.actual_end_time
-    }));
+    console.log('Dados recebidos:', data);
 
+    const formattedAppointments: Appointment[] = (data || []).map(item => {
+      console.log('Formatando item:', item);
+      return {
+        id: item.id,
+        patient_name: item.patient_name,
+        professional_id: item.professional_id,
+        professional: {
+          name: item.professionals?.name || ''
+        },
+        appointment_date: item.appointment_date,
+        appointment_time: item.appointment_time,
+        display_status: item.display_status || 'waiting',
+        priority: item.priority || 'normal',
+        notes: item.notes,
+        actual_start_time: item.actual_start_time,
+        actual_end_time: item.actual_end_time
+      };
+    });
+
+    console.log('Appointments formatados:', formattedAppointments);
     setAppointments(formattedAppointments);
   };
 
-  // Função para criar uma nova consulta
   const createAppointment = async (appointmentData: Omit<Appointment, 'id' | 'professional'>) => {
+    console.log('Criando nova consulta:', appointmentData);
+    
     try {
       const { data, error } = await supabase
         .from('appointments')
         .insert([{
           ...appointmentData,
           display_status: 'waiting',
-          priority: appointmentData.priority || 'normal'
+          priority: appointmentData.priority || 'normal',
+          deleted_at: null
         }])
         .select(`
           id,
@@ -103,14 +112,13 @@ export const useAppointments = (selectedProfessional: string) => {
         return null;
       }
 
+      console.log('Consulta criada com sucesso:', data);
       toast({
         title: "Sucesso",
         description: "Consulta agendada com sucesso!",
       });
 
-      // Atualizar a lista de consultas
       await fetchAppointments();
-
       return data;
     } catch (error) {
       console.error('Erro ao criar consulta:', error);
@@ -124,9 +132,8 @@ export const useAppointments = (selectedProfessional: string) => {
   };
 
   useEffect(() => {
-    fetchAppointments();
-
-    // Configurar subscription para atualizações em tempo real
+    console.log('Inicializando useEffect com professional:', selectedProfessional);
+    
     const channel = supabase
       .channel('appointments-changes')
       .on(
@@ -148,10 +155,10 @@ export const useAppointments = (selectedProfessional: string) => {
         console.log('Status da subscription:', status);
       });
 
-    // Buscar dados iniciais
     fetchAppointments();
 
     return () => {
+      console.log('Limpando subscription');
       supabase.removeChannel(channel);
     };
   }, [selectedProfessional]);
