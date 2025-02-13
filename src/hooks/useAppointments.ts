@@ -45,12 +45,30 @@ export const useAppointments = (selectedProfessional: string) => {
       return;
     }
 
-    setAppointments(data || []);
+    // Formatar os dados para garantir a consistência dos tipos
+    const formattedAppointments: Appointment[] = (data || []).map(item => ({
+      id: item.id,
+      patient_name: item.patient_name,
+      professional_id: item.professional_id,
+      professional: {
+        name: item.professionals.name
+      },
+      appointment_date: item.appointment_date,
+      appointment_time: item.appointment_time,
+      display_status: item.display_status,
+      priority: item.priority,
+      notes: item.notes,
+      actual_start_time: item.actual_start_time,
+      actual_end_time: item.actual_end_time
+    }));
+
+    setAppointments(formattedAppointments);
   };
 
   useEffect(() => {
     fetchAppointments();
 
+    // Configurar subscription para atualizações em tempo real
     const channel = supabase
       .channel('appointments-changes')
       .on(
@@ -58,18 +76,81 @@ export const useAppointments = (selectedProfessional: string) => {
         {
           event: '*',
           schema: 'public',
-          table: 'appointments'
+          table: 'appointments',
+          filter: selectedProfessional !== "all" 
+            ? `professional_id=eq.${selectedProfessional}` 
+            : undefined
         },
-        () => {
+        (payload) => {
+          console.log('Mudança detectada:', payload);
           fetchAppointments();
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('Status da subscription:', status);
+      });
 
     return () => {
       supabase.removeChannel(channel);
     };
   }, [selectedProfessional]);
 
-  return { appointments, fetchAppointments };
+  // Adicionar função para criar novo agendamento
+  const createAppointment = async (appointmentData: Omit<Appointment, 'id' | 'professional'>) => {
+    try {
+      const { data, error } = await supabase
+        .from('appointments')
+        .insert([appointmentData])
+        .select(`
+          id,
+          patient_name,
+          professional_id,
+          appointment_date,
+          appointment_time,
+          display_status,
+          priority,
+          notes,
+          actual_start_time,
+          actual_end_time,
+          professionals (
+            name
+          )
+        `)
+        .single();
+
+      if (error) {
+        console.error('Erro ao criar consulta:', error);
+        toast({
+          title: "Erro",
+          description: "Não foi possível agendar a consulta",
+          variant: "destructive",
+        });
+        return null;
+      }
+
+      toast({
+        title: "Sucesso",
+        description: "Consulta agendada com sucesso!",
+      });
+
+      // Atualizar a lista de consultas
+      await fetchAppointments();
+
+      return data;
+    } catch (error) {
+      console.error('Erro ao criar consulta:', error);
+      toast({
+        title: "Erro",
+        description: "Ocorreu um erro ao agendar a consulta",
+        variant: "destructive",
+      });
+      return null;
+    }
+  };
+
+  return { 
+    appointments, 
+    fetchAppointments,
+    createAppointment 
+  };
 };
