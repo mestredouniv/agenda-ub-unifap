@@ -38,7 +38,7 @@ export const useAppointments = (professionalId: string) => {
           )
         `)
         .eq('appointment_date', today)
-        .is('deleted_at', null);
+        .eq('deleted_at', null);
 
       if (professionalId !== "all") {
         query = query.eq('professional_id', professionalId);
@@ -99,47 +99,6 @@ export const useAppointments = (professionalId: string) => {
     }
   }, [professionalId, toast]);
 
-  const updateAppointment = useCallback(async (id: string, updateData: Partial<Appointment>) => {
-    console.log('[Agenda] Iniciando atualização de consulta:', { id, updateData });
-    
-    try {
-      const { error } = await supabase
-        .from('appointments')
-        .update({
-          ...updateData,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', id);
-
-      if (error) {
-        console.error('[Agenda] Erro ao atualizar consulta:', error);
-        toast({
-          title: "Erro ao salvar",
-          description: "Não foi possível salvar as alterações. Tente novamente.",
-          variant: "destructive",
-        });
-        return false;
-      }
-
-      console.log('[Agenda] Consulta atualizada com sucesso');
-      toast({
-        title: "Alterações salvas",
-        description: "As alterações foram salvas automaticamente.",
-      });
-
-      await fetchAppointments();
-      return true;
-    } catch (error) {
-      console.error('[Agenda] Erro inesperado ao atualizar consulta:', error);
-      toast({
-        title: "Erro",
-        description: "Ocorreu um erro ao salvar as alterações.",
-        variant: "destructive",
-      });
-      return false;
-    }
-  }, [fetchAppointments, toast]);
-
   const createAppointment = useCallback(async (appointmentData: Omit<Appointment, 'id' | 'professional'>) => {
     console.log('[Agenda] Criando nova consulta:', appointmentData);
     
@@ -185,6 +144,47 @@ export const useAppointments = (professionalId: string) => {
     }
   }, [fetchAppointments, toast]);
 
+  const updateAppointment = useCallback(async (id: string, updateData: Partial<Appointment>) => {
+    console.log('[Agenda] Iniciando atualização de consulta:', { id, updateData });
+    
+    try {
+      const { error } = await supabase
+        .from('appointments')
+        .update({
+          ...updateData,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', id);
+
+      if (error) {
+        console.error('[Agenda] Erro ao atualizar consulta:', error);
+        toast({
+          title: "Erro ao salvar",
+          description: "Não foi possível salvar as alterações. Tente novamente.",
+          variant: "destructive",
+        });
+        return false;
+      }
+
+      console.log('[Agenda] Consulta atualizada com sucesso');
+      toast({
+        title: "Alterações salvas",
+        description: "As alterações foram salvas automaticamente.",
+      });
+
+      await fetchAppointments();
+      return true;
+    } catch (error) {
+      console.error('[Agenda] Erro inesperado ao atualizar consulta:', error);
+      toast({
+        title: "Erro",
+        description: "Ocorreu um erro ao salvar as alterações.",
+        variant: "destructive",
+      });
+      return false;
+    }
+  }, [fetchAppointments, toast]);
+
   useEffect(() => {
     console.log('[Agenda] Configurando sincronização em tempo real para profissional:', professionalId);
     
@@ -223,3 +223,4 @@ export const useAppointments = (professionalId: string) => {
     updateAppointment
   };
 };
+

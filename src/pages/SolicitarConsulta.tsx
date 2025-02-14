@@ -31,9 +31,14 @@ export const SolicitarConsulta = () => {
     age: "",
     phone: "",
     responsible: "",
+    birthDate: "",
     professionalId: "",
     preferredDate: undefined as Date | undefined,
     preferredTime: "",
+    address: "",
+    cep: "",
+    neighborhood: "",
+    city: "",
   });
 
   useEffect(() => {
@@ -55,7 +60,17 @@ export const SolicitarConsulta = () => {
 
   const validateForm = () => {
     const newErrors: Record<string, boolean> = {};
-    const requiredFields = ["patientName", "cpf", "sus", "age", "phone", "professionalId", "preferredDate", "preferredTime"];
+    const requiredFields = [
+      "patientName", 
+      "cpf", 
+      "sus", 
+      "age", 
+      "phone", 
+      "professionalId", 
+      "preferredDate", 
+      "preferredTime",
+      "birthDate"
+    ];
     
     requiredFields.forEach(field => {
       if (!formData[field as keyof typeof formData]) {
@@ -73,6 +88,15 @@ export const SolicitarConsulta = () => {
 
   const handleFormChange = (field: string, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
+    
+    // Remove o erro do campo quando ele é preenchido
+    if (errors[field]) {
+      setErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors[field];
+        return newErrors;
+      });
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -87,34 +111,41 @@ export const SolicitarConsulta = () => {
       return;
     }
 
+    console.log('Enviando dados do formulário:', formData);
+
     const { data, error } = await supabase
       .from('appointments')
       .insert([{
         professional_id: formData.professionalId,
         patient_name: formData.patientName,
+        birth_date: formData.birthDate,
         appointment_date: formData.preferredDate?.toISOString().split('T')[0],
         appointment_time: formData.preferredTime,
         status: 'pending',
+        display_status: 'waiting',
         medical_record_type: `CPF: ${formData.cpf}, SUS: ${formData.sus}, Idade: ${formData.age}, Telefone: ${formData.phone}${formData.responsible ? `, Responsável: ${formData.responsible}` : ''}`
       }])
       .select()
       .single();
 
     if (error) {
+      console.error('Error submitting appointment request:', error);
       toast({
         title: "Erro",
         description: "Ocorreu um erro ao enviar a solicitação. Por favor, tente novamente.",
         variant: "destructive",
       });
-      console.error('Error submitting appointment request:', error);
       return;
     }
+
+    console.log('Appointment created successfully:', data);
 
     toast({
       title: "Solicitação enviada",
       description: "Sua solicitação foi enviada com sucesso!",
     });
 
+    // Limpa o formulário após o envio bem-sucedido
     setFormData({
       patientName: "",
       cpf: "",
@@ -122,9 +153,14 @@ export const SolicitarConsulta = () => {
       age: "",
       phone: "",
       responsible: "",
+      birthDate: "",
       professionalId: "",
       preferredDate: undefined,
       preferredTime: "",
+      address: "",
+      cep: "",
+      neighborhood: "",
+      city: "",
     });
   };
 
@@ -142,6 +178,7 @@ export const SolicitarConsulta = () => {
               professionals={professionals}
               formData={formData}
               onChange={handleFormChange}
+              errors={errors}
             />
 
             <PersonalDataForm
