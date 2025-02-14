@@ -17,3 +17,21 @@ export interface Appointment {
   updated_at?: string;
   deleted_at?: string | null;
 }
+
+export interface PersonalDataFormProps {
+  formData: {
+    patientName: string;
+    cpf: string;
+    sus: string;
+    age: string;
+    phone: string;
+    responsible?: string;
+    address: string;
+    cep: string;
+    neighborhood: string;
+    city: string;
+    birthDate: string;
+  };
+  onChange: (field: string, value: any) => void;
+  errors?: Record<string, boolean>;
+}

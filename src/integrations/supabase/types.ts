@@ -39,6 +39,7 @@ export type Database = {
           actual_start_time: string | null
           appointment_date: string
           appointment_time: string
+          birth_date: string | null
           created_at: string | null
           deleted_at: string | null
           display_status: string | null
@@ -60,6 +61,7 @@ export type Database = {
           actual_start_time?: string | null
           appointment_date: string
           appointment_time: string
+          birth_date?: string | null
           created_at?: string | null
           deleted_at?: string | null
           display_status?: string | null
@@ -81,6 +83,7 @@ export type Database = {
           actual_start_time?: string | null
           appointment_date?: string
           appointment_time?: string
+          birth_date?: string | null
           created_at?: string | null
           deleted_at?: string | null
           display_status?: string | null

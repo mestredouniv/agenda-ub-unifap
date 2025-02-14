@@ -29,9 +29,11 @@ export const AppointmentCard = ({ appointment, onSuccess }: AppointmentCardProps
           <div>
             <h3 className="font-medium">{appointment.patient_name}</h3>
             <p className="text-sm text-gray-500">
-              Nascimento: {formatDate(appointment.birth_date)}
+              Data de Nascimento: {formatDate(appointment.birth_date)}
             </p>
-            <p className="text-sm text-gray-500">Horário: {appointment.appointment_time}</p>
+            <p className="text-sm text-gray-500">
+              Horário: {appointment.appointment_time}
+            </p>
           </div>
           {getStatusBadge(appointment.display_status)}
         </div>

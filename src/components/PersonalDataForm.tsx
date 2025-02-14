@@ -9,31 +9,13 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-
-interface PersonalDataFormProps {
-  formData: {
-    patientName: string;
-    cpf: string;
-    sus: string;
-    age: string;
-    phone: string;
-    responsible?: string;
-    address: string;
-    cep: string;
-    neighborhood: string;
-    city: string;
-    birthDate: string;
-  };
-  onChange: (field: string, value: string) => void;
-  errors?: Record<string, boolean>;
-}
+import { PersonalDataFormProps } from "@/types/appointment";
 
 export const PersonalDataForm = ({ formData, onChange, errors = {} }: PersonalDataFormProps) => {
   const isMinor = parseInt(formData.age) < 18;
 
   const handleDateSelect = (date: Date | undefined) => {
     if (date) {
-      // Ajusta a data para meio-dia UTC para evitar problemas de timezone
       const utcDate = new Date(Date.UTC(
         date.getFullYear(),
         date.getMonth(),
@@ -55,7 +37,6 @@ export const PersonalDataForm = ({ formData, onChange, errors = {} }: PersonalDa
     }
   };
 
-  // Calcula a data máxima permitida (hoje)
   const maxDate = new Date();
 
   return (
@@ -131,27 +112,29 @@ export const PersonalDataForm = ({ formData, onChange, errors = {} }: PersonalDa
         </div>
       </div>
 
-      <div>
-        <Label htmlFor="phone">Telefone de Contato</Label>
-        <Input
-          id="phone"
-          value={formData.phone}
-          onChange={(e) => onChange("phone", e.target.value)}
-          className={errors.phone ? "border-red-500" : ""}
-          required
-        />
-      </div>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div>
+          <Label htmlFor="phone">Telefone de Contato</Label>
+          <Input
+            id="phone"
+            value={formData.phone}
+            onChange={(e) => onChange("phone", e.target.value)}
+            className={errors.phone ? "border-red-500" : ""}
+            required
+          />
+        </div>
 
-      <div>
-        <Label htmlFor="age">Idade</Label>
-        <Input
-          id="age"
-          type="number"
-          value={formData.age}
-          onChange={(e) => onChange("age", e.target.value)}
-          className={errors.age ? "border-red-500" : ""}
-          required
-        />
+        <div>
+          <Label htmlFor="age">Idade</Label>
+          <Input
+            id="age"
+            type="number"
+            value={formData.age}
+            onChange={(e) => onChange("age", e.target.value)}
+            className={errors.age ? "border-red-500" : ""}
+            required
+          />
+        </div>
       </div>
 
       {isMinor && (
