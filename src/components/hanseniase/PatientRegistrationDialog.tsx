@@ -12,14 +12,14 @@ import { UserPlus } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PersonalDataForm } from "@/components/PersonalDataForm";
 import { TreatmentDataForm } from "./TreatmentDataForm";
+import { BasicPersonalData } from "@/types/appointment";
 
 interface PatientRegistrationDialogProps {
-  personalData: {
-    patientName: string;
-    cpf: string;
-    sus: string;
-    age: string;
-    phone: string;
+  personalData: BasicPersonalData & {
+    address: string;
+    cep: string;
+    neighborhood: string;
+    city: string;
   };
   treatmentData: {
     pb: string;

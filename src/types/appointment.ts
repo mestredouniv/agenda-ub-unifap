@@ -35,3 +35,13 @@ export interface PersonalDataFormProps {
   onChange: (field: string, value: any) => void;
   errors?: Record<string, boolean>;
 }
+
+export interface BasicPersonalData {
+  patientName: string;
+  birthDate: string;
+  cpf: string;
+  sus: string;
+  age: string;
+  phone: string;
+  responsible?: string;
+}
