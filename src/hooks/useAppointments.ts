@@ -22,6 +22,7 @@ export const useAppointments = (professionalId: string) => {
         .select(`
           id,
           patient_name,
+          birth_date,
           professional_id,
           appointment_date,
           appointment_time,
@@ -61,17 +62,21 @@ export const useAppointments = (professionalId: string) => {
 
       const formattedAppointments: Appointment[] = (data || []).map(item => {
         console.log('[Agenda] Formatando item:', item);
+        const status = item.display_status as Appointment['display_status'] || 'waiting';
+        const priority = item.priority as Appointment['priority'] || 'normal';
+        
         return {
           id: item.id,
           patient_name: item.patient_name,
+          birth_date: item.birth_date,
           professional_id: item.professional_id,
           professional: {
             name: item.professionals?.name || ''
           },
           appointment_date: item.appointment_date,
           appointment_time: item.appointment_time,
-          display_status: item.display_status || 'waiting',
-          priority: item.priority || 'normal',
+          display_status: status,
+          priority: priority,
           notes: item.notes,
           actual_start_time: item.actual_start_time,
           actual_end_time: item.actual_end_time,
@@ -143,7 +148,7 @@ export const useAppointments = (professionalId: string) => {
         .from('appointments')
         .insert([{
           ...appointmentData,
-          display_status: 'waiting',
+          display_status: 'waiting' as const,
           priority: appointmentData.priority || 'normal',
           deleted_at: null,
           updated_at: new Date().toISOString()
@@ -180,7 +185,6 @@ export const useAppointments = (professionalId: string) => {
     }
   }, [fetchAppointments, toast]);
 
-  // Configurar a sincronização em tempo real
   useEffect(() => {
     console.log('[Agenda] Configurando sincronização em tempo real para profissional:', professionalId);
     
@@ -203,10 +207,8 @@ export const useAppointments = (professionalId: string) => {
         console.log('[Agenda] Status da sincronização:', status);
       });
 
-    // Carregar dados iniciais
     fetchAppointments();
 
-    // Cleanup
     return () => {
       console.log('[Agenda] Limpando subscription');
       supabase.removeChannel(channel);
