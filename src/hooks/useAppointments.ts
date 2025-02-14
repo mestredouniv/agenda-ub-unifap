@@ -1,133 +1,24 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { Appointment } from "@/types/appointment";
 
-export const useAppointments = (selectedProfessional: string) => {
+export const useAppointments = (professionalId: string) => {
   const { toast } = useToast();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const fetchAppointments = async () => {
-    const today = new Date().toISOString().split('T')[0];
-    console.log('Buscando consultas para:', today);
-    
-    let query = supabase
-      .from('appointments')
-      .select(`
-        id,
-        patient_name,
-        professional_id,
-        appointment_date,
-        appointment_time,
-        display_status,
-        priority,
-        notes,
-        actual_start_time,
-        actual_end_time,
-        professionals (
-          name
-        )
-      `)
-      .eq('appointment_date', today)
-      .is('deleted_at', null);
-
-    if (selectedProfessional !== "all") {
-      query = query.eq('professional_id', selectedProfessional);
-    }
-
-    const { data, error } = await query.order('priority', { ascending: false }).order('appointment_time', { ascending: true });
-
-    if (error) {
-      console.error('Erro ao buscar consultas:', error);
-      toast({
-        title: "Erro",
-        description: "Não foi possível carregar as consultas",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    console.log('Dados recebidos:', data);
-
-    const formattedAppointments: Appointment[] = (data || []).map(item => {
-      console.log('Formatando item:', item);
-      const status = item.display_status as Appointment['display_status'] || 'waiting';
-      const priority = item.priority as Appointment['priority'] || 'normal';
+  const fetchAppointments = useCallback(async () => {
+    try {
+      console.log('[Agenda] Iniciando busca de consultas para profissional:', professionalId);
+      setIsLoading(true);
       
-      return {
-        id: item.id,
-        patient_name: item.patient_name,
-        professional_id: item.professional_id,
-        professional: {
-          name: item.professionals?.name || ''
-        },
-        appointment_date: item.appointment_date,
-        appointment_time: item.appointment_time,
-        display_status: status,
-        priority: priority,
-        notes: item.notes,
-        actual_start_time: item.actual_start_time,
-        actual_end_time: item.actual_end_time
-      };
-    });
-
-    console.log('Appointments formatados:', formattedAppointments);
-    setAppointments(formattedAppointments);
-  };
-
-  const updateAppointment = async (id: string, updateData: Partial<Appointment>) => {
-    console.log('Atualizando consulta:', id, updateData);
-    
-    try {
-      const { error } = await supabase
+      const today = new Date().toISOString().split('T')[0];
+      console.log('[Agenda] Data atual:', today);
+      
+      let query = supabase
         .from('appointments')
-        .update({
-          ...updateData,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', id);
-
-      if (error) {
-        console.error('Erro ao atualizar consulta:', error);
-        toast({
-          title: "Erro",
-          description: "Não foi possível atualizar a consulta",
-          variant: "destructive",
-        });
-        return false;
-      }
-
-      toast({
-        title: "Sucesso",
-        description: "Consulta atualizada com sucesso!",
-      });
-
-      await fetchAppointments();
-      return true;
-    } catch (error) {
-      console.error('Erro ao atualizar consulta:', error);
-      toast({
-        title: "Erro",
-        description: "Ocorreu um erro ao atualizar a consulta",
-        variant: "destructive",
-      });
-      return false;
-    }
-  };
-
-  const createAppointment = async (appointmentData: Omit<Appointment, 'id' | 'professional'>) => {
-    console.log('Criando nova consulta:', appointmentData);
-    
-    try {
-      const { data, error } = await supabase
-        .from('appointments')
-        .insert([{
-          ...appointmentData,
-          display_status: 'waiting' as const,
-          priority: appointmentData.priority || 'normal',
-          deleted_at: null
-        }])
         .select(`
           id,
           patient_name,
@@ -139,75 +30,192 @@ export const useAppointments = (selectedProfessional: string) => {
           notes,
           actual_start_time,
           actual_end_time,
+          updated_at,
+          deleted_at,
           professionals (
             name
           )
         `)
+        .eq('appointment_date', today)
+        .is('deleted_at', null);
+
+      if (professionalId !== "all") {
+        query = query.eq('professional_id', professionalId);
+      }
+
+      const { data, error } = await query
+        .order('priority', { ascending: false })
+        .order('appointment_time', { ascending: true });
+
+      if (error) {
+        console.error('[Agenda] Erro ao buscar consultas:', error);
+        toast({
+          title: "Erro ao carregar agenda",
+          description: "Não foi possível carregar as consultas. Por favor, tente novamente.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      console.log('[Agenda] Dados recebidos do banco:', data);
+
+      const formattedAppointments: Appointment[] = (data || []).map(item => {
+        console.log('[Agenda] Formatando item:', item);
+        return {
+          id: item.id,
+          patient_name: item.patient_name,
+          professional_id: item.professional_id,
+          professional: {
+            name: item.professionals?.name || ''
+          },
+          appointment_date: item.appointment_date,
+          appointment_time: item.appointment_time,
+          display_status: item.display_status || 'waiting',
+          priority: item.priority || 'normal',
+          notes: item.notes,
+          actual_start_time: item.actual_start_time,
+          actual_end_time: item.actual_end_time,
+          updated_at: item.updated_at,
+          deleted_at: item.deleted_at
+        };
+      });
+
+      console.log('[Agenda] Appointments formatados:', formattedAppointments);
+      setAppointments(formattedAppointments);
+    } catch (err) {
+      console.error('[Agenda] Erro inesperado ao buscar consultas:', err);
+      toast({
+        title: "Erro",
+        description: "Ocorreu um erro inesperado. Por favor, tente novamente.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [professionalId, toast]);
+
+  const updateAppointment = useCallback(async (id: string, updateData: Partial<Appointment>) => {
+    console.log('[Agenda] Iniciando atualização de consulta:', { id, updateData });
+    
+    try {
+      const { error } = await supabase
+        .from('appointments')
+        .update({
+          ...updateData,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', id);
+
+      if (error) {
+        console.error('[Agenda] Erro ao atualizar consulta:', error);
+        toast({
+          title: "Erro ao salvar",
+          description: "Não foi possível salvar as alterações. Tente novamente.",
+          variant: "destructive",
+        });
+        return false;
+      }
+
+      console.log('[Agenda] Consulta atualizada com sucesso');
+      toast({
+        title: "Alterações salvas",
+        description: "As alterações foram salvas automaticamente.",
+      });
+
+      await fetchAppointments();
+      return true;
+    } catch (error) {
+      console.error('[Agenda] Erro inesperado ao atualizar consulta:', error);
+      toast({
+        title: "Erro",
+        description: "Ocorreu um erro ao salvar as alterações.",
+        variant: "destructive",
+      });
+      return false;
+    }
+  }, [fetchAppointments, toast]);
+
+  const createAppointment = useCallback(async (appointmentData: Omit<Appointment, 'id' | 'professional'>) => {
+    console.log('[Agenda] Criando nova consulta:', appointmentData);
+    
+    try {
+      const { data, error } = await supabase
+        .from('appointments')
+        .insert([{
+          ...appointmentData,
+          display_status: 'waiting',
+          priority: appointmentData.priority || 'normal',
+          deleted_at: null,
+          updated_at: new Date().toISOString()
+        }])
+        .select()
         .single();
 
       if (error) {
-        console.error('Erro ao criar consulta:', error);
+        console.error('[Agenda] Erro ao criar consulta:', error);
         toast({
-          title: "Erro",
-          description: "Não foi possível agendar a consulta",
+          title: "Erro ao criar",
+          description: "Não foi possível criar a consulta. Tente novamente.",
           variant: "destructive",
         });
         return null;
       }
 
-      console.log('Consulta criada com sucesso:', data);
+      console.log('[Agenda] Consulta criada com sucesso:', data);
       toast({
-        title: "Sucesso",
-        description: "Consulta agendada com sucesso!",
+        title: "Consulta agendada",
+        description: "A consulta foi agendada com sucesso!",
       });
 
       await fetchAppointments();
       return data;
     } catch (error) {
-      console.error('Erro ao criar consulta:', error);
+      console.error('[Agenda] Erro inesperado ao criar consulta:', error);
       toast({
         title: "Erro",
-        description: "Ocorreu um erro ao agendar a consulta",
+        description: "Ocorreu um erro ao agendar a consulta.",
         variant: "destructive",
       });
       return null;
     }
-  };
+  }, [fetchAppointments, toast]);
 
+  // Configurar a sincronização em tempo real
   useEffect(() => {
-    console.log('Inicializando useEffect com professional:', selectedProfessional);
+    console.log('[Agenda] Configurando sincronização em tempo real para profissional:', professionalId);
     
     const channel = supabase
-      .channel('appointments-changes')
+      .channel('agenda-realtime')
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
           table: 'appointments',
-          filter: selectedProfessional !== "all" 
-            ? `professional_id=eq.${selectedProfessional}` 
-            : undefined
+          filter: professionalId !== "all" ? `professional_id=eq.${professionalId}` : undefined
         },
         (payload) => {
-          console.log('Mudança detectada:', payload);
+          console.log('[Agenda] Mudança detectada:', payload);
           fetchAppointments();
         }
       )
       .subscribe((status) => {
-        console.log('Status da subscription:', status);
+        console.log('[Agenda] Status da sincronização:', status);
       });
 
+    // Carregar dados iniciais
     fetchAppointments();
 
+    // Cleanup
     return () => {
-      console.log('Limpando subscription');
+      console.log('[Agenda] Limpando subscription');
       supabase.removeChannel(channel);
     };
-  }, [selectedProfessional]);
+  }, [professionalId, fetchAppointments]);
 
   return { 
-    appointments, 
+    appointments,
+    isLoading,
     fetchAppointments,
     createAppointment,
     updateAppointment

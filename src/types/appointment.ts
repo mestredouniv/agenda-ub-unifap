@@ -13,4 +13,6 @@ export interface Appointment {
   notes?: string;
   actual_start_time?: string | null;
   actual_end_time?: string | null;
+  deleted_at?: string | null;
+  updated_at?: string;
 }
