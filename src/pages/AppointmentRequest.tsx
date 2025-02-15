@@ -60,14 +60,14 @@ const AppointmentRequest = () => {
   const { toast } = useToast();
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [ticketNumber, setTicketNumber] = useState<string>("");
-  const [formData, setFormData] = useState<AppointmentRequest>({
+  const [formData, setFormData] = useState({
     professionalId: "",
     patientName: "",
     cpf: "",
     sus: "",
     age: "",
     phone: "",
-    preferredDate: undefined,
+    preferredDate: undefined as Date | undefined,
     preferredTime: "",
   });
 
@@ -127,7 +127,13 @@ const AppointmentRequest = () => {
               />
 
               <PersonalDataForm
-                formData={formData}
+                formData={{
+                  patientName: formData.patientName,
+                  cpf: formData.cpf,
+                  sus: formData.sus,
+                  age: formData.age,
+                  phone: formData.phone
+                }}
                 onChange={handleFormChange}
               />
 
