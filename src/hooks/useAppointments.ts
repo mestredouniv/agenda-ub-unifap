@@ -38,7 +38,7 @@ export const useAppointments = (professionalId: string) => {
           )
         `)
         .eq('appointment_date', today)
-        .eq('deleted_at', null);
+        .is('deleted_at', null); // Modificado aqui: usando .is() ao invés de .eq()
 
       if (professionalId !== "all") {
         query = query.eq('professional_id', professionalId);
@@ -223,4 +223,3 @@ export const useAppointments = (professionalId: string) => {
     updateAppointment
   };
 };
-
