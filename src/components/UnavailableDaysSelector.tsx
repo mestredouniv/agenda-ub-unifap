@@ -1,83 +1,116 @@
+
+import { useCallback, useEffect, useState } from "react";
 import { Calendar } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
 import { ptBR } from "date-fns/locale";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
-import { useToast } from "@/components/ui/use-toast";
 import { Card } from "@/components/ui/card";
-import { useAvailableSlots } from "@/hooks/useAvailableSlots";
-import { useState, useEffect } from "react";
-
-interface TimeSlot {
-  time: string;
-  available: boolean;
-}
+import { useToast } from "@/components/ui/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface UnavailableDaysSelectorProps {
   professionalId: string;
-  selectedDays: Date[];
-  onChange: (days: Date[]) => void;
-  timeSlots?: TimeSlot[];
-  onTimeSlotsChange?: (slots: TimeSlot[]) => void;
+  onSuccess?: () => void;
 }
 
 export const UnavailableDaysSelector = ({
   professionalId,
-  selectedDays,
-  onChange,
-  timeSlots,
-  onTimeSlotsChange,
+  onSuccess,
 }: UnavailableDaysSelectorProps) => {
   const { toast } = useToast();
-  const { slots: availableSlots, updateSlots, updateUnavailableDays } = useAvailableSlots(professionalId, undefined);
-  const [localSlots, setLocalSlots] = useState<TimeSlot[]>(availableSlots);
+  const [selectedDays, setSelectedDays] = useState<Date[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const fetchUnavailableDays = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from('professional_unavailable_days')
+        .select('date')
+        .eq('professional_id', professionalId);
+
+      if (error) throw error;
+
+      setSelectedDays(data.map(item => new Date(item.date)));
+    } catch (error) {
+      console.error('Erro ao buscar dias indisponíveis:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível carregar os dias indisponíveis.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [professionalId, toast]);
 
   useEffect(() => {
-    setLocalSlots(availableSlots);
-  }, [availableSlots]);
+    fetchUnavailableDays();
+  }, [fetchUnavailableDays]);
 
-  const handleSelect = (date: Date | undefined) => {
+  const handleDaySelect = async (date: Date | undefined) => {
     if (!date) return;
 
-    const isAlreadySelected = selectedDays.some(
-      (selectedDate) =>
-        selectedDate.toISOString().split("T")[0] === date.toISOString().split("T")[0]
-    );
+    try {
+      const dateStr = date.toISOString().split('T')[0];
+      const isSelected = selectedDays.some(
+        (selectedDate) => selectedDate.toISOString().split('T')[0] === dateStr
+      );
 
-    const newSelectedDays = isAlreadySelected
-      ? selectedDays.filter(
-          (selectedDate) =>
-            selectedDate.toISOString().split("T")[0] !== date.toISOString().split("T")[0]
-        )
-      : [...selectedDays, date];
+      if (isSelected) {
+        // Remover data
+        const { error } = await supabase
+          .from('professional_unavailable_days')
+          .delete()
+          .eq('professional_id', professionalId)
+          .eq('date', dateStr);
 
-    onChange(newSelectedDays);
-    updateUnavailableDays(newSelectedDays);
-  };
+        if (error) throw error;
 
-  const handleTimeSlotChange = (time: string, checked: boolean) => {
-    const updatedSlots = localSlots.map((slot) =>
-      slot.time === time ? { ...slot, available: checked } : slot
-    );
-    
-    setLocalSlots(updatedSlots);
-    updateSlots(updatedSlots);
-    
-    if (onTimeSlotsChange) {
-      onTimeSlotsChange(updatedSlots);
+        setSelectedDays(prev => 
+          prev.filter(d => d.toISOString().split('T')[0] !== dateStr)
+        );
+      } else {
+        // Adicionar data
+        const { error } = await supabase
+          .from('professional_unavailable_days')
+          .insert([{
+            professional_id: professionalId,
+            date: dateStr,
+          }]);
+
+        if (error) throw error;
+
+        setSelectedDays(prev => [...prev, date]);
+      }
+
+      toast({
+        title: "Sucesso",
+        description: isSelected 
+          ? "Dia marcado como disponível"
+          : "Dia marcado como indisponível",
+      });
+
+      if (onSuccess) {
+        onSuccess();
+      }
+    } catch (error) {
+      console.error('Erro ao atualizar dias indisponíveis:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível atualizar a disponibilidade.",
+        variant: "destructive",
+      });
     }
-    
-    toast({
-      title: "Horários atualizados",
-      description: "Os horários de atendimento foram atualizados com sucesso.",
-    });
   };
+
+  if (isLoading) {
+    return <div>Carregando...</div>;
+  }
 
   return (
     <div className="space-y-6">
       <Calendar
         mode="single"
-        onSelect={handleSelect}
+        onSelect={handleDaySelect}
         selected={undefined}
         modifiers={{
           unavailable: selectedDays,
@@ -90,35 +123,10 @@ export const UnavailableDaysSelector = ({
       />
       
       <Card className="p-4">
-        <h3 className="font-medium text-sm mb-4">Horários disponíveis para atendimento:</h3>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-          {localSlots.map((slot) => (
-            <div
-              key={slot.time}
-              className="flex items-center space-x-2 bg-white rounded-lg p-3 shadow-sm border"
-            >
-              <Checkbox
-                id={`time-${slot.time}`}
-                checked={slot.available}
-                onCheckedChange={(checked) => 
-                  handleTimeSlotChange(slot.time, checked as boolean)
-                }
-                className="data-[state=checked]:bg-primary"
-              />
-              <Label
-                htmlFor={`time-${slot.time}`}
-                className="text-sm font-medium cursor-pointer"
-              >
-                {slot.time}
-              </Label>
-            </div>
-          ))}
+        <div className="text-sm text-muted-foreground">
+          Clique nos dias para marcar/desmarcar ausências. Os dias em vermelho indicam que você não estará disponível para atendimento.
         </div>
       </Card>
-
-      <div className="text-sm text-muted-foreground">
-        Clique nos dias para marcar/desmarcar ausências e selecione os horários disponíveis
-      </div>
     </div>
   );
 };

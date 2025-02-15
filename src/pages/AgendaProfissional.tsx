@@ -5,7 +5,7 @@ import {
   Calendar, 
   Users, 
   Clock, 
-  UserPlus, 
+  UserPlus,
   List,
   Grid,
   Filter,
@@ -25,12 +25,15 @@ import { useAppointments } from "@/hooks/useAppointments";
 import { AppointmentCard } from "@/components/appointments/AppointmentCard";
 import { NovoAgendamento } from "@/components/NovoAgendamento";
 import { BackToHomeButton } from "@/components/BackToHomeButton";
+import { UnavailableDaysSelector } from "@/components/UnavailableDaysSelector";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 export const AgendaProfissional = () => {
   const { professionalId } = useParams<{ professionalId: string }>();
   const { appointments, isLoading, fetchAppointments } = useAppointments(professionalId || "");
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
   const [isNewAppointmentOpen, setIsNewAppointmentOpen] = useState(false);
+  const [isUnavailableDaysOpen, setIsUnavailableDaysOpen] = useState(false);
 
   if (!professionalId) return <div>ID do profissional não encontrado</div>;
 
@@ -56,7 +59,11 @@ export const AgendaProfissional = () => {
               Novo Agendamento
             </Button>
             
-            <Button variant="outline" className="w-full justify-start">
+            <Button 
+              variant="outline" 
+              className="w-full justify-start"
+              onClick={() => setIsUnavailableDaysOpen(true)}
+            >
               <Calendar className="mr-2 h-4 w-4" />
               Organizar Horários
             </Button>
@@ -117,10 +124,6 @@ export const AgendaProfissional = () => {
           <div className="max-w-5xl mx-auto space-y-6">
             <div className="flex justify-between items-center">
               <h1 className="text-2xl font-bold text-gray-900">Minha Agenda</h1>
-              <Button onClick={() => setIsNewAppointmentOpen(true)}>
-                <UserPlus className="mr-2 h-4 w-4" />
-                Novo Agendamento
-              </Button>
             </div>
 
             {isLoading ? (
@@ -161,6 +164,21 @@ export const AgendaProfissional = () => {
           </div>
         </SheetContent>
       </Sheet>
+
+      <Dialog open={isUnavailableDaysOpen} onOpenChange={setIsUnavailableDaysOpen}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>Organizar Meus Horários</DialogTitle>
+          </DialogHeader>
+          <UnavailableDaysSelector
+            professionalId={professionalId}
+            onSuccess={() => {
+              setIsUnavailableDaysOpen(false);
+              fetchAppointments();
+            }}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
