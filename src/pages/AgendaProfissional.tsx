@@ -9,7 +9,7 @@ import {
   List,
   Grid,
   Filter,
-  Sort
+  ArrowUpDown
 } from "lucide-react";
 import {
   Sheet,
@@ -88,7 +88,7 @@ export const AgendaProfissional = () => {
             </Button>
             
             <Button variant="outline" className="w-full justify-start">
-              <Sort className="mr-2 h-4 w-4" />
+              <ArrowUpDown className="mr-2 h-4 w-4" />
               Ordenar
             </Button>
           </div>
