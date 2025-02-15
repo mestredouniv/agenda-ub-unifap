@@ -13,11 +13,19 @@ import {
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 
-interface AppointmentDateFormProps {
+interface TimeSlot {
+  time: string;
+  available: boolean;
+  maxAppointments?: number;
+  currentAppointments?: number;
+}
+
+export interface AppointmentDateFormProps {
   appointmentDate: Date | undefined;
   appointmentTime: string;
   onAppointmentDateSelect: (date: Date | undefined) => void;
   onAppointmentTimeChange: (value: string) => void;
+  availableSlots: TimeSlot[];
 }
 
 export const AppointmentDateForm = ({
@@ -25,6 +33,7 @@ export const AppointmentDateForm = ({
   appointmentTime,
   onAppointmentDateSelect,
   onAppointmentTimeChange,
+  availableSlots,
 }: AppointmentDateFormProps) => {
   return (
     <div className="space-y-4">
@@ -52,7 +61,10 @@ export const AppointmentDateForm = ({
               mode="single"
               selected={appointmentDate}
               onSelect={onAppointmentDateSelect}
-              disabled={(date) => date < new Date()}
+              disabled={(date) => {
+                const dateStr = format(date, 'yyyy-MM-dd');
+                return date < new Date() || !availableSlots.some(slot => slot.available);
+              }}
               initialFocus
               locale={ptBR}
             />

@@ -75,23 +75,6 @@ export const NovoAgendamento = ({ professionalId, onSuccess }: NovoAgendamentoPr
     }
   };
 
-  const handleBirthDateChange = (value: string) => {
-    setFormData(prev => {
-      const birthDate = new Date(value);
-      const today = new Date();
-      let age = today.getFullYear() - birthDate.getFullYear();
-      const m = today.getMonth() - birthDate.getMonth();
-      if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
-        age--;
-      }
-      return {
-        ...prev,
-        birth_date: value,
-        isMinor: age < 18
-      };
-    });
-  };
-
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <PatientInfoForm
@@ -99,7 +82,20 @@ export const NovoAgendamento = ({ professionalId, onSuccess }: NovoAgendamentoPr
         birthDate={formData.birth_date}
         phone={formData.phone}
         onPatientNameChange={(value) => setFormData(prev => ({ ...prev, patientName: value }))}
-        onBirthDateChange={handleBirthDateChange}
+        onBirthDateChange={(value) => setFormData(prev => {
+          const birthDate = new Date(value);
+          const today = new Date();
+          let age = today.getFullYear() - birthDate.getFullYear();
+          const m = today.getMonth() - birthDate.getMonth();
+          if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+            age--;
+          }
+          return {
+            ...prev,
+            birth_date: value,
+            isMinor: age < 18
+          };
+        })}
         onPhoneChange={(value) => setFormData(prev => ({ ...prev, phone: value }))}
       />
 
