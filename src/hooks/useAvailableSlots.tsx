@@ -1,5 +1,5 @@
 
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 interface TimeSlot {
@@ -18,9 +18,11 @@ const DEFAULT_TIME_SLOTS = [
   { time: "15:00", available: true, maxAppointments: 10, currentAppointments: 0 },
 ];
 
-export const useAvailableSlots = (professionalId: string, date: Date | undefined) => {
-  const queryClient = useQueryClient();
+interface UnavailableDay {
+  date: string;
+}
 
+export const useAvailableSlots = (professionalId: string, date: Date | undefined) => {
   const slotsQuery = useQuery({
     queryKey: ['availableSlots', professionalId, date?.toISOString()],
     queryFn: async () => {
@@ -38,7 +40,7 @@ export const useAvailableSlots = (professionalId: string, date: Date | undefined
       }
 
       // Se a data selecionada estiver nos dias indisponíveis, retornar todos os slots como indisponíveis
-      if (date && unavailableDays.some(day => 
+      if (date && unavailableDays && unavailableDays.some(day => 
         new Date(day.date).toISOString().split('T')[0] === date.toISOString().split('T')[0]
       )) {
         return DEFAULT_TIME_SLOTS.map(slot => ({ ...slot, available: false }));
@@ -61,7 +63,7 @@ export const useAvailableSlots = (professionalId: string, date: Date | undefined
 
         // Atualizar a contagem de agendamentos para cada slot
         return DEFAULT_TIME_SLOTS.map(slot => {
-          const slotAppointments = appointments.filter(app => app.appointment_time === slot.time).length;
+          const slotAppointments = appointments ? appointments.filter(app => app.appointment_time === slot.time).length : 0;
           return {
             ...slot,
             currentAppointments: slotAppointments,

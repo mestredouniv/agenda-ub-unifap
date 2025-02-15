@@ -1,7 +1,6 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { Calendar } from "@/components/ui/calendar";
-import { Button } from "@/components/ui/button";
 import { ptBR } from "date-fns/locale";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
@@ -10,6 +9,10 @@ import { supabase } from "@/integrations/supabase/client";
 interface UnavailableDaysSelectorProps {
   professionalId: string;
   onSuccess?: () => void;
+}
+
+interface UnavailableDay {
+  date: string;
 }
 
 export const UnavailableDaysSelector = ({
@@ -29,7 +32,9 @@ export const UnavailableDaysSelector = ({
 
       if (error) throw error;
 
-      setSelectedDays(data.map(item => new Date(item.date)));
+      if (data) {
+        setSelectedDays(data.map(item => new Date(item.date)));
+      }
     } catch (error) {
       console.error('Erro ao buscar dias indisponíveis:', error);
       toast({
