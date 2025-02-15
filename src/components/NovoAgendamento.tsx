@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { PatientInfoForm } from "@/components/appointments/PatientInfoForm";
 import { AppointmentDateForm } from "@/components/appointments/AppointmentDateForm";
 import { AdditionalInfoForm } from "@/components/appointments/AdditionalInfoForm";
+import { useAvailableSlots } from "@/hooks/useAvailableSlots";
 
 interface NovoAgendamentoProps {
   professionalId: string;
@@ -16,9 +17,10 @@ interface NovoAgendamentoProps {
 export const NovoAgendamento = ({ professionalId, onSuccess }: NovoAgendamentoProps) => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const { slots: availableSlots } = useAvailableSlots(professionalId, undefined);
   const [formData, setFormData] = useState({
     patientName: "",
-    birthDate: undefined as Date | undefined,
+    birth_date: "",
     appointmentDate: undefined as Date | undefined,
     appointmentTime: "",
     phone: "",
@@ -29,7 +31,7 @@ export const NovoAgendamento = ({ professionalId, onSuccess }: NovoAgendamentoPr
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.patientName || !formData.birthDate || !formData.appointmentDate || !formData.appointmentTime) {
+    if (!formData.patientName || !formData.birth_date || !formData.appointmentDate || !formData.appointmentTime) {
       toast({
         title: "Campos obrigatórios",
         description: "Por favor, preencha todos os campos obrigatórios.",
@@ -45,7 +47,7 @@ export const NovoAgendamento = ({ professionalId, onSuccess }: NovoAgendamentoPr
         .insert([{
           professional_id: professionalId,
           patient_name: formData.patientName,
-          birth_date: format(formData.birthDate, 'yyyy-MM-dd'),
+          birth_date: formData.birth_date,
           appointment_date: format(formData.appointmentDate, 'yyyy-MM-dd'),
           appointment_time: formData.appointmentTime,
           display_status: 'waiting',
@@ -73,26 +75,31 @@ export const NovoAgendamento = ({ professionalId, onSuccess }: NovoAgendamentoPr
     }
   };
 
-  const handleBirthDateSelect = (date: Date | undefined) => {
-    if (date) {
+  const handleBirthDateChange = (value: string) => {
+    setFormData(prev => {
+      const birthDate = new Date(value);
       const today = new Date();
-      const age = today.getFullYear() - date.getFullYear();
-      setFormData(prev => ({
+      let age = today.getFullYear() - birthDate.getFullYear();
+      const m = today.getMonth() - birthDate.getMonth();
+      if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+        age--;
+      }
+      return {
         ...prev,
-        birthDate: date,
+        birth_date: value,
         isMinor: age < 18
-      }));
-    }
+      };
+    });
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <PatientInfoForm
         patientName={formData.patientName}
-        birthDate={formData.birthDate}
+        birthDate={formData.birth_date}
         phone={formData.phone}
         onPatientNameChange={(value) => setFormData(prev => ({ ...prev, patientName: value }))}
-        onBirthDateSelect={handleBirthDateSelect}
+        onBirthDateChange={handleBirthDateChange}
         onPhoneChange={(value) => setFormData(prev => ({ ...prev, phone: value }))}
       />
 
@@ -101,6 +108,7 @@ export const NovoAgendamento = ({ professionalId, onSuccess }: NovoAgendamentoPr
         appointmentTime={formData.appointmentTime}
         onAppointmentDateSelect={(date) => setFormData(prev => ({ ...prev, appointmentDate: date }))}
         onAppointmentTimeChange={(value) => setFormData(prev => ({ ...prev, appointmentTime: value }))}
+        availableSlots={availableSlots}
       />
 
       <AdditionalInfoForm

@@ -25,6 +25,7 @@ export interface PersonalDataFormProps {
     sus: string;
     age: string;
     phone: string;
+    birth_date?: string;
     responsible?: string;
   };
   onChange: (field: string, value: any) => void;
