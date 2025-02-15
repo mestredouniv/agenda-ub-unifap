@@ -43,7 +43,9 @@ export type Database = {
           created_at: string | null
           deleted_at: string | null
           display_status: string | null
+          has_record: string | null
           id: string
+          is_minor: boolean | null
           medical_record_type: string | null
           notes: string | null
           notification_status: string | null
@@ -53,6 +55,7 @@ export type Database = {
           professional_id: string
           rescheduled_from: string | null
           rescheduled_to: string | null
+          responsible_name: string | null
           status: string | null
           updated_at: string | null
         }
@@ -65,7 +68,9 @@ export type Database = {
           created_at?: string | null
           deleted_at?: string | null
           display_status?: string | null
+          has_record?: string | null
           id?: string
+          is_minor?: boolean | null
           medical_record_type?: string | null
           notes?: string | null
           notification_status?: string | null
@@ -75,6 +80,7 @@ export type Database = {
           professional_id: string
           rescheduled_from?: string | null
           rescheduled_to?: string | null
+          responsible_name?: string | null
           status?: string | null
           updated_at?: string | null
         }
@@ -87,7 +93,9 @@ export type Database = {
           created_at?: string | null
           deleted_at?: string | null
           display_status?: string | null
+          has_record?: string | null
           id?: string
+          is_minor?: boolean | null
           medical_record_type?: string | null
           notes?: string | null
           notification_status?: string | null
@@ -97,6 +105,7 @@ export type Database = {
           professional_id?: string
           rescheduled_from?: string | null
           rescheduled_to?: string | null
+          responsible_name?: string | null
           status?: string | null
           updated_at?: string | null
         }
