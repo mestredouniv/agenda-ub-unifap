@@ -32,44 +32,48 @@ export const AvailableTimeSlots = ({ professionalId }: AvailableTimeSlotsProps) 
   }, [professionalId]);
 
   const fetchTimeSlots = async () => {
-    const { data, error } = await supabase
-      .from('professional_available_slots')
-      .select('*')
-      .eq('professional_id', professionalId)
-      .order('time_slot');
+    try {
+      const { data, error } = await supabase
+        .from('professional_available_slots')
+        .select('id, time_slot, max_appointments')
+        .eq('professional_id', professionalId)
+        .order('time_slot');
 
-    if (error) {
+      if (error) throw error;
+
+      if (data) {
+        setTimeSlots(data as TimeSlot[]);
+      }
+    } catch (error) {
       toast({
         title: "Erro",
         description: "Não foi possível carregar os horários disponíveis.",
         variant: "destructive",
       });
-      return;
     }
-
-    setTimeSlots(data);
   };
 
   const handleMaxAppointmentsChange = async (slotId: string, value: number) => {
-    const { error } = await supabase
-      .from('professional_available_slots')
-      .update({ max_appointments: value })
-      .eq('id', slotId);
+    try {
+      const { error } = await supabase
+        .from('professional_available_slots')
+        .update({ max_appointments: value })
+        .eq('id', slotId);
 
-    if (error) {
+      if (error) throw error;
+
+      await fetchTimeSlots();
+      toast({
+        title: "Sucesso",
+        description: "Número máximo de pacientes atualizado com sucesso.",
+      });
+    } catch (error) {
       toast({
         title: "Erro",
         description: "Não foi possível atualizar o número máximo de pacientes.",
         variant: "destructive",
       });
-      return;
     }
-
-    await fetchTimeSlots();
-    toast({
-      title: "Sucesso",
-      description: "Número máximo de pacientes atualizado com sucesso.",
-    });
   };
 
   return (

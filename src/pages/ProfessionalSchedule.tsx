@@ -13,6 +13,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Table,
   TableBody,
@@ -135,7 +136,7 @@ const ProfessionalSchedule = () => {
   };
 
   const handleUnavailableDaysChange = (days: Date[]) => {
-    setUnavailableDays(days);
+    
     toast({
       title: "Dias indisponíveis atualizados",
       description: "O calendário foi atualizado com os dias de ausência.",
@@ -143,10 +144,10 @@ const ProfessionalSchedule = () => {
   };
 
   const isDateUnavailable = (date: Date) => {
-    return unavailableDays.some(
-      (unavailableDate) =>
-        format(unavailableDate, "yyyy-MM-dd") === format(date, "yyyy-MM-dd")
-    );
+    
+      
+    
+    return false;
   };
 
   const getRecordStatus = (hasRecord: "yes" | "no" | "electronic") => {
@@ -333,6 +334,8 @@ const ProfessionalSchedule = () => {
         </DialogContent>
       </Dialog>
 
+      
+
       <Dialog open={isSelectingUnavailableDays} onOpenChange={setIsSelectingUnavailableDays}>
         <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -347,6 +350,8 @@ const ProfessionalSchedule = () => {
           />
         </DialogContent>
       </Dialog>
+
+      
 
       <Dialog open={!!editingAppointment} onOpenChange={() => setEditingAppointment(null)}>
         <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
