@@ -18,8 +18,8 @@ interface TimeSlot {
   time_slot: string;
   max_appointments: number;
   professional_id: string;
-  created_at?: string;
-  updated_at?: string;
+  created_at: string;
+  updated_at: string;
 }
 
 interface AvailableTimeSlotsProps {
@@ -36,18 +36,19 @@ export const AvailableTimeSlots = ({ professionalId }: AvailableTimeSlotsProps) 
 
   const fetchTimeSlots = async () => {
     try {
-      const { data: slots, error } = await supabase
+      const { data, error } = await supabase
         .from("professional_available_slots")
         .select("*")
         .eq("professional_id", professionalId)
-        .order("time_slot") as { data: TimeSlot[] | null; error: any };
+        .order("time_slot");
 
       if (error) throw error;
 
-      if (slots) {
-        setTimeSlots(slots);
+      if (data) {
+        setTimeSlots(data);
       }
     } catch (error) {
+      console.error('Error fetching time slots:', error);
       toast({
         title: "Erro",
         description: "Não foi possível carregar os horários disponíveis.",
@@ -71,6 +72,7 @@ export const AvailableTimeSlots = ({ professionalId }: AvailableTimeSlotsProps) 
         description: "Número máximo de pacientes atualizado com sucesso.",
       });
     } catch (error) {
+      console.error('Error updating max appointments:', error);
       toast({
         title: "Erro",
         description: "Não foi possível atualizar o número máximo de pacientes.",

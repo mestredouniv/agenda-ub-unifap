@@ -651,6 +651,41 @@ export type Database = {
           },
         ]
       }
+      professional_available_slots: {
+        Row: {
+          created_at: string | null
+          id: string
+          max_appointments: number
+          professional_id: string
+          time_slot: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          max_appointments?: number
+          professional_id: string
+          time_slot: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          max_appointments?: number
+          professional_id?: string
+          time_slot?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "professional_available_slots_professional_id_fkey"
+            columns: ["professional_id"]
+            isOneToOne: false
+            referencedRelation: "professionals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       professional_unavailable_days: {
         Row: {
           created_at: string | null
