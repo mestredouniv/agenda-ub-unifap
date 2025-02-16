@@ -2,14 +2,12 @@
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { 
-  Calendar, 
   Users, 
   Clock, 
   UserPlus,
   List,
   Grid,
-  Filter,
-  ArrowUpDown
+  Filter
 } from "lucide-react";
 import {
   Sheet,
@@ -27,6 +25,7 @@ import { NovoAgendamento } from "@/components/NovoAgendamento";
 import { BackToHomeButton } from "@/components/BackToHomeButton";
 import { UnavailableDaysSelector } from "@/components/UnavailableDaysSelector";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { supabase } from "@/integrations/supabase/client";
 
 export const AgendaProfissional = () => {
   const { professionalId } = useParams<{ professionalId: string }>();
@@ -34,6 +33,25 @@ export const AgendaProfissional = () => {
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
   const [isNewAppointmentOpen, setIsNewAppointmentOpen] = useState(false);
   const [isUnavailableDaysOpen, setIsUnavailableDaysOpen] = useState(false);
+  const [professionalName, setProfessionalName] = useState("");
+
+  useEffect(() => {
+    const fetchProfessionalName = async () => {
+      if (professionalId) {
+        const { data, error } = await supabase
+          .from('professionals')
+          .select('name')
+          .eq('id', professionalId)
+          .single();
+        
+        if (data && !error) {
+          setProfessionalName(data.name);
+        }
+      }
+    };
+
+    fetchProfessionalName();
+  }, [professionalId]);
 
   if (!professionalId) return <div>ID do profissional não encontrado</div>;
 
@@ -64,7 +82,7 @@ export const AgendaProfissional = () => {
               className="w-full justify-start"
               onClick={() => setIsUnavailableDaysOpen(true)}
             >
-              <Calendar className="mr-2 h-4 w-4" />
+              <Clock className="mr-2 h-4 w-4" />
               Organizar Horários
             </Button>
           </div>
@@ -93,11 +111,6 @@ export const AgendaProfissional = () => {
               <Filter className="mr-2 h-4 w-4" />
               Filtrar
             </Button>
-            
-            <Button variant="outline" className="w-full justify-start">
-              <ArrowUpDown className="mr-2 h-4 w-4" />
-              Ordenar
-            </Button>
           </div>
           
           <Separator />
@@ -123,7 +136,9 @@ export const AgendaProfissional = () => {
         <div className="flex-1 p-6">
           <div className="max-w-5xl mx-auto space-y-6">
             <div className="flex justify-between items-center">
-              <h1 className="text-2xl font-bold text-gray-900">Minha Agenda</h1>
+              <h1 className="text-2xl font-bold text-gray-900">
+                Agenda: {professionalName}
+              </h1>
             </div>
 
             {isLoading ? (
