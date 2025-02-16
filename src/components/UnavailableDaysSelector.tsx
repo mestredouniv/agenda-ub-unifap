@@ -25,6 +25,11 @@ export const UnavailableDaysSelector = ({
 
   const fetchUnavailableDays = useCallback(async () => {
     try {
+      const { data: session } = await supabase.auth.getSession();
+      if (!session?.session) {
+        throw new Error("Não autenticado");
+      }
+
       const { data, error } = await supabase
         .from('professional_unavailable_days')
         .select('date')
@@ -55,6 +60,11 @@ export const UnavailableDaysSelector = ({
     if (!date) return;
 
     try {
+      const { data: session } = await supabase.auth.getSession();
+      if (!session?.session) {
+        throw new Error("Não autenticado");
+      }
+
       const dateStr = date.toISOString().split('T')[0];
       const isSelected = selectedDays.some(
         (selectedDate) => selectedDate.toISOString().split('T')[0] === dateStr
@@ -135,3 +145,4 @@ export const UnavailableDaysSelector = ({
     </div>
   );
 };
+
