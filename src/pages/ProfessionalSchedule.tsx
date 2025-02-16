@@ -63,7 +63,6 @@ const ProfessionalSchedule = () => {
   const [isAddingAppointment, setIsAddingAppointment] = useState(false);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null);
-  const [unavailableDays, setUnavailableDays] = useState<Date[]>([]);
   const [isSelectingUnavailableDays, setIsSelectingUnavailableDays] = useState(false);
 
   const months = [
@@ -82,10 +81,10 @@ const ProfessionalSchedule = () => {
   ];
 
   const handleAddAppointment = (formData: AppointmentFormData) => {
-    if (isDateUnavailable(selectedDate || new Date())) {
+    if (!selectedDate) {
       toast({
-        title: "Data Indisponível",
-        description: "O profissional não está disponível nesta data. Por favor, selecione outra data.",
+        title: "Data Inválida",
+        description: "Por favor, selecione uma data para a consulta.",
         variant: "destructive",
       });
       return;
@@ -93,7 +92,7 @@ const ProfessionalSchedule = () => {
 
     const newAppointment: Appointment = {
       id: appointments.length + 1,
-      date: selectedDate || new Date(),
+      date: selectedDate,
       ...formData,
     };
     setAppointments([...appointments, newAppointment]);
@@ -317,14 +316,15 @@ const ProfessionalSchedule = () => {
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
-            <Calendar
-              mode="single"
-              selected={selectedDate}
-              onSelect={setSelectedDate}
-              className="rounded-md border"
-              locale={ptBR}
-              disabled={(date) => isDateUnavailable(date)}
-            />
+            <div className="grid gap-2">
+              <Label>Data da Consulta</Label>
+              <Input
+                type="date"
+                value={selectedDate ? format(selectedDate, 'yyyy-MM-dd') : ''}
+                onChange={(e) => setSelectedDate(e.target.value ? new Date(e.target.value) : undefined)}
+                required
+              />
+            </div>
             <AppointmentForm
               onSubmit={handleAddAppointment}
               initialData={null}
@@ -357,17 +357,18 @@ const ProfessionalSchedule = () => {
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
-            <Calendar
-              mode="single"
-              selected={editingAppointment?.date}
-              onSelect={(date) =>
-                editingAppointment &&
-                setEditingAppointment({ ...editingAppointment, date: date || new Date() })
-              }
-              className="rounded-md border"
-              locale={ptBR}
-              disabled={(date) => isDateUnavailable(date)}
-            />
+            <div className="grid gap-2">
+              <Label>Data da Consulta</Label>
+              <Input
+                type="date"
+                value={editingAppointment?.date ? format(editingAppointment.date, 'yyyy-MM-dd') : ''}
+                onChange={(e) =>
+                  editingAppointment &&
+                  setEditingAppointment({ ...editingAppointment, date: e.target.value ? new Date(e.target.value) : undefined })
+                }
+                required
+              />
+            </div>
             {editingAppointment && (
               <AppointmentForm
                 onSubmit={(formData) =>

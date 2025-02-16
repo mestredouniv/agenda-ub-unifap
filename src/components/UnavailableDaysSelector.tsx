@@ -1,4 +1,3 @@
-
 import { useCallback, useEffect, useState } from "react";
 import { Calendar } from "@/components/ui/calendar";
 import { ptBR } from "date-fns/locale";
@@ -138,11 +137,11 @@ export const UnavailableDaysSelector = ({
       />
       
       <Card className="p-4">
-        <div className="text-sm text-muted-foreground">
+        <div className="text-sm text-muted-foreground mb-4">
           Clique nos dias para marcar/desmarcar ausências. Os dias em vermelho indicam que você não estará disponível para atendimento.
         </div>
+        <AvailableTimeSlots professionalId={professionalId} />
       </Card>
     </div>
   );
 };
-
