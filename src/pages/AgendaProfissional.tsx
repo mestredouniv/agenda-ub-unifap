@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { 
@@ -26,6 +25,9 @@ import { BackToHomeButton } from "@/components/BackToHomeButton";
 import { UnavailableDaysSelector } from "@/components/UnavailableDaysSelector";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 export const AgendaProfissional = () => {
   const { professionalId } = useParams<{ professionalId: string }>();
@@ -34,6 +36,11 @@ export const AgendaProfissional = () => {
   const [isNewAppointmentOpen, setIsNewAppointmentOpen] = useState(false);
   const [isUnavailableDaysOpen, setIsUnavailableDaysOpen] = useState(false);
   const [professionalName, setProfessionalName] = useState("");
+  const [availableMonths, setAvailableMonths] = useState<{ month: number; year: number }[]>([]);
+  const [selectedMonth, setSelectedMonth] = useState<string>(() => {
+    const today = new Date();
+    return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+  });
 
   useEffect(() => {
     const fetchProfessionalName = async () => {
@@ -53,12 +60,30 @@ export const AgendaProfissional = () => {
     fetchProfessionalName();
   }, [professionalId]);
 
+  useEffect(() => {
+    const fetchAvailableMonths = async () => {
+      if (professionalId) {
+        const { data, error } = await supabase
+          .from('professional_available_months')
+          .select('month, year')
+          .eq('professional_id', professionalId)
+          .order('year')
+          .order('month');
+        
+        if (data && !error) {
+          setAvailableMonths(data);
+        }
+      }
+    };
+
+    fetchAvailableMonths();
+  }, [professionalId]);
+
   if (!professionalId) return <div>ID do profissional não encontrado</div>;
 
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="flex">
-        {/* Sidebar */}
         <div className="w-64 min-h-screen bg-white border-r border-gray-200 p-4 space-y-4">
           <div className="space-y-2">
             <h2 className="text-lg font-semibold">Agenda</h2>
@@ -130,9 +155,30 @@ export const AgendaProfissional = () => {
               </span>
             </div>
           </div>
+          
+          <div className="space-y-2">
+            <Label>Filtrar por Mês</Label>
+            <Select
+              value={selectedMonth}
+              onValueChange={setSelectedMonth}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Selecione um mês" />
+              </SelectTrigger>
+              <SelectContent>
+                {availableMonths.map(({ month, year }) => (
+                  <SelectItem 
+                    key={`${year}-${month}`} 
+                    value={`${year}-${String(month).padStart(2, '0')}`}
+                  >
+                    {format(new Date(year, month - 1), 'MMMM yyyy', { locale: ptBR })}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
-        {/* Main Content */}
         <div className="flex-1 p-6">
           <div className="max-w-5xl mx-auto space-y-6">
             <div className="flex justify-between items-center">

@@ -10,6 +10,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Calendar } from "@/components/ui/calendar";
+import { Button } from "@/components/ui/button";
+import { CalendarIcon } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 
 interface TimeSlot {
   time: string;
@@ -37,16 +42,34 @@ export const AppointmentDateForm = ({
     <div className="space-y-4">
       <div>
         <Label>Data da Consulta *</Label>
-        <Input
-          type="date"
-          value={appointmentDate ? format(appointmentDate, 'yyyy-MM-dd') : ''}
-          onChange={(e) => {
-            const date = e.target.value ? new Date(e.target.value) : undefined;
-            onAppointmentDateSelect(date);
-          }}
-          min={format(new Date(), 'yyyy-MM-dd')}
-          required
-        />
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              className={cn(
+                "w-full justify-start text-left font-normal",
+                !appointmentDate && "text-muted-foreground"
+              )}
+            >
+              <CalendarIcon className="mr-2 h-4 w-4" />
+              {appointmentDate ? (
+                format(appointmentDate, "PPP", { locale: ptBR })
+              ) : (
+                <span>Selecione uma data</span>
+              )}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="start">
+            <Calendar
+              mode="single"
+              selected={appointmentDate}
+              onSelect={onAppointmentDateSelect}
+              disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+              initialFocus
+              locale={ptBR}
+            />
+          </PopoverContent>
+        </Popover>
       </div>
 
       <div>

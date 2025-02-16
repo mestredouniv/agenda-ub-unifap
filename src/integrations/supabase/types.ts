@@ -651,6 +651,41 @@ export type Database = {
           },
         ]
       }
+      professional_available_months: {
+        Row: {
+          created_at: string | null
+          id: string
+          month: number
+          professional_id: string
+          updated_at: string | null
+          year: number
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          month: number
+          professional_id: string
+          updated_at?: string | null
+          year: number
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          month?: number
+          professional_id?: string
+          updated_at?: string | null
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "professional_available_months_professional_id_fkey"
+            columns: ["professional_id"]
+            isOneToOne: false
+            referencedRelation: "professionals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       professional_available_slots: {
         Row: {
           created_at: string | null
