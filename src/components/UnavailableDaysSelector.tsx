@@ -1,11 +1,10 @@
-
 import { useCallback, useEffect, useState } from "react";
 import { Calendar } from "@/components/ui/calendar";
 import { ptBR } from "date-fns/locale";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { AvailableTimeSlots } from "./appointments/AvailableTimeSlots";
+import { AvailableTimeSlots } from "@/components/appointments/AvailableTimeSlots";
 
 interface UnavailableDaysSelectorProps {
   professionalId: string;

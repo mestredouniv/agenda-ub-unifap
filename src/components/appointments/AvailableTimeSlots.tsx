@@ -17,6 +17,9 @@ interface TimeSlot {
   id: string;
   time_slot: string;
   max_appointments: number;
+  professional_id: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 interface AvailableTimeSlotsProps {
@@ -33,16 +36,16 @@ export const AvailableTimeSlots = ({ professionalId }: AvailableTimeSlotsProps) 
 
   const fetchTimeSlots = async () => {
     try {
-      const { data, error } = await supabase
-        .from('professional_available_slots')
-        .select('id, time_slot, max_appointments')
-        .eq('professional_id', professionalId)
-        .order('time_slot');
+      const { data: slots, error } = await supabase
+        .from("professional_available_slots")
+        .select("*")
+        .eq("professional_id", professionalId)
+        .order("time_slot") as { data: TimeSlot[] | null; error: any };
 
       if (error) throw error;
 
-      if (data) {
-        setTimeSlots(data as TimeSlot[]);
+      if (slots) {
+        setTimeSlots(slots);
       }
     } catch (error) {
       toast({
@@ -56,9 +59,9 @@ export const AvailableTimeSlots = ({ professionalId }: AvailableTimeSlotsProps) 
   const handleMaxAppointmentsChange = async (slotId: string, value: number) => {
     try {
       const { error } = await supabase
-        .from('professional_available_slots')
+        .from("professional_available_slots")
         .update({ max_appointments: value })
-        .eq('id', slotId);
+        .eq("id", slotId);
 
       if (error) throw error;
 
