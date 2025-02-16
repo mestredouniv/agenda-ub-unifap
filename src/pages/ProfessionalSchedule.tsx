@@ -163,6 +163,14 @@ const ProfessionalSchedule = () => {
     }
   };
 
+  const handleUnavailableDaysSuccess = () => {
+    toast({
+      title: "Dias indisponíveis atualizados",
+      description: "O calendário foi atualizado com os dias de ausência.",
+    });
+    setIsSelectingUnavailableDays(false);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <BackToHomeButton />
@@ -334,9 +342,8 @@ const ProfessionalSchedule = () => {
             </DialogDescription>
           </DialogHeader>
           <UnavailableDaysSelector
-            professionalId="1" // Você pode ajustar isso para usar o ID do profissional atual
-            selectedDays={unavailableDays}
-            onChange={handleUnavailableDaysChange}
+            professionalId="5f474147-572f-4c7c-ba4a-b8febb4ad0c5"
+            onSuccess={handleUnavailableDaysSuccess}
           />
         </DialogContent>
       </Dialog>
