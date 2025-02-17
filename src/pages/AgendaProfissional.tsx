@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { 
@@ -18,6 +19,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Card } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
 import { useAppointments } from "@/hooks/useAppointments";
 import { AppointmentCard } from "@/components/appointments/AppointmentCard";
 import { NovoAgendamento } from "@/components/NovoAgendamento";
@@ -25,7 +27,13 @@ import { BackToHomeButton } from "@/components/BackToHomeButton";
 import { UnavailableDaysSelector } from "@/components/UnavailableDaysSelector";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
