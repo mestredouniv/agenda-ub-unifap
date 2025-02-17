@@ -37,7 +37,10 @@ export const UnavailableDaysSelector = ({
         .order('year')
         .order('month');
 
-      if (error) throw error;
+      if (error) {
+        console.error('[UnavailableDaysSelector] Erro ao buscar meses:', error);
+        throw error;
+      }
       console.log('[UnavailableDaysSelector] Meses disponíveis:', data);
       setAvailableMonths(data || []);
     } catch (error) {
@@ -58,7 +61,10 @@ export const UnavailableDaysSelector = ({
         .select('date')
         .eq('professional_id', professionalId);
 
-      if (error) throw error;
+      if (error) {
+        console.error('[UnavailableDaysSelector] Erro ao buscar dias:', error);
+        throw error;
+      }
 
       if (data) {
         console.log('[UnavailableDaysSelector] Dias indisponíveis:', data);
@@ -92,13 +98,17 @@ export const UnavailableDaysSelector = ({
       );
 
       if (isSelected) {
+        console.log('[UnavailableDaysSelector] Removendo data:', dateStr);
         const { error } = await supabase
           .from('professional_unavailable_days')
           .delete()
           .eq('professional_id', professionalId)
           .eq('date', dateStr);
 
-        if (error) throw error;
+        if (error) {
+          console.error('[UnavailableDaysSelector] Erro ao deletar:', error);
+          throw error;
+        }
 
         setSelectedDays(prev => 
           prev.filter(d => format(d, 'yyyy-MM-dd') !== dateStr)
@@ -109,6 +119,7 @@ export const UnavailableDaysSelector = ({
           description: "Data removida dos dias indisponíveis"
         });
       } else {
+        console.log('[UnavailableDaysSelector] Adicionando data:', dateStr);
         const { error } = await supabase
           .from('professional_unavailable_days')
           .insert([{
@@ -116,7 +127,10 @@ export const UnavailableDaysSelector = ({
             date: dateStr,
           }]);
 
-        if (error) throw error;
+        if (error) {
+          console.error('[UnavailableDaysSelector] Erro ao inserir:', error);
+          throw error;
+        }
 
         setSelectedDays(prev => [...prev, date]);
 
