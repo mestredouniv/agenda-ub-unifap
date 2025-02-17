@@ -29,6 +29,7 @@ export const UnavailableDaysSelector = ({
 
   const fetchAvailableMonths = async () => {
     try {
+      console.log('[UnavailableDaysSelector] Buscando meses disponíveis');
       const { data, error } = await supabase
         .from('professional_available_months')
         .select('month, year')
@@ -37,19 +38,21 @@ export const UnavailableDaysSelector = ({
         .order('month');
 
       if (error) throw error;
+      console.log('[UnavailableDaysSelector] Meses disponíveis:', data);
       setAvailableMonths(data || []);
     } catch (error) {
-      console.error('Erro ao buscar meses disponíveis:', error);
+      console.error('[UnavailableDaysSelector] Erro ao buscar meses:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível carregar os meses disponíveis.",
+        variant: "destructive",
+      });
     }
   };
 
   const fetchUnavailableDays = useCallback(async () => {
     try {
-      const { data: session } = await supabase.auth.getSession();
-      if (!session?.session) {
-        throw new Error("Não autenticado");
-      }
-
+      console.log('[UnavailableDaysSelector] Buscando dias indisponíveis');
       const { data, error } = await supabase
         .from('professional_unavailable_days')
         .select('date')
@@ -58,10 +61,11 @@ export const UnavailableDaysSelector = ({
       if (error) throw error;
 
       if (data) {
+        console.log('[UnavailableDaysSelector] Dias indisponíveis:', data);
         setSelectedDays(data.map(item => new Date(item.date)));
       }
     } catch (error) {
-      console.error('Erro ao buscar dias indisponíveis:', error);
+      console.error('[UnavailableDaysSelector] Erro ao buscar dias:', error);
       toast({
         title: "Erro",
         description: "Não foi possível carregar os dias indisponíveis.",
@@ -81,18 +85,13 @@ export const UnavailableDaysSelector = ({
     if (!date) return;
 
     try {
-      const { data: session } = await supabase.auth.getSession();
-      if (!session?.session) {
-        throw new Error("Não autenticado");
-      }
-
+      console.log('[UnavailableDaysSelector] Alterando disponibilidade para:', date);
       const dateStr = format(date, 'yyyy-MM-dd');
       const isSelected = selectedDays.some(
         (selectedDate) => format(selectedDate, 'yyyy-MM-dd') === dateStr
       );
 
       if (isSelected) {
-        // Remover data
         const { error } = await supabase
           .from('professional_unavailable_days')
           .delete()
@@ -110,7 +109,6 @@ export const UnavailableDaysSelector = ({
           description: "Data removida dos dias indisponíveis"
         });
       } else {
-        // Adicionar data
         const { error } = await supabase
           .from('professional_unavailable_days')
           .insert([{
@@ -132,7 +130,7 @@ export const UnavailableDaysSelector = ({
         onSuccess();
       }
     } catch (error) {
-      console.error('Erro ao atualizar dias indisponíveis:', error);
+      console.error('[UnavailableDaysSelector] Erro ao atualizar dia:', error);
       toast({
         title: "Erro",
         description: "Não foi possível atualizar a disponibilidade.",
