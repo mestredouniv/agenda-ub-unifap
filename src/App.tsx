@@ -1,5 +1,4 @@
 
-import { BrowserRouter } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
 import { Routes, Route } from "react-router-dom";
 
@@ -18,7 +17,7 @@ import { AgendaProfissional } from "@/pages/AgendaProfissional";
 
 function App() {
   return (
-    <BrowserRouter>
+    <>
       <Routes>
         <Route path="/" element={<Index />} />
         <Route path="/display" element={<Display />} />
@@ -34,7 +33,7 @@ function App() {
         <Route path="*" element={<NotFound />} />
       </Routes>
       <Toaster />
-    </BrowserRouter>
+    </>
   );
 }
 
