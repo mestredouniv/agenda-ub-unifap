@@ -121,15 +121,10 @@ export const UnavailableDaysSelector = ({
         console.log('[UnavailableDaysSelector] Adicionando data:', dateStr);
         const { error } = await supabase
           .from('professional_unavailable_days')
-          .upsert(
-            {
-              professional_id: professionalId,
-              date: dateStr,
-            },
-            {
-              onConflict: 'professional_id,date'
-            }
-          );
+          .insert({
+            professional_id: professionalId,
+            date: dateStr,
+          });
 
         if (error) {
           console.error('[UnavailableDaysSelector] Erro ao inserir:', error);
