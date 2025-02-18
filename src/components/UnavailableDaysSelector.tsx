@@ -7,7 +7,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { AvailableTimeSlots } from "@/components/appointments/AvailableTimeSlots";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { format } from "date-fns";
+import { format, isSameDay } from "date-fns";
 
 interface UnavailableDaysSelectorProps {
   professionalId: string;
@@ -26,6 +26,7 @@ export const UnavailableDaysSelector = ({
   const [selectedDays, setSelectedDays] = useState<Date[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [availableMonths, setAvailableMonths] = useState<{ month: number; year: number }[]>([]);
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
 
   const fetchAvailableMonths = async () => {
     try {
@@ -68,7 +69,8 @@ export const UnavailableDaysSelector = ({
 
       if (data) {
         console.log('[UnavailableDaysSelector] Dias indisponíveis:', data);
-        setSelectedDays(data.map(item => new Date(item.date)));
+        const unavailableDates = data.map(item => new Date(item.date));
+        setSelectedDays(unavailableDates);
       }
     } catch (error) {
       console.error('[UnavailableDaysSelector] Erro ao buscar dias:', error);
@@ -94,7 +96,7 @@ export const UnavailableDaysSelector = ({
       console.log('[UnavailableDaysSelector] Alterando disponibilidade para:', date);
       const dateStr = format(date, 'yyyy-MM-dd');
       const isSelected = selectedDays.some(
-        (selectedDate) => format(selectedDate, 'yyyy-MM-dd') === dateStr
+        (selectedDate) => isSameDay(selectedDate, date)
       );
 
       if (isSelected) {
@@ -110,7 +112,7 @@ export const UnavailableDaysSelector = ({
         }
 
         setSelectedDays(prev => 
-          prev.filter(d => format(d, 'yyyy-MM-dd') !== dateStr)
+          prev.filter(d => !isSameDay(d, date))
         );
 
         toast({
@@ -170,7 +172,7 @@ export const UnavailableDaysSelector = ({
             <Calendar
               mode="single"
               onSelect={handleDaySelect}
-              selected={undefined}
+              selected={selectedDate}
               modifiers={{
                 unavailable: selectedDays,
               }}
@@ -187,7 +189,10 @@ export const UnavailableDaysSelector = ({
           </div>
           
           <Card className="p-4">
-            <AvailableTimeSlots professionalId={professionalId} />
+            <AvailableTimeSlots 
+              professionalId={professionalId} 
+              selectedDate={selectedDate}
+            />
           </Card>
         </div>
       </div>

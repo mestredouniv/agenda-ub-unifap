@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { 
@@ -25,7 +24,7 @@ import { AppointmentCard } from "@/components/appointments/AppointmentCard";
 import { NovoAgendamento } from "@/components/NovoAgendamento";
 import { BackToHomeButton } from "@/components/BackToHomeButton";
 import { UnavailableDaysSelector } from "@/components/UnavailableDaysSelector";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Select,
@@ -234,15 +233,21 @@ export const AgendaProfissional = () => {
         </SheetContent>
       </Sheet>
 
-      <Dialog open={isUnavailableDaysOpen} onOpenChange={setIsUnavailableDaysOpen}>
+      <Dialog 
+        open={isUnavailableDaysOpen} 
+        onOpenChange={setIsUnavailableDaysOpen}
+        modal={true}
+      >
         <DialogContent className="max-w-4xl">
           <DialogHeader>
             <DialogTitle>Organizar Meus Horários</DialogTitle>
+            <DialogDescription>
+              Selecione os dias em que você não estará disponível para atendimento
+            </DialogDescription>
           </DialogHeader>
           <UnavailableDaysSelector
             professionalId={professionalId}
             onSuccess={() => {
-              setIsUnavailableDaysOpen(false);
               fetchAppointments();
             }}
           />
