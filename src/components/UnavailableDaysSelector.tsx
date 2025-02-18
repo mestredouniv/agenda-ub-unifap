@@ -102,8 +102,7 @@ export const UnavailableDaysSelector = ({
         const { error } = await supabase
           .from('professional_unavailable_days')
           .delete()
-          .eq('professional_id', professionalId)
-          .eq('date', dateStr);
+          .match({ professional_id: professionalId, date: dateStr });
 
         if (error) {
           console.error('[UnavailableDaysSelector] Erro ao deletar:', error);
@@ -122,10 +121,15 @@ export const UnavailableDaysSelector = ({
         console.log('[UnavailableDaysSelector] Adicionando data:', dateStr);
         const { error } = await supabase
           .from('professional_unavailable_days')
-          .insert([{
-            professional_id: professionalId,
-            date: dateStr,
-          }]);
+          .upsert(
+            {
+              professional_id: professionalId,
+              date: dateStr,
+            },
+            {
+              onConflict: 'professional_id,date'
+            }
+          );
 
         if (error) {
           console.error('[UnavailableDaysSelector] Erro ao inserir:', error);
