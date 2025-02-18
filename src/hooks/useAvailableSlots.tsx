@@ -6,8 +6,8 @@ import { format } from "date-fns";
 interface TimeSlot {
   time: string;
   available: boolean;
-  maxAppointments?: number;
-  currentAppointments?: number;
+  maxAppointments: number;
+  currentAppointments: number;
 }
 
 interface UnavailableDay {
@@ -24,34 +24,39 @@ interface Appointment {
 }
 
 const fetchUnavailableDays = async (professionalId: string) => {
+  console.log('[useAvailableSlots] Buscando dias indisponíveis para:', professionalId);
   const { data, error } = await supabase
     .from('professional_unavailable_days')
     .select('date')
     .eq('professional_id', professionalId);
 
   if (error) {
-    console.error('Erro ao buscar dias indisponíveis:', error);
+    console.error('[useAvailableSlots] Erro ao buscar dias indisponíveis:', error);
     throw error;
   }
 
+  console.log('[useAvailableSlots] Dias indisponíveis encontrados:', data);
   return data || [];
 };
 
 const fetchAvailableSlots = async (professionalId: string) => {
+  console.log('[useAvailableSlots] Buscando slots disponíveis para:', professionalId);
   const { data, error } = await supabase
     .from('professional_available_slots')
     .select('time_slot, max_appointments')
     .eq('professional_id', professionalId);
 
   if (error) {
-    console.error('Erro ao buscar slots disponíveis:', error);
+    console.error('[useAvailableSlots] Erro ao buscar slots disponíveis:', error);
     throw error;
   }
 
+  console.log('[useAvailableSlots] Slots disponíveis encontrados:', data);
   return data || [];
 };
 
 const fetchAppointments = async (professionalId: string, dateStr: string) => {
+  console.log('[useAvailableSlots] Buscando agendamentos para:', professionalId, 'na data:', dateStr);
   const { data, error } = await supabase
     .from('appointments')
     .select('appointment_time')
@@ -60,10 +65,11 @@ const fetchAppointments = async (professionalId: string, dateStr: string) => {
     .is('deleted_at', null);
 
   if (error) {
-    console.error('Erro ao buscar agendamentos:', error);
+    console.error('[useAvailableSlots] Erro ao buscar agendamentos:', error);
     throw error;
   }
 
+  console.log('[useAvailableSlots] Agendamentos encontrados:', data);
   return data || [];
 };
 
@@ -77,10 +83,12 @@ const mapSlotsWithAppointments = (
   appointments: Appointment[]
 ): TimeSlot[] => {
   return availableSlots.map(slot => {
-    const slotAppointments = appointments.filter(app => app.appointment_time === slot.time_slot).length;
+    const slotAppointments = appointments.filter(
+      app => app.appointment_time === `${slot.time_slot}`
+    ).length;
     
     return {
-      time: slot.time_slot.slice(0, -3), // Remove os segundos
+      time: slot.time_slot.slice(0, -3),
       maxAppointments: slot.max_appointments,
       currentAppointments: slotAppointments,
       available: slotAppointments < slot.max_appointments
@@ -92,11 +100,12 @@ export const useAvailableSlots = (professionalId: string, date: Date | undefined
   const slotsQuery = useQuery({
     queryKey: ['availableSlots', professionalId, date?.toISOString()],
     queryFn: async () => {
-      if (!professionalId) return [];
-      if (!date) return [];
+      if (!professionalId || !date) {
+        console.log('[useAvailableSlots] Retornando array vazio - sem profissional ou data');
+        return [];
+      }
 
       try {
-        console.log('[useAvailableSlots] Buscando slots para profissional:', professionalId);
         const [unavailableDays, availableSlots] = await Promise.all([
           fetchUnavailableDays(professionalId),
           fetchAvailableSlots(professionalId)
@@ -110,13 +119,13 @@ export const useAvailableSlots = (professionalId: string, date: Date | undefined
         const dateStr = format(date, 'yyyy-MM-dd');
         const appointments = await fetchAppointments(professionalId, dateStr);
 
-        console.log('[useAvailableSlots] Slots configurados:', availableSlots);
-        console.log('[useAvailableSlots] Agendamentos existentes:', appointments);
-
-        return mapSlotsWithAppointments(availableSlots, appointments);
+        const mappedSlots = mapSlotsWithAppointments(availableSlots, appointments);
+        console.log('[useAvailableSlots] Slots processados:', mappedSlots);
+        
+        return mappedSlots;
       } catch (error) {
         console.error('[useAvailableSlots] Erro ao processar slots:', error);
-        return [];
+        throw error;
       }
     },
     enabled: !!professionalId && !!date,

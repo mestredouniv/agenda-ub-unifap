@@ -7,7 +7,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { PatientInfoForm } from "@/components/appointments/PatientInfoForm";
 import { AppointmentDateForm } from "@/components/appointments/AppointmentDateForm";
 import { AdditionalInfoForm } from "@/components/appointments/AdditionalInfoForm";
-import { useAvailableSlots } from "@/hooks/useAvailableSlots";
 
 interface NovoAgendamentoProps {
   professionalId: string;
@@ -17,7 +16,6 @@ interface NovoAgendamentoProps {
 export const NovoAgendamento = ({ professionalId, onSuccess }: NovoAgendamentoProps) => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const { slots: availableSlots } = useAvailableSlots(professionalId, undefined);
   const [formData, setFormData] = useState({
     patientName: "",
     birth_date: "",
@@ -49,11 +47,12 @@ export const NovoAgendamento = ({ professionalId, onSuccess }: NovoAgendamentoPr
           patient_name: formData.patientName,
           birth_date: formData.birth_date,
           appointment_date: format(formData.appointmentDate, 'yyyy-MM-dd'),
-          appointment_time: formData.appointmentTime,
+          appointment_time: `${formData.appointmentTime}:00`,
           display_status: 'waiting',
           is_minor: formData.isMinor,
           responsible_name: formData.responsibleName,
           has_record: formData.hasRecord || null,
+          phone: formData.phone || null,
         }]);
 
       if (error) throw error;
@@ -100,11 +99,11 @@ export const NovoAgendamento = ({ professionalId, onSuccess }: NovoAgendamentoPr
       />
 
       <AppointmentDateForm
+        professionalId={professionalId}
         appointmentDate={formData.appointmentDate}
         appointmentTime={formData.appointmentTime}
-        onAppointmentDateSelect={(date) => setFormData(prev => ({ ...prev, appointmentDate: date }))}
+        onAppointmentDateSelect={(date) => setFormData(prev => ({ ...prev, appointmentDate: date, appointmentTime: "" }))}
         onAppointmentTimeChange={(value) => setFormData(prev => ({ ...prev, appointmentTime: value }))}
-        availableSlots={availableSlots}
       />
 
       <AdditionalInfoForm
