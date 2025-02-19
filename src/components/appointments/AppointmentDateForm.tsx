@@ -1,11 +1,8 @@
 
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Calendar } from "@/components/ui/calendar";
-import { Button } from "@/components/ui/button";
-import { CalendarIcon } from "lucide-react";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { cn } from "@/lib/utils";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -13,53 +10,34 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
-import { useAvailabilityManager } from "@/hooks/useAvailabilityManager";
-import { useTimeSlots } from "@/hooks/useTimeSlots";
+import { Calendar } from "@/components/ui/calendar";
+import { Button } from "@/components/ui/button";
+import { CalendarIcon } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 
-interface AppointmentDateFormProps {
-  professionalId: string;
+interface TimeSlot {
+  time: string;
+  available: boolean;
+  maxAppointments?: number;
+  currentAppointments?: number;
+}
+
+export interface AppointmentDateFormProps {
   appointmentDate: Date | undefined;
   appointmentTime: string;
   onAppointmentDateSelect: (date: Date | undefined) => void;
   onAppointmentTimeChange: (value: string) => void;
+  availableSlots: TimeSlot[];
 }
 
 export const AppointmentDateForm = ({
-  professionalId,
   appointmentDate,
   appointmentTime,
   onAppointmentDateSelect,
   onAppointmentTimeChange,
+  availableSlots,
 }: AppointmentDateFormProps) => {
-  // Gerenciamento de disponibilidade
-  const {
-    isMonthAvailable,
-    isDayUnavailable,
-    isLoading: isLoadingAvailability
-  } = useAvailabilityManager(professionalId);
-
-  // Verificar se a data selecionada está disponível
-  const isDateAvailable = appointmentDate ? 
-    isMonthAvailable(appointmentDate) && !isDayUnavailable(appointmentDate) : 
-    false;
-
-  // Gerenciamento de horários
-  const {
-    timeSlots,
-    isLoading: isLoadingTimeSlots
-  } = useTimeSlots(professionalId, appointmentDate, isDateAvailable);
-
-  const isDateDisabled = (date: Date) => {
-    // Desabilitar datas passadas
-    if (date < new Date(new Date().setHours(0, 0, 0, 0))) return true;
-
-    // Verificar disponibilidade
-    return !isMonthAvailable(date) || isDayUnavailable(date);
-  };
-
-  const isLoading = isLoadingAvailability || isLoadingTimeSlots;
-
   return (
     <div className="space-y-4">
       <div>
@@ -86,7 +64,7 @@ export const AppointmentDateForm = ({
               mode="single"
               selected={appointmentDate}
               onSelect={onAppointmentDateSelect}
-              disabled={isDateDisabled}
+              disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
               initialFocus
               locale={ptBR}
             />
@@ -99,29 +77,19 @@ export const AppointmentDateForm = ({
         <Select
           value={appointmentTime}
           onValueChange={onAppointmentTimeChange}
-          disabled={!appointmentDate || isLoading || !isDateAvailable || timeSlots.length === 0}
+          disabled={!appointmentDate || !availableSlots.length}
         >
           <SelectTrigger>
-            <SelectValue placeholder={
-              !appointmentDate 
-                ? "Selecione uma data primeiro" 
-                : !isDateAvailable
-                ? "Data indisponível"
-                : isLoading 
-                ? "Carregando horários..." 
-                : timeSlots.length === 0 
-                ? "Nenhum horário disponível" 
-                : "Selecione um horário"
-            } />
+            <SelectValue placeholder="Selecione um horário" />
           </SelectTrigger>
           <SelectContent>
-            {timeSlots.map((slot) => (
+            {availableSlots.map((slot) => (
               <SelectItem 
                 key={slot.time} 
                 value={slot.time}
                 disabled={!slot.available}
               >
-                {slot.time} ({slot.currentAppointments}/{slot.maxAppointments} agendamentos)
+                {slot.time} ({slot.currentAppointments || 0}/{slot.maxAppointments || 10} agendamentos)
               </SelectItem>
             ))}
           </SelectContent>
