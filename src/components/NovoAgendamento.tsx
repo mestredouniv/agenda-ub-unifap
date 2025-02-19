@@ -29,6 +29,7 @@ export const NovoAgendamento = ({ professionalId, onSuccess }: NovoAgendamentoPr
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
     if (!formData.patientName || !formData.birth_date || !formData.appointmentDate || !formData.appointmentTime) {
       toast({
         title: "Campos obrigatórios",
@@ -40,33 +41,53 @@ export const NovoAgendamento = ({ professionalId, onSuccess }: NovoAgendamentoPr
 
     setIsLoading(true);
     try {
-      const { error } = await supabase
-        .from('appointments')
-        .insert([{
-          professional_id: professionalId,
-          patient_name: formData.patientName,
-          birth_date: formData.birth_date,
-          appointment_date: format(formData.appointmentDate, 'yyyy-MM-dd'),
-          appointment_time: `${formData.appointmentTime}:00`,
-          display_status: 'waiting',
-          is_minor: formData.isMinor,
-          responsible_name: formData.responsibleName,
-          has_record: formData.hasRecord || null,
-          phone: formData.phone || null,
-        }]);
+      console.log('Iniciando criação de agendamento:', {
+        professionalId,
+        ...formData
+      });
 
-      if (error) throw error;
+      const appointmentData = {
+        professional_id: professionalId,
+        patient_name: formData.patientName,
+        birth_date: formData.birth_date,
+        appointment_date: format(formData.appointmentDate, 'yyyy-MM-dd'),
+        appointment_time: formData.appointmentTime.length === 5 
+          ? `${formData.appointmentTime}:00`
+          : formData.appointmentTime,
+        display_status: 'waiting',
+        is_minor: formData.isMinor,
+        responsible_name: formData.responsibleName || null,
+        has_record: formData.hasRecord || null,
+        phone: formData.phone || null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+
+      console.log('Dados do agendamento formatados:', appointmentData);
+
+      const { data, error } = await supabase
+        .from('appointments')
+        .insert([appointmentData])
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Erro ao criar agendamento:', error);
+        throw error;
+      }
+
+      console.log('Agendamento criado com sucesso:', data);
 
       toast({
         title: "Sucesso",
         description: "Agendamento realizado com sucesso!",
       });
       onSuccess();
-    } catch (error) {
-      console.error('Erro ao criar agendamento:', error);
+    } catch (error: any) {
+      console.error('Erro detalhado:', error);
       toast({
         title: "Erro",
-        description: "Não foi possível realizar o agendamento. Tente novamente.",
+        description: error.message || "Não foi possível realizar o agendamento. Tente novamente.",
         variant: "destructive",
       });
     } finally {
@@ -102,8 +123,14 @@ export const NovoAgendamento = ({ professionalId, onSuccess }: NovoAgendamentoPr
         professionalId={professionalId}
         appointmentDate={formData.appointmentDate}
         appointmentTime={formData.appointmentTime}
-        onAppointmentDateSelect={(date) => setFormData(prev => ({ ...prev, appointmentDate: date, appointmentTime: "" }))}
-        onAppointmentTimeChange={(value) => setFormData(prev => ({ ...prev, appointmentTime: value }))}
+        onAppointmentDateSelect={(date) => {
+          console.log('Data selecionada:', date);
+          setFormData(prev => ({ ...prev, appointmentDate: date, appointmentTime: "" }));
+        }}
+        onAppointmentTimeChange={(value) => {
+          console.log('Horário selecionado:', value);
+          setFormData(prev => ({ ...prev, appointmentTime: value }));
+        }}
       />
 
       <AdditionalInfoForm
