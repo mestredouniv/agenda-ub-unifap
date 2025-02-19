@@ -43,44 +43,79 @@ export const AppointmentDateForm = ({
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [timeSlots, setTimeSlots] = useState<TimeSlot[]>([]);
+  const [unavailableDays, setUnavailableDays] = useState<Date[]>([]);
+  const [availableMonths, setAvailableMonths] = useState<{ month: number; year: number }[]>([]);
 
+  // Buscar meses disponíveis e dias indisponíveis
+  useEffect(() => {
+    const fetchAvailability = async () => {
+      try {
+        // Buscar meses disponíveis
+        const { data: months, error: monthsError } = await supabase
+          .from('professional_available_months')
+          .select('month, year')
+          .eq('professional_id', professionalId)
+          .order('year')
+          .order('month');
+
+        if (monthsError) throw monthsError;
+        setAvailableMonths(months || []);
+
+        // Buscar dias indisponíveis
+        const { data: days, error: daysError } = await supabase
+          .from('professional_unavailable_days')
+          .select('date')
+          .eq('professional_id', professionalId);
+
+        if (daysError) throw daysError;
+        
+        const unavailableDates = (days || []).map(day => new Date(day.date));
+        setUnavailableDays(unavailableDates);
+      } catch (error) {
+        console.error('Erro ao buscar disponibilidade:', error);
+        toast({
+          title: "Erro",
+          description: "Não foi possível carregar a disponibilidade do profissional.",
+          variant: "destructive",
+        });
+      }
+    };
+
+    fetchAvailability();
+  }, [professionalId, toast]);
+
+  // Buscar horários disponíveis quando uma data é selecionada
   useEffect(() => {
     const fetchAvailableSlots = async () => {
       if (!appointmentDate || !professionalId) return;
 
       setIsLoading(true);
       try {
-        // Buscar horários disponíveis do profissional
-        const { data: availableSlots, error: slotsError } = await supabase
-          .from('professional_available_slots')
-          .select('time_slot, max_appointments')
-          .eq('professional_id', professionalId)
-          .order('time_slot');
-
-        if (slotsError) throw slotsError;
-
-        // Buscar agendamentos existentes para a data
         const formattedDate = format(appointmentDate, 'yyyy-MM-dd');
-        const { data: existingAppointments, error: appointmentsError } = await supabase
-          .from('appointments')
-          .select('appointment_time, id')
-          .eq('professional_id', professionalId)
-          .eq('appointment_date', formattedDate)
-          .is('deleted_at', null);
 
-        if (appointmentsError) throw appointmentsError;
+        // Verificar se a data está em um mês disponível
+        const selectedMonth = appointmentDate.getMonth() + 1;
+        const selectedYear = appointmentDate.getFullYear();
+        const isMonthAvailable = availableMonths.some(
+          m => m.month === selectedMonth && m.year === selectedYear
+        );
 
-        // Verificar dias indisponíveis
-        const { data: unavailableDays, error: unavailableError } = await supabase
-          .from('professional_unavailable_days')
-          .select('date')
-          .eq('professional_id', professionalId)
-          .eq('date', formattedDate);
+        if (!isMonthAvailable) {
+          setTimeSlots([]);
+          toast({
+            title: "Mês indisponível",
+            description: "O profissional não atende neste mês.",
+            variant: "destructive",
+          });
+          return;
+        }
 
-        if (unavailableError) throw unavailableError;
+        // Verificar se o dia está bloqueado
+        const isDayUnavailable = unavailableDays.some(
+          date => format(date, 'yyyy-MM-dd') === formattedDate
+        );
 
-        // Se o dia estiver marcado como indisponível, não mostrar horários
-        if (unavailableDays && unavailableDays.length > 0) {
+        if (isDayUnavailable) {
           setTimeSlots([]);
           toast({
             title: "Dia indisponível",
@@ -90,7 +125,26 @@ export const AppointmentDateForm = ({
           return;
         }
 
-        // Processar os horários disponíveis
+        // Buscar horários disponíveis
+        const { data: availableSlots, error: slotsError } = await supabase
+          .from('professional_available_slots')
+          .select('time_slot, max_appointments')
+          .eq('professional_id', professionalId)
+          .order('time_slot');
+
+        if (slotsError) throw slotsError;
+
+        // Buscar agendamentos existentes
+        const { data: existingAppointments, error: appointmentsError } = await supabase
+          .from('appointments')
+          .select('appointment_time')
+          .eq('professional_id', professionalId)
+          .eq('appointment_date', formattedDate)
+          .is('deleted_at', null);
+
+        if (appointmentsError) throw appointmentsError;
+
+        // Processar horários disponíveis
         const slots = (availableSlots || []).map(slot => {
           const timeStr = slot.time_slot.slice(0, 5);
           const appointmentsAtTime = existingAppointments?.filter(
@@ -120,7 +174,25 @@ export const AppointmentDateForm = ({
     };
 
     fetchAvailableSlots();
-  }, [professionalId, appointmentDate, toast]);
+  }, [professionalId, appointmentDate, availableMonths, unavailableDays, toast]);
+
+  const isDateDisabled = (date: Date) => {
+    // Desabilitar datas passadas
+    if (date < new Date(new Date().setHours(0, 0, 0, 0))) return true;
+
+    // Verificar se o mês está disponível
+    const month = date.getMonth() + 1;
+    const year = date.getFullYear();
+    const isMonthAvailable = availableMonths.some(
+      m => m.month === month && m.year === year
+    );
+    if (!isMonthAvailable) return true;
+
+    // Verificar se o dia está bloqueado
+    return unavailableDays.some(
+      unavailableDate => format(unavailableDate, 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd')
+    );
+  };
 
   return (
     <div className="space-y-4">
@@ -148,7 +220,7 @@ export const AppointmentDateForm = ({
               mode="single"
               selected={appointmentDate}
               onSelect={onAppointmentDateSelect}
-              disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+              disabled={isDateDisabled}
               initialFocus
               locale={ptBR}
             />
