@@ -1,8 +1,9 @@
 
 import { useState, useEffect, useCallback } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
-import { Appointment } from "@/types/appointment";
+import { supabase } from "@/integrations/supabase/client";
+import { Appointment } from "@/types/appointments";
+import { fetchTodayAppointments, createAppointment, updateAppointment } from "@/services/appointmentService";
 
 export const useAppointments = (professionalId: string) => {
   const { toast } = useToast();
@@ -14,39 +15,7 @@ export const useAppointments = (professionalId: string) => {
       console.log('[Agenda] Iniciando busca de consultas para profissional:', professionalId);
       setIsLoading(true);
       
-      const today = new Date().toISOString().split('T')[0];
-      console.log('[Agenda] Data atual:', today);
-      
-      let query = supabase
-        .from('appointments')
-        .select(`
-          id,
-          patient_name,
-          birth_date,
-          professional_id,
-          appointment_date,
-          appointment_time,
-          display_status,
-          priority,
-          notes,
-          actual_start_time,
-          actual_end_time,
-          updated_at,
-          deleted_at,
-          professionals (
-            name
-          )
-        `)
-        .eq('appointment_date', today)
-        .is('deleted_at', null); // Modificado aqui: usando .is() ao invés de .eq()
-
-      if (professionalId !== "all") {
-        query = query.eq('professional_id', professionalId);
-      }
-
-      const { data, error } = await query
-        .order('priority', { ascending: false })
-        .order('appointment_time', { ascending: true });
+      const { data, error } = await fetchTodayAppointments(professionalId);
 
       if (error) {
         console.error('[Agenda] Erro ao buscar consultas:', error);
@@ -99,21 +68,11 @@ export const useAppointments = (professionalId: string) => {
     }
   }, [professionalId, toast]);
 
-  const createAppointment = useCallback(async (appointmentData: Omit<Appointment, 'id' | 'professional'>) => {
+  const handleCreateAppointment = useCallback(async (appointmentData: Omit<Appointment, 'id' | 'professional'>) => {
     console.log('[Agenda] Criando nova consulta:', appointmentData);
     
     try {
-      const { data, error } = await supabase
-        .from('appointments')
-        .insert([{
-          ...appointmentData,
-          display_status: 'waiting' as const,
-          priority: appointmentData.priority || 'normal',
-          deleted_at: null,
-          updated_at: new Date().toISOString()
-        }])
-        .select()
-        .single();
+      const { data, error } = await createAppointment(appointmentData);
 
       if (error) {
         console.error('[Agenda] Erro ao criar consulta:', error);
@@ -144,17 +103,11 @@ export const useAppointments = (professionalId: string) => {
     }
   }, [fetchAppointments, toast]);
 
-  const updateAppointment = useCallback(async (id: string, updateData: Partial<Appointment>) => {
+  const handleUpdateAppointment = useCallback(async (id: string, updateData: Partial<Appointment>) => {
     console.log('[Agenda] Iniciando atualização de consulta:', { id, updateData });
     
     try {
-      const { error } = await supabase
-        .from('appointments')
-        .update({
-          ...updateData,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', id);
+      const { error } = await updateAppointment(id, updateData);
 
       if (error) {
         console.error('[Agenda] Erro ao atualizar consulta:', error);
@@ -219,7 +172,7 @@ export const useAppointments = (professionalId: string) => {
     appointments,
     isLoading,
     fetchAppointments,
-    createAppointment,
-    updateAppointment
+    createAppointment: handleCreateAppointment,
+    updateAppointment: handleUpdateAppointment
   };
 };
