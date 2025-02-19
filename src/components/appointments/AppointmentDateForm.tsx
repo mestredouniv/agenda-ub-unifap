@@ -14,7 +14,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { useAvailableSlots } from "@/hooks/useAvailableSlots";
+import { useState, useEffect } from "react";
+import { useToast } from "@/components/ui/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface AppointmentDateFormProps {
   professionalId: string;
@@ -24,6 +26,13 @@ interface AppointmentDateFormProps {
   onAppointmentTimeChange: (value: string) => void;
 }
 
+interface TimeSlot {
+  time: string;
+  available: boolean;
+  currentAppointments: number;
+  maxAppointments: number;
+}
+
 export const AppointmentDateForm = ({
   professionalId,
   appointmentDate,
@@ -31,7 +40,87 @@ export const AppointmentDateForm = ({
   onAppointmentDateSelect,
   onAppointmentTimeChange,
 }: AppointmentDateFormProps) => {
-  const { slots, isLoading } = useAvailableSlots(professionalId, appointmentDate);
+  const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
+  const [timeSlots, setTimeSlots] = useState<TimeSlot[]>([]);
+
+  useEffect(() => {
+    const fetchAvailableSlots = async () => {
+      if (!appointmentDate || !professionalId) return;
+
+      setIsLoading(true);
+      try {
+        // Buscar horários disponíveis do profissional
+        const { data: availableSlots, error: slotsError } = await supabase
+          .from('professional_available_slots')
+          .select('time_slot, max_appointments')
+          .eq('professional_id', professionalId)
+          .order('time_slot');
+
+        if (slotsError) throw slotsError;
+
+        // Buscar agendamentos existentes para a data
+        const formattedDate = format(appointmentDate, 'yyyy-MM-dd');
+        const { data: existingAppointments, error: appointmentsError } = await supabase
+          .from('appointments')
+          .select('appointment_time, id')
+          .eq('professional_id', professionalId)
+          .eq('appointment_date', formattedDate)
+          .is('deleted_at', null);
+
+        if (appointmentsError) throw appointmentsError;
+
+        // Verificar dias indisponíveis
+        const { data: unavailableDays, error: unavailableError } = await supabase
+          .from('professional_unavailable_days')
+          .select('date')
+          .eq('professional_id', professionalId)
+          .eq('date', formattedDate);
+
+        if (unavailableError) throw unavailableError;
+
+        // Se o dia estiver marcado como indisponível, não mostrar horários
+        if (unavailableDays && unavailableDays.length > 0) {
+          setTimeSlots([]);
+          toast({
+            title: "Dia indisponível",
+            description: "O profissional não atende nesta data.",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        // Processar os horários disponíveis
+        const slots = (availableSlots || []).map(slot => {
+          const timeStr = slot.time_slot.slice(0, 5);
+          const appointmentsAtTime = existingAppointments?.filter(
+            app => app.appointment_time.slice(0, 5) === timeStr
+          ).length || 0;
+
+          return {
+            time: timeStr,
+            available: appointmentsAtTime < slot.max_appointments,
+            currentAppointments: appointmentsAtTime,
+            maxAppointments: slot.max_appointments
+          };
+        });
+
+        setTimeSlots(slots);
+      } catch (error) {
+        console.error('Erro ao buscar horários:', error);
+        toast({
+          title: "Erro",
+          description: "Não foi possível carregar os horários disponíveis.",
+          variant: "destructive",
+        });
+        setTimeSlots([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchAvailableSlots();
+  }, [professionalId, appointmentDate, toast]);
 
   return (
     <div className="space-y-4">
@@ -72,7 +161,7 @@ export const AppointmentDateForm = ({
         <Select
           value={appointmentTime}
           onValueChange={onAppointmentTimeChange}
-          disabled={!appointmentDate || isLoading || slots.length === 0}
+          disabled={!appointmentDate || isLoading || timeSlots.length === 0}
         >
           <SelectTrigger>
             <SelectValue placeholder={
@@ -80,13 +169,13 @@ export const AppointmentDateForm = ({
                 ? "Selecione uma data primeiro" 
                 : isLoading 
                 ? "Carregando horários..." 
-                : slots.length === 0 
+                : timeSlots.length === 0 
                 ? "Nenhum horário disponível" 
                 : "Selecione um horário"
             } />
           </SelectTrigger>
           <SelectContent>
-            {slots.map((slot) => (
+            {timeSlots.map((slot) => (
               <SelectItem 
                 key={slot.time} 
                 value={slot.time}
