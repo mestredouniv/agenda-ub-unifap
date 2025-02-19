@@ -7,6 +7,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { Input } from "@/components/ui/input";
+import { Plus } from "lucide-react";
 
 interface AvailableTimeSlotsProps {
   professionalId: string;
@@ -18,10 +20,15 @@ interface TimeSlot {
   max_appointments: number;
 }
 
+const DEFAULT_TIME_SLOTS = [
+  "08:00", "09:00", "10:00", "11:00", "14:00", "15:00"
+];
+
 export const AvailableTimeSlots = ({ professionalId, selectedDate }: AvailableTimeSlotsProps) => {
   const { toast } = useToast();
   const [timeSlots, setTimeSlots] = useState<TimeSlot[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [newTimeSlot, setNewTimeSlot] = useState("");
 
   useEffect(() => {
     const fetchTimeSlots = async () => {
@@ -51,19 +58,27 @@ export const AvailableTimeSlots = ({ professionalId, selectedDate }: AvailableTi
 
   const handleAddTimeSlot = async (time: string) => {
     try {
+      const formattedTime = time.length === 5 ? time : `${time}:00`;
+      
       const { error } = await supabase
         .from('professional_available_slots')
-        .insert({
+        .upsert({
           professional_id: professionalId,
-          time_slot: time,
+          time_slot: formattedTime,
           max_appointments: 1
+        }, {
+          onConflict: 'professional_id,time_slot'
         });
 
       if (error) throw error;
 
-      setTimeSlots(prev => [...prev, { time_slot: time, max_appointments: 1 }].sort((a, b) => 
+      setTimeSlots(prev => [...prev, { time_slot: formattedTime, max_appointments: 1 }].sort((a, b) => 
         a.time_slot.localeCompare(b.time_slot)
       ));
+
+      if (time === newTimeSlot) {
+        setNewTimeSlot("");
+      }
 
       toast({
         title: "Sucesso",
@@ -104,6 +119,22 @@ export const AvailableTimeSlots = ({ professionalId, selectedDate }: AvailableTi
     }
   };
 
+  const validateTimeFormat = (time: string) => {
+    return /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/.test(time);
+  };
+
+  const handleManualTimeAdd = () => {
+    if (!validateTimeFormat(newTimeSlot)) {
+      toast({
+        title: "Formato inválido",
+        description: "Use o formato HH:MM (exemplo: 13:30)",
+        variant: "destructive",
+      });
+      return;
+    }
+    handleAddTimeSlot(newTimeSlot);
+  };
+
   if (isLoading) {
     return <div>Carregando horários...</div>;
   }
@@ -123,20 +154,55 @@ export const AvailableTimeSlots = ({ professionalId, selectedDate }: AvailableTi
 
       <Separator />
 
-      <div className="grid grid-cols-2 gap-2">
-        {["08:00", "09:00", "10:00", "11:00", "14:00", "15:00"].map((time) => {
-          const isActive = timeSlots.some(slot => slot.time_slot === time);
-          return (
-            <Button
-              key={time}
-              variant={isActive ? "default" : "outline"}
-              onClick={() => isActive ? handleRemoveTimeSlot(time) : handleAddTimeSlot(time)}
-              className="w-full"
-            >
-              {time}
-            </Button>
-          );
-        })}
+      <div className="space-y-4">
+        <div className="grid grid-cols-2 gap-2">
+          {DEFAULT_TIME_SLOTS.map((time) => {
+            const isActive = timeSlots.some(slot => slot.time_slot === `${time}:00`);
+            return (
+              <Button
+                key={time}
+                variant={isActive ? "default" : "outline"}
+                onClick={() => isActive ? handleRemoveTimeSlot(`${time}:00`) : handleAddTimeSlot(time)}
+                className="w-full"
+              >
+                {time}
+              </Button>
+            );
+          })}
+        </div>
+
+        <Separator />
+
+        <div className="flex gap-2">
+          <Input
+            type="text"
+            placeholder="Adicionar horário (HH:MM)"
+            value={newTimeSlot}
+            onChange={(e) => setNewTimeSlot(e.target.value)}
+            className="flex-1"
+          />
+          <Button onClick={handleManualTimeAdd} disabled={!newTimeSlot}>
+            <Plus className="h-4 w-4" />
+          </Button>
+        </div>
+
+        {timeSlots.filter(slot => !DEFAULT_TIME_SLOTS.includes(slot.time_slot.slice(0, -3))).length > 0 && (
+          <div className="grid grid-cols-2 gap-2">
+            {timeSlots
+              .filter(slot => !DEFAULT_TIME_SLOTS.includes(slot.time_slot.slice(0, -3)))
+              .sort((a, b) => a.time_slot.localeCompare(b.time_slot))
+              .map((slot) => (
+                <Button
+                  key={slot.time_slot}
+                  variant="default"
+                  onClick={() => handleRemoveTimeSlot(slot.time_slot)}
+                  className="w-full"
+                >
+                  {slot.time_slot.slice(0, -3)}
+                </Button>
+              ))}
+          </div>
+        )}
       </div>
 
       <div className="text-sm text-muted-foreground mt-2">
@@ -145,3 +211,4 @@ export const AvailableTimeSlots = ({ professionalId, selectedDate }: AvailableTi
     </div>
   );
 };
+

@@ -1,8 +1,11 @@
 
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Calendar } from "@/components/ui/calendar";
+import { Button } from "@/components/ui/button";
+import { CalendarIcon } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 import {
   Select,
   SelectContent,
@@ -10,34 +13,26 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Calendar } from "@/components/ui/calendar";
-import { Button } from "@/components/ui/button";
-import { CalendarIcon } from "lucide-react";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { cn } from "@/lib/utils";
+import { Label } from "@/components/ui/label";
+import { useAvailableSlots } from "@/hooks/useAvailableSlots";
 
-interface TimeSlot {
-  time: string;
-  available: boolean;
-  maxAppointments?: number;
-  currentAppointments?: number;
-}
-
-export interface AppointmentDateFormProps {
+interface AppointmentDateFormProps {
+  professionalId: string;
   appointmentDate: Date | undefined;
   appointmentTime: string;
   onAppointmentDateSelect: (date: Date | undefined) => void;
   onAppointmentTimeChange: (value: string) => void;
-  availableSlots: TimeSlot[];
 }
 
 export const AppointmentDateForm = ({
+  professionalId,
   appointmentDate,
   appointmentTime,
   onAppointmentDateSelect,
   onAppointmentTimeChange,
-  availableSlots,
 }: AppointmentDateFormProps) => {
+  const { slots, isLoading } = useAvailableSlots(professionalId, appointmentDate);
+
   return (
     <div className="space-y-4">
       <div>
@@ -77,19 +72,27 @@ export const AppointmentDateForm = ({
         <Select
           value={appointmentTime}
           onValueChange={onAppointmentTimeChange}
-          disabled={!appointmentDate || !availableSlots.length}
+          disabled={!appointmentDate || isLoading || slots.length === 0}
         >
           <SelectTrigger>
-            <SelectValue placeholder="Selecione um horário" />
+            <SelectValue placeholder={
+              !appointmentDate 
+                ? "Selecione uma data primeiro" 
+                : isLoading 
+                ? "Carregando horários..." 
+                : slots.length === 0 
+                ? "Nenhum horário disponível" 
+                : "Selecione um horário"
+            } />
           </SelectTrigger>
           <SelectContent>
-            {availableSlots.map((slot) => (
+            {slots.map((slot) => (
               <SelectItem 
                 key={slot.time} 
                 value={slot.time}
                 disabled={!slot.available}
               >
-                {slot.time} ({slot.currentAppointments || 0}/{slot.maxAppointments || 10} agendamentos)
+                {slot.time} ({slot.currentAppointments}/{slot.maxAppointments} agendamentos)
               </SelectItem>
             ))}
           </SelectContent>
