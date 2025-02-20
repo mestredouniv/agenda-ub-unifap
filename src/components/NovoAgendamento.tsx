@@ -40,13 +40,65 @@ export const NovoAgendamento = ({ professionalId, onSuccess }: NovoAgendamentoPr
 
     setIsLoading(true);
     try {
+      // Verificar se o dia está disponível
+      const checkDate = format(formData.appointmentDate, 'yyyy-MM-dd');
+      const { data: unavailableDays } = await supabase
+        .from('professional_unavailable_days')
+        .select('date')
+        .eq('professional_id', professionalId)
+        .eq('date', checkDate);
+
+      if (unavailableDays && unavailableDays.length > 0) {
+        toast({
+          title: "Data indisponível",
+          description: "O profissional não está disponível nesta data.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Verificar disponibilidade do horário
+      const { data: existingAppointments } = await supabase
+        .from('appointments')
+        .select('id')
+        .eq('professional_id', professionalId)
+        .eq('appointment_date', checkDate)
+        .eq('appointment_time', `${formData.appointmentTime}:00`)
+        .is('deleted_at', null);
+
+      const { data: slotConfig } = await supabase
+        .from('professional_available_slots')
+        .select('max_appointments')
+        .eq('professional_id', professionalId)
+        .eq('time_slot', `${formData.appointmentTime}:00`)
+        .single();
+
+      if (!slotConfig) {
+        toast({
+          title: "Horário inválido",
+          description: "Este horário não está configurado para atendimento.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (existingAppointments && existingAppointments.length >= slotConfig.max_appointments) {
+        toast({
+          title: "Horário indisponível",
+          description: "Este horário já está totalmente ocupado.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Criar o agendamento
       const { error } = await supabase
         .from('appointments')
         .insert([{
           professional_id: professionalId,
           patient_name: formData.patientName,
           birth_date: formData.birth_date,
-          appointment_date: format(formData.appointmentDate, 'yyyy-MM-dd'),
+          appointment_date: checkDate,
           appointment_time: `${formData.appointmentTime}:00`,
           display_status: 'waiting',
           is_minor: formData.isMinor,

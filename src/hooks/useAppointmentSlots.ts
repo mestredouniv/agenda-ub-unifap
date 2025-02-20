@@ -29,6 +29,21 @@ export const useAppointmentSlots = (
         setIsLoading(true);
         const formattedDate = format(selectedDate, 'yyyy-MM-dd');
 
+        // Verificar se o dia está indisponível
+        const { data: unavailableDay } = await supabase
+          .from('professional_unavailable_days')
+          .select('id')
+          .eq('professional_id', professionalId)
+          .eq('date', formattedDate)
+          .single();
+
+        if (unavailableDay) {
+          console.log('[Slots] Dia marcado como indisponível');
+          setSlots([]);
+          setIsLoading(false);
+          return;
+        }
+
         // Buscar slots disponíveis
         const { data: availableSlots, error: slotsError } = await supabase
           .from('professional_available_slots')
@@ -63,6 +78,7 @@ export const useAppointmentSlots = (
           };
         });
 
+        console.log('[Slots] Slots processados:', processedSlots);
         setSlots(processedSlots);
       } catch (error) {
         console.error('Erro ao buscar slots:', error);
@@ -83,6 +99,26 @@ export const useAppointmentSlots = (
           event: '*',
           schema: 'public',
           table: 'professional_available_slots',
+          filter: `professional_id=eq.${professionalId}`
+        },
+        () => fetchSlots()
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'professional_unavailable_days',
+          filter: `professional_id=eq.${professionalId}`
+        },
+        () => fetchSlots()
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'appointments',
           filter: `professional_id=eq.${professionalId}`
         },
         () => fetchSlots()
