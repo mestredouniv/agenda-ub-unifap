@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Calendar } from "@/components/ui/calendar";
 import { Label } from "@/components/ui/label";
@@ -9,7 +10,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ptBR } from "date-fns/locale";
-import { useAvailableSlots } from "@/hooks/useAvailableSlots";
+import { useAppointmentSlots } from "@/hooks/useAppointmentSlots";
 
 interface Professional {
   id: string;
@@ -32,15 +33,12 @@ export const AppointmentSelection = ({
   formData,
   onChange,
 }: AppointmentSelectionProps) => {
-  const { slots: availableSlots, isLoading } = useAvailableSlots(
+  const { slots, isLoading } = useAppointmentSlots(
     formData.professionalId,
     formData.preferredDate
   );
 
-  const availableTimeSlots = availableSlots.filter(slot => 
-    slot.available && 
-    (!slot.currentAppointments || slot.currentAppointments < (slot.maxAppointments || 10))
-  );
+  const availableTimeSlots = slots.filter(slot => slot.available);
 
   return (
     <div className="space-y-4">
@@ -100,12 +98,20 @@ export const AppointmentSelection = ({
             disabled={!formData.preferredDate || !availableTimeSlots.length}
           >
             <SelectTrigger>
-              <SelectValue placeholder="Selecione um horário disponível" />
+              <SelectValue placeholder={
+                !formData.preferredDate 
+                  ? "Selecione uma data primeiro" 
+                  : isLoading 
+                  ? "Carregando horários..." 
+                  : availableTimeSlots.length === 0 
+                  ? "Nenhum horário disponível" 
+                  : "Selecione um horário"
+              } />
             </SelectTrigger>
             <SelectContent>
               {availableTimeSlots.map((slot) => (
                 <SelectItem key={slot.time} value={slot.time}>
-                  {slot.time} ({slot.currentAppointments || 0}/{slot.maxAppointments || 10} agendamentos)
+                  {slot.time} ({slot.currentAppointments}/{slot.maxAppointments} agendamentos)
                 </SelectItem>
               ))}
             </SelectContent>
