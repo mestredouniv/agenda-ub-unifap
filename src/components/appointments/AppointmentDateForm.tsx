@@ -14,7 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { useAvailableSlots } from "@/hooks/useAvailableSlots";
+import { useAppointmentSlots } from "@/hooks/useAppointmentSlots";
 
 interface AppointmentDateFormProps {
   professionalId: string;
@@ -31,7 +31,7 @@ export const AppointmentDateForm = ({
   onAppointmentDateSelect,
   onAppointmentTimeChange,
 }: AppointmentDateFormProps) => {
-  const { slots, isLoading } = useAvailableSlots(professionalId, appointmentDate);
+  const { slots, isLoading } = useAppointmentSlots(professionalId, appointmentDate);
 
   return (
     <div className="space-y-4">
