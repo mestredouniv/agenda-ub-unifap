@@ -1,23 +1,18 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { useToast } from "@/components/ui/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
 import { Plus } from "lucide-react";
+import { useAvailableSlots } from "@/hooks/useAvailableSlots";
+import { useToast } from "@/components/ui/use-toast";
 
 interface AvailableTimeSlotsProps {
   professionalId: string;
   selectedDate?: Date;
-}
-
-interface TimeSlot {
-  time_slot: string;
-  max_appointments: number;
 }
 
 const DEFAULT_TIME_SLOTS = [
@@ -26,113 +21,19 @@ const DEFAULT_TIME_SLOTS = [
 
 export const AvailableTimeSlots = ({ professionalId, selectedDate }: AvailableTimeSlotsProps) => {
   const { toast } = useToast();
-  const [timeSlots, setTimeSlots] = useState<TimeSlot[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [newTimeSlot, setNewTimeSlot] = useState("");
-
-  useEffect(() => {
-    const fetchTimeSlots = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('professional_available_slots')
-          .select('time_slot, max_appointments')
-          .eq('professional_id', professionalId)
-          .order('time_slot');
-
-        if (error) throw error;
-        setTimeSlots(data || []);
-      } catch (error) {
-        console.error('Erro ao buscar horários:', error);
-        toast({
-          title: "Erro",
-          description: "Não foi possível carregar os horários disponíveis.",
-          variant: "destructive",
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchTimeSlots();
-  }, [professionalId, toast]);
-
-  const handleAddTimeSlot = async (time: string) => {
-    try {
-      const formattedTime = time.length === 5 ? time : `${time}:00`;
-      
-      // Verificar se o horário já existe
-      const existingSlot = timeSlots.find(slot => slot.time_slot === formattedTime);
-      if (existingSlot) {
-        toast({
-          title: "Aviso",
-          description: "Este horário já está adicionado.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      const { error } = await supabase
-        .from('professional_available_slots')
-        .insert({
-          professional_id: professionalId,
-          time_slot: formattedTime,
-          max_appointments: 1
-        });
-
-      if (error) throw error;
-
-      setTimeSlots(prev => [...prev, { time_slot: formattedTime, max_appointments: 1 }].sort((a, b) => 
-        a.time_slot.localeCompare(b.time_slot)
-      ));
-
-      if (time === newTimeSlot) {
-        setNewTimeSlot("");
-      }
-
-      toast({
-        title: "Sucesso",
-        description: "Horário adicionado com sucesso",
-      });
-    } catch (error) {
-      console.error('Erro ao adicionar horário:', error);
-      toast({
-        title: "Erro",
-        description: "Não foi possível adicionar o horário. Verifique se ele já não existe.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleRemoveTimeSlot = async (time: string) => {
-    try {
-      const { error } = await supabase
-        .from('professional_available_slots')
-        .delete()
-        .match({ professional_id: professionalId, time_slot: time });
-
-      if (error) throw error;
-
-      setTimeSlots(prev => prev.filter(slot => slot.time_slot !== time));
-
-      toast({
-        title: "Sucesso",
-        description: "Horário removido com sucesso",
-      });
-    } catch (error) {
-      console.error('Erro ao remover horário:', error);
-      toast({
-        title: "Erro",
-        description: "Não foi possível remover o horário.",
-        variant: "destructive",
-      });
-    }
-  };
+  const { 
+    timeSlots, 
+    isLoading, 
+    addTimeSlot, 
+    removeTimeSlot 
+  } = useAvailableSlots(professionalId);
 
   const validateTimeFormat = (time: string) => {
     return /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/.test(time);
   };
 
-  const handleManualTimeAdd = () => {
+  const handleManualTimeAdd = async () => {
     if (!validateTimeFormat(newTimeSlot)) {
       toast({
         title: "Formato inválido",
@@ -142,19 +43,18 @@ export const AvailableTimeSlots = ({ professionalId, selectedDate }: AvailableTi
       return;
     }
 
-    // Verificar se o horário já existe
-    const formattedTime = newTimeSlot.length === 5 ? newTimeSlot : `${newTimeSlot}:00`;
-    const existingSlot = timeSlots.find(slot => slot.time_slot === formattedTime);
-    if (existingSlot) {
-      toast({
-        title: "Aviso",
-        description: "Este horário já está adicionado.",
-        variant: "destructive",
-      });
-      return;
+    const success = await addTimeSlot(newTimeSlot);
+    if (success) {
+      setNewTimeSlot("");
     }
+  };
 
-    handleAddTimeSlot(newTimeSlot);
+  const handleTimeSlotToggle = async (time: string, isActive: boolean) => {
+    if (isActive) {
+      await removeTimeSlot(`${time}:00`);
+    } else {
+      await addTimeSlot(time);
+    }
   };
 
   if (isLoading) {
@@ -184,7 +84,7 @@ export const AvailableTimeSlots = ({ professionalId, selectedDate }: AvailableTi
               <Button
                 key={time}
                 variant={isActive ? "default" : "outline"}
-                onClick={() => isActive ? handleRemoveTimeSlot(`${time}:00`) : handleAddTimeSlot(time)}
+                onClick={() => handleTimeSlotToggle(time, isActive)}
                 className="w-full"
               >
                 {time}
@@ -217,7 +117,7 @@ export const AvailableTimeSlots = ({ professionalId, selectedDate }: AvailableTi
                 <Button
                   key={slot.time_slot}
                   variant="default"
-                  onClick={() => handleRemoveTimeSlot(slot.time_slot)}
+                  onClick={() => removeTimeSlot(slot.time_slot)}
                   className="w-full"
                 >
                   {slot.time_slot.slice(0, -3)}
