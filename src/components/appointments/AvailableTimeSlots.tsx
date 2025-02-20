@@ -60,14 +60,23 @@ export const AvailableTimeSlots = ({ professionalId, selectedDate }: AvailableTi
     try {
       const formattedTime = time.length === 5 ? time : `${time}:00`;
       
+      // Verificar se o horário já existe
+      const existingSlot = timeSlots.find(slot => slot.time_slot === formattedTime);
+      if (existingSlot) {
+        toast({
+          title: "Aviso",
+          description: "Este horário já está adicionado.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       const { error } = await supabase
         .from('professional_available_slots')
-        .upsert({
+        .insert({
           professional_id: professionalId,
           time_slot: formattedTime,
           max_appointments: 1
-        }, {
-          onConflict: 'professional_id,time_slot'
         });
 
       if (error) throw error;
@@ -88,7 +97,7 @@ export const AvailableTimeSlots = ({ professionalId, selectedDate }: AvailableTi
       console.error('Erro ao adicionar horário:', error);
       toast({
         title: "Erro",
-        description: "Não foi possível adicionar o horário.",
+        description: "Não foi possível adicionar o horário. Verifique se ele já não existe.",
         variant: "destructive",
       });
     }
@@ -132,6 +141,19 @@ export const AvailableTimeSlots = ({ professionalId, selectedDate }: AvailableTi
       });
       return;
     }
+
+    // Verificar se o horário já existe
+    const formattedTime = newTimeSlot.length === 5 ? newTimeSlot : `${newTimeSlot}:00`;
+    const existingSlot = timeSlots.find(slot => slot.time_slot === formattedTime);
+    if (existingSlot) {
+      toast({
+        title: "Aviso",
+        description: "Este horário já está adicionado.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     handleAddTimeSlot(newTimeSlot);
   };
 
@@ -211,4 +233,3 @@ export const AvailableTimeSlots = ({ professionalId, selectedDate }: AvailableTi
     </div>
   );
 };
-
