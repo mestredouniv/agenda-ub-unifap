@@ -7,7 +7,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { AvailableTimeSlots } from "@/components/appointments/AvailableTimeSlots";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { format, isSameDay } from "date-fns";
+import { format, isSameDay, parseISO } from "date-fns";
 
 interface UnavailableDaysSelectorProps {
   professionalId: string;
@@ -15,7 +15,9 @@ interface UnavailableDaysSelectorProps {
 }
 
 interface UnavailableDay {
+  id: string;
   date: string;
+  professional_id: string;
 }
 
 export const UnavailableDaysSelector = ({
@@ -23,57 +25,24 @@ export const UnavailableDaysSelector = ({
   onSuccess,
 }: UnavailableDaysSelectorProps) => {
   const { toast } = useToast();
-  const [selectedDays, setSelectedDays] = useState<Date[]>([]);
+  const [unavailableDays, setUnavailableDays] = useState<UnavailableDay[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [availableMonths, setAvailableMonths] = useState<{ month: number; year: number }[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
-
-  const fetchAvailableMonths = async () => {
-    try {
-      console.log('[UnavailableDaysSelector] Buscando meses disponíveis');
-      const { data, error } = await supabase
-        .from('professional_available_months')
-        .select('month, year')
-        .eq('professional_id', professionalId)
-        .order('year')
-        .order('month');
-
-      if (error) {
-        console.error('[UnavailableDaysSelector] Erro ao buscar meses:', error);
-        throw error;
-      }
-      console.log('[UnavailableDaysSelector] Meses disponíveis:', data);
-      setAvailableMonths(data || []);
-    } catch (error) {
-      console.error('[UnavailableDaysSelector] Erro ao buscar meses:', error);
-      toast({
-        title: "Erro",
-        description: "Não foi possível carregar os meses disponíveis.",
-        variant: "destructive",
-      });
-    }
-  };
 
   const fetchUnavailableDays = useCallback(async () => {
     try {
-      console.log('[UnavailableDaysSelector] Buscando dias indisponíveis');
+      setIsLoading(true);
       const { data, error } = await supabase
         .from('professional_unavailable_days')
-        .select('date')
+        .select('id, date, professional_id')
         .eq('professional_id', professionalId);
 
-      if (error) {
-        console.error('[UnavailableDaysSelector] Erro ao buscar dias:', error);
-        throw error;
-      }
+      if (error) throw error;
 
-      if (data) {
-        console.log('[UnavailableDaysSelector] Dias indisponíveis:', data);
-        const unavailableDates = data.map(item => new Date(item.date));
-        setSelectedDays(unavailableDates);
-      }
+      console.log('[UnavailableDaysSelector] Dias indisponíveis carregados:', data);
+      setUnavailableDays(data || []);
     } catch (error) {
-      console.error('[UnavailableDaysSelector] Erro ao buscar dias:', error);
+      console.error('[UnavailableDaysSelector] Erro ao carregar dias:', error);
       toast({
         title: "Erro",
         description: "Não foi possível carregar os dias indisponíveis.",
@@ -86,60 +55,73 @@ export const UnavailableDaysSelector = ({
 
   useEffect(() => {
     fetchUnavailableDays();
-    fetchAvailableMonths();
-  }, [fetchUnavailableDays]);
+
+    const channel = supabase
+      .channel('unavailable-days-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'professional_unavailable_days',
+          filter: `professional_id=eq.${professionalId}`
+        },
+        () => {
+          console.log('[UnavailableDaysSelector] Mudanças detectadas, recarregando...');
+          fetchUnavailableDays();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [fetchUnavailableDays, professionalId]);
 
   const handleDaySelect = async (date: Date | undefined) => {
     if (!date) return;
 
     try {
-      console.log('[UnavailableDaysSelector] Alterando disponibilidade para:', date);
       const dateStr = format(date, 'yyyy-MM-dd');
-      const isSelected = selectedDays.some(
-        (selectedDate) => isSameDay(selectedDate, date)
+      const existingDay = unavailableDays.find(
+        day => isSameDay(parseISO(day.date), date)
       );
 
-      if (isSelected) {
-        console.log('[UnavailableDaysSelector] Removendo data:', dateStr);
+      if (existingDay) {
+        // Remove o dia indisponível
         const { error } = await supabase
           .from('professional_unavailable_days')
           .delete()
-          .match({ professional_id: professionalId, date: dateStr });
+          .eq('id', existingDay.id);
 
-        if (error) {
-          console.error('[UnavailableDaysSelector] Erro ao deletar:', error);
-          throw error;
-        }
+        if (error) throw error;
 
-        setSelectedDays(prev => 
-          prev.filter(d => !isSameDay(d, date))
-        );
+        console.log('[UnavailableDaysSelector] Dia removido com sucesso:', dateStr);
+        setUnavailableDays(prev => prev.filter(d => d.id !== existingDay.id));
 
         toast({
-          title: "Sucesso",
-          description: "Data removida dos dias indisponíveis"
+          title: "Dia disponibilizado",
+          description: "O dia foi marcado como disponível com sucesso."
         });
       } else {
-        console.log('[UnavailableDaysSelector] Adicionando data:', dateStr);
-        const { error } = await supabase
+        // Adiciona novo dia indisponível
+        const { data, error } = await supabase
           .from('professional_unavailable_days')
-          .upsert({
+          .insert({
             professional_id: professionalId,
             date: dateStr,
-          }, {
-            onConflict: 'professional_id,date'
-          });
+          })
+          .select()
+          .single();
 
-        if (error) {
-          console.error('[UnavailableDaysSelector] Erro ao inserir:', error);
-          throw error;
-        }
+        if (error) throw error;
 
-        setSelectedDays(prev => [...prev, date]);
+        console.log('[UnavailableDaysSelector] Novo dia indisponível adicionado:', data);
+        setUnavailableDays(prev => [...prev, data]);
 
         toast({
-          title: "Sucesso",
-          description: "Data adicionada aos dias indisponíveis"
+          title: "Dia bloqueado",
+          description: "O dia foi marcado como indisponível com sucesso."
         });
       }
 
@@ -156,12 +138,6 @@ export const UnavailableDaysSelector = ({
     }
   };
 
-  const isDateInAvailableMonth = (date: Date) => {
-    const month = date.getMonth() + 1;
-    const year = date.getFullYear();
-    return availableMonths.some(am => am.month === month && am.year === year);
-  };
-
   if (isLoading) {
     return <div>Carregando...</div>;
   }
@@ -176,14 +152,13 @@ export const UnavailableDaysSelector = ({
               onSelect={handleDaySelect}
               selected={selectedDate}
               modifiers={{
-                unavailable: selectedDays,
+                unavailable: unavailableDays.map(d => parseISO(d.date)),
               }}
               modifiersStyles={{
                 unavailable: { backgroundColor: "rgb(239 68 68)", color: "white" },
               }}
               className="rounded-md border"
               locale={ptBR}
-              disabled={(date) => !isDateInAvailableMonth(date)}
             />
             <div className="text-sm text-muted-foreground mt-2">
               Clique nos dias para marcar/desmarcar ausências. Os dias em vermelho indicam que você não estará disponível para atendimento.
