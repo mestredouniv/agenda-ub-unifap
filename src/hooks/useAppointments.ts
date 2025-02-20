@@ -38,7 +38,7 @@ export const useAppointments = (professionalId: string) => {
           )
         `)
         .eq('appointment_date', today)
-        .is('deleted_at', null); // Modificado aqui: usando .is() ao invés de .eq()
+        .is('deleted_at', null);
 
       if (professionalId !== "all") {
         query = query.eq('professional_id', professionalId);
