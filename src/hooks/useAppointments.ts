@@ -3,6 +3,12 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { Appointment } from "@/types/appointment";
+import { 
+  fetchDailyAppointments, 
+  createNewAppointment, 
+  updateExistingAppointment 
+} from "@/services/appointmentService";
+import { formatAppointmentData } from "@/utils/appointmentUtils";
 
 export const useAppointments = (professionalId: string) => {
   const { toast } = useToast();
@@ -14,78 +20,12 @@ export const useAppointments = (professionalId: string) => {
       console.log('[Agenda] Iniciando busca de consultas para profissional:', professionalId);
       setIsLoading(true);
       
-      const today = new Date().toISOString().split('T')[0];
-      console.log('[Agenda] Data atual:', today);
-      
-      let query = supabase
-        .from('appointments')
-        .select(`
-          id,
-          patient_name,
-          birth_date,
-          professional_id,
-          appointment_date,
-          appointment_time,
-          display_status,
-          priority,
-          notes,
-          actual_start_time,
-          actual_end_time,
-          updated_at,
-          deleted_at,
-          professionals (
-            name
-          )
-        `)
-        .eq('appointment_date', today)
-        .is('deleted_at', null);
-
-      if (professionalId !== "all") {
-        query = query.eq('professional_id', professionalId);
-      }
-
-      const { data, error } = await query
-        .order('priority', { ascending: false })
-        .order('appointment_time', { ascending: true });
-
-      if (error) {
-        console.error('[Agenda] Erro ao buscar consultas:', error);
-        toast({
-          title: "Erro ao carregar agenda",
-          description: "Não foi possível carregar as consultas. Por favor, tente novamente.",
-          variant: "destructive",
-        });
-        return;
-      }
-
+      const data = await fetchDailyAppointments(professionalId);
       console.log('[Agenda] Dados recebidos do banco:', data);
 
-      const formattedAppointments: Appointment[] = (data || []).map(item => {
-        console.log('[Agenda] Formatando item:', item);
-        const status = item.display_status as Appointment['display_status'] || 'waiting';
-        const priority = item.priority as Appointment['priority'] || 'normal';
-        
-        return {
-          id: item.id,
-          patient_name: item.patient_name,
-          birth_date: item.birth_date,
-          professional_id: item.professional_id,
-          professional: {
-            name: item.professionals?.name || ''
-          },
-          appointment_date: item.appointment_date,
-          appointment_time: item.appointment_time,
-          display_status: status,
-          priority: priority,
-          notes: item.notes,
-          actual_start_time: item.actual_start_time,
-          actual_end_time: item.actual_end_time,
-          updated_at: item.updated_at,
-          deleted_at: item.deleted_at
-        };
-      });
-
+      const formattedAppointments = formatAppointmentData(data || []);
       console.log('[Agenda] Appointments formatados:', formattedAppointments);
+      
       setAppointments(formattedAppointments);
     } catch (err) {
       console.error('[Agenda] Erro inesperado ao buscar consultas:', err);
@@ -103,29 +43,9 @@ export const useAppointments = (professionalId: string) => {
     console.log('[Agenda] Criando nova consulta:', appointmentData);
     
     try {
-      const { data, error } = await supabase
-        .from('appointments')
-        .insert([{
-          ...appointmentData,
-          display_status: 'waiting' as const,
-          priority: appointmentData.priority || 'normal',
-          deleted_at: null,
-          updated_at: new Date().toISOString()
-        }])
-        .select()
-        .single();
-
-      if (error) {
-        console.error('[Agenda] Erro ao criar consulta:', error);
-        toast({
-          title: "Erro ao criar",
-          description: "Não foi possível criar a consulta. Tente novamente.",
-          variant: "destructive",
-        });
-        return null;
-      }
-
+      const data = await createNewAppointment(appointmentData);
       console.log('[Agenda] Consulta criada com sucesso:', data);
+      
       toast({
         title: "Consulta agendada",
         description: "A consulta foi agendada com sucesso!",
@@ -148,25 +68,9 @@ export const useAppointments = (professionalId: string) => {
     console.log('[Agenda] Iniciando atualização de consulta:', { id, updateData });
     
     try {
-      const { error } = await supabase
-        .from('appointments')
-        .update({
-          ...updateData,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', id);
-
-      if (error) {
-        console.error('[Agenda] Erro ao atualizar consulta:', error);
-        toast({
-          title: "Erro ao salvar",
-          description: "Não foi possível salvar as alterações. Tente novamente.",
-          variant: "destructive",
-        });
-        return false;
-      }
-
+      await updateExistingAppointment(id, updateData);
       console.log('[Agenda] Consulta atualizada com sucesso');
+      
       toast({
         title: "Alterações salvas",
         description: "As alterações foram salvas automaticamente.",
