@@ -15,6 +15,8 @@ import {
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { useAppointmentSlots } from "@/hooks/useAppointmentSlots";
+import { useEffect, useState, useCallback } from "react";
+import { useToast } from "@/components/ui/use-toast";
 
 interface AppointmentDateFormProps {
   professionalId: string;
@@ -31,7 +33,58 @@ export const AppointmentDateForm = ({
   onAppointmentDateSelect,
   onAppointmentTimeChange,
 }: AppointmentDateFormProps) => {
-  const { slots, isLoading } = useAppointmentSlots(professionalId, appointmentDate);
+  const { toast } = useToast();
+  const [lastClickTime, setLastClickTime] = useState(0);
+  const [unavailableDates, setUnavailableDates] = useState<Date[]>([]);
+  const { slots, isLoading, fetchUnavailableDays } = useAppointmentSlots(professionalId, appointmentDate);
+
+  const handleDateSelect = useCallback((date: Date | undefined) => {
+    if (!date) {
+      onAppointmentDateSelect(undefined);
+      return;
+    }
+
+    const now = Date.now();
+    const isDoubleClick = now - lastClickTime < 300; // 300ms para duplo clique
+    setLastClickTime(now);
+
+    if (isDoubleClick) {
+      // Verificar se a data está disponível
+      const isUnavailable = unavailableDates.some(
+        unavailableDate => format(unavailableDate, 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd')
+      );
+
+      if (isUnavailable) {
+        toast({
+          title: "Data indisponível",
+          description: "O profissional não está disponível nesta data.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Se disponível, seleciona a data
+      onAppointmentDateSelect(date);
+      toast({
+        title: "Data selecionada",
+        description: format(date, "dd 'de' MMMM 'de' yyyy", { locale: ptBR }),
+      });
+    }
+  }, [lastClickTime, onAppointmentDateSelect, toast, unavailableDates]);
+
+  useEffect(() => {
+    const loadUnavailableDays = async () => {
+      const dates = await fetchUnavailableDays();
+      setUnavailableDates(dates.map(d => new Date(d.date)));
+    };
+
+    loadUnavailableDays();
+
+    // Configurar polling para atualização a cada 5 segundos
+    const interval = setInterval(loadUnavailableDays, 5000);
+
+    return () => clearInterval(interval);
+  }, [fetchUnavailableDays]);
 
   return (
     <div className="space-y-4">
@@ -50,7 +103,7 @@ export const AppointmentDateForm = ({
               {appointmentDate ? (
                 format(appointmentDate, "PPP", { locale: ptBR })
               ) : (
-                <span>Selecione uma data</span>
+                <span>Selecione uma data (clique duplo para confirmar)</span>
               )}
             </Button>
           </PopoverTrigger>
@@ -58,9 +111,24 @@ export const AppointmentDateForm = ({
             <Calendar
               mode="single"
               selected={appointmentDate}
-              onSelect={onAppointmentDateSelect}
-              disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
-              initialFocus
+              onSelect={handleDateSelect}
+              disabled={[
+                ...unavailableDates,
+                {
+                  before: new Date(new Date().setHours(0, 0, 0, 0)),
+                },
+              ]}
+              modifiers={{
+                unavailable: unavailableDates,
+              }}
+              modifiersStyles={{
+                unavailable: { 
+                  backgroundColor: "rgb(239 68 68)", 
+                  color: "white",
+                  cursor: "not-allowed" 
+                },
+              }}
+              className="rounded-md border"
               locale={ptBR}
             />
           </PopoverContent>
