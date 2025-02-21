@@ -19,6 +19,11 @@ export const useAppointmentSlots = (
 
   useEffect(() => {
     const fetchSlots = async () => {
+      console.log('[useAppointmentSlots] Iniciando busca de slots', {
+        professionalId,
+        selectedDate
+      });
+
       if (!selectedDate) {
         setSlots([]);
         setIsLoading(false);
@@ -30,15 +35,20 @@ export const useAppointmentSlots = (
         const formattedDate = format(selectedDate, 'yyyy-MM-dd');
 
         // Verificar se o dia está indisponível
-        const { data: unavailableDay } = await supabase
+        const { data: unavailableDay, error: unavailableError } = await supabase
           .from('professional_unavailable_days')
           .select('id')
           .eq('professional_id', professionalId)
           .eq('date', formattedDate)
-          .single();
+          .maybeSingle();
+
+        if (unavailableError) {
+          console.error('[useAppointmentSlots] Erro ao verificar disponibilidade:', unavailableError);
+          throw unavailableError;
+        }
 
         if (unavailableDay) {
-          console.log('[Slots] Dia marcado como indisponível');
+          console.log('[useAppointmentSlots] Dia indisponível:', formattedDate);
           setSlots([]);
           setIsLoading(false);
           return;
@@ -51,7 +61,12 @@ export const useAppointmentSlots = (
           .eq('professional_id', professionalId)
           .order('time_slot');
 
-        if (slotsError) throw slotsError;
+        if (slotsError) {
+          console.error('[useAppointmentSlots] Erro ao buscar slots:', slotsError);
+          throw slotsError;
+        }
+
+        console.log('[useAppointmentSlots] Slots disponíveis:', availableSlots);
 
         // Buscar agendamentos existentes
         const { data: appointments, error: appointmentsError } = await supabase
@@ -61,7 +76,12 @@ export const useAppointmentSlots = (
           .eq('appointment_date', formattedDate)
           .is('deleted_at', null);
 
-        if (appointmentsError) throw appointmentsError;
+        if (appointmentsError) {
+          console.error('[useAppointmentSlots] Erro ao buscar agendamentos:', appointmentsError);
+          throw appointmentsError;
+        }
+
+        console.log('[useAppointmentSlots] Agendamentos existentes:', appointments);
 
         // Processar os slots
         const processedSlots = (availableSlots || []).map(slot => {
@@ -78,10 +98,10 @@ export const useAppointmentSlots = (
           };
         });
 
-        console.log('[Slots] Slots processados:', processedSlots);
+        console.log('[useAppointmentSlots] Slots processados:', processedSlots);
         setSlots(processedSlots);
       } catch (error) {
-        console.error('Erro ao buscar slots:', error);
+        console.error('[useAppointmentSlots] Erro inesperado:', error);
         setSlots([]);
       } finally {
         setIsLoading(false);
@@ -90,9 +110,9 @@ export const useAppointmentSlots = (
 
     fetchSlots();
 
-    // Configurar listener para mudanças em tempo real
+    // Configurar listeners para mudanças em tempo real
     const channel = supabase
-      .channel('slots-changes')
+      .channel(`slots-${professionalId}-${selectedDate?.toISOString() || 'no-date'}`)
       .on(
         'postgres_changes',
         {
@@ -101,7 +121,10 @@ export const useAppointmentSlots = (
           table: 'professional_available_slots',
           filter: `professional_id=eq.${professionalId}`
         },
-        () => fetchSlots()
+        (payload) => {
+          console.log('[useAppointmentSlots] Mudança em slots:', payload);
+          fetchSlots();
+        }
       )
       .on(
         'postgres_changes',
@@ -111,7 +134,10 @@ export const useAppointmentSlots = (
           table: 'professional_unavailable_days',
           filter: `professional_id=eq.${professionalId}`
         },
-        () => fetchSlots()
+        (payload) => {
+          console.log('[useAppointmentSlots] Mudança em dias indisponíveis:', payload);
+          fetchSlots();
+        }
       )
       .on(
         'postgres_changes',
@@ -121,11 +147,17 @@ export const useAppointmentSlots = (
           table: 'appointments',
           filter: `professional_id=eq.${professionalId}`
         },
-        () => fetchSlots()
+        (payload) => {
+          console.log('[useAppointmentSlots] Mudança em agendamentos:', payload);
+          fetchSlots();
+        }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('[useAppointmentSlots] Status da subscription:', status);
+      });
 
     return () => {
+      console.log('[useAppointmentSlots] Limpando subscription');
       supabase.removeChannel(channel);
     };
   }, [professionalId, selectedDate]);

@@ -27,28 +27,52 @@ export const NovoAgendamento = ({ professionalId, onSuccess }: NovoAgendamentoPr
     hasRecord: "" as "yes" | "no" | "electronic" | "",
   });
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const validateForm = () => {
     if (!formData.patientName || !formData.birth_date || !formData.appointmentDate || !formData.appointmentTime) {
       toast({
         title: "Campos obrigatórios",
         description: "Por favor, preencha todos os campos obrigatórios.",
         variant: "destructive",
       });
-      return;
+      return false;
     }
+    if (formData.isMinor && !formData.responsibleName) {
+      toast({
+        title: "Responsável necessário",
+        description: "Para pacientes menores de idade, informe o nome do responsável.",
+        variant: "destructive",
+      });
+      return false;
+    }
+    return true;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    console.log('[NovoAgendamento] Iniciando submissão do formulário:', formData);
+
+    if (!validateForm()) return;
 
     setIsLoading(true);
     try {
-      // Verificar se o dia está disponível
       const checkDate = format(formData.appointmentDate, 'yyyy-MM-dd');
-      const { data: unavailableDays } = await supabase
+      console.log('[NovoAgendamento] Data formatada:', checkDate);
+
+      // Verificar disponibilidade do dia
+      const { data: unavailableDay, error: unavailableError } = await supabase
         .from('professional_unavailable_days')
         .select('date')
         .eq('professional_id', professionalId)
-        .eq('date', checkDate);
+        .eq('date', checkDate)
+        .maybeSingle();
 
-      if (unavailableDays && unavailableDays.length > 0) {
+      if (unavailableError) {
+        console.error('[NovoAgendamento] Erro ao verificar disponibilidade:', unavailableError);
+        throw unavailableError;
+      }
+
+      if (unavailableDay) {
+        console.log('[NovoAgendamento] Dia indisponível:', checkDate);
         toast({
           title: "Data indisponível",
           description: "O profissional não está disponível nesta data.",
@@ -58,22 +82,23 @@ export const NovoAgendamento = ({ professionalId, onSuccess }: NovoAgendamentoPr
       }
 
       // Verificar disponibilidade do horário
-      const { data: existingAppointments } = await supabase
-        .from('appointments')
-        .select('id')
-        .eq('professional_id', professionalId)
-        .eq('appointment_date', checkDate)
-        .eq('appointment_time', `${formData.appointmentTime}:00`)
-        .is('deleted_at', null);
+      const timeSlot = `${formData.appointmentTime}:00`;
+      console.log('[NovoAgendamento] Verificando horário:', timeSlot);
 
-      const { data: slotConfig } = await supabase
+      const { data: slotConfig, error: slotError } = await supabase
         .from('professional_available_slots')
         .select('max_appointments')
         .eq('professional_id', professionalId)
-        .eq('time_slot', `${formData.appointmentTime}:00`)
-        .single();
+        .eq('time_slot', timeSlot)
+        .maybeSingle();
+
+      if (slotError) {
+        console.error('[NovoAgendamento] Erro ao verificar configuração do slot:', slotError);
+        throw slotError;
+      }
 
       if (!slotConfig) {
+        console.log('[NovoAgendamento] Horário não configurado');
         toast({
           title: "Horário inválido",
           description: "Este horário não está configurado para atendimento.",
@@ -82,7 +107,24 @@ export const NovoAgendamento = ({ professionalId, onSuccess }: NovoAgendamentoPr
         return;
       }
 
+      const { data: existingAppointments, error: appointmentsError } = await supabase
+        .from('appointments')
+        .select('id')
+        .eq('professional_id', professionalId)
+        .eq('appointment_date', checkDate)
+        .eq('appointment_time', timeSlot)
+        .is('deleted_at', null);
+
+      if (appointmentsError) {
+        console.error('[NovoAgendamento] Erro ao verificar agendamentos existentes:', appointmentsError);
+        throw appointmentsError;
+      }
+
       if (existingAppointments && existingAppointments.length >= slotConfig.max_appointments) {
+        console.log('[NovoAgendamento] Horário lotado:', {
+          atual: existingAppointments.length,
+          maximo: slotConfig.max_appointments
+        });
         toast({
           title: "Horário indisponível",
           description: "Este horário já está totalmente ocupado.",
@@ -92,14 +134,15 @@ export const NovoAgendamento = ({ professionalId, onSuccess }: NovoAgendamentoPr
       }
 
       // Criar o agendamento
-      const { error } = await supabase
+      console.log('[NovoAgendamento] Criando agendamento');
+      const { error: insertError } = await supabase
         .from('appointments')
         .insert([{
           professional_id: professionalId,
           patient_name: formData.patientName,
           birth_date: formData.birth_date,
           appointment_date: checkDate,
-          appointment_time: `${formData.appointmentTime}:00`,
+          appointment_time: timeSlot,
           display_status: 'waiting',
           is_minor: formData.isMinor,
           responsible_name: formData.responsibleName,
@@ -107,15 +150,19 @@ export const NovoAgendamento = ({ professionalId, onSuccess }: NovoAgendamentoPr
           phone: formData.phone || null,
         }]);
 
-      if (error) throw error;
+      if (insertError) {
+        console.error('[NovoAgendamento] Erro ao criar agendamento:', insertError);
+        throw insertError;
+      }
 
+      console.log('[NovoAgendamento] Agendamento criado com sucesso');
       toast({
         title: "Sucesso",
         description: "Agendamento realizado com sucesso!",
       });
       onSuccess();
     } catch (error) {
-      console.error('Erro ao criar agendamento:', error);
+      console.error('[NovoAgendamento] Erro inesperado:', error);
       toast({
         title: "Erro",
         description: "Não foi possível realizar o agendamento. Tente novamente.",
@@ -132,8 +179,12 @@ export const NovoAgendamento = ({ professionalId, onSuccess }: NovoAgendamentoPr
         patientName={formData.patientName}
         birthDate={formData.birth_date}
         phone={formData.phone}
-        onPatientNameChange={(value) => setFormData(prev => ({ ...prev, patientName: value }))}
-        onBirthDateChange={(value) => setFormData(prev => {
+        onPatientNameChange={(value) => {
+          console.log('[NovoAgendamento] Atualizando nome do paciente:', value);
+          setFormData(prev => ({ ...prev, patientName: value }));
+        }}
+        onBirthDateChange={(value) => {
+          console.log('[NovoAgendamento] Atualizando data de nascimento:', value);
           const birthDate = new Date(value);
           const today = new Date();
           let age = today.getFullYear() - birthDate.getFullYear();
@@ -141,29 +192,44 @@ export const NovoAgendamento = ({ professionalId, onSuccess }: NovoAgendamentoPr
           if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
             age--;
           }
-          return {
+          setFormData(prev => ({
             ...prev,
             birth_date: value,
             isMinor: age < 18
-          };
-        })}
-        onPhoneChange={(value) => setFormData(prev => ({ ...prev, phone: value }))}
+          }));
+        }}
+        onPhoneChange={(value) => {
+          console.log('[NovoAgendamento] Atualizando telefone:', value);
+          setFormData(prev => ({ ...prev, phone: value }));
+        }}
       />
 
       <AppointmentDateForm
         professionalId={professionalId}
         appointmentDate={formData.appointmentDate}
         appointmentTime={formData.appointmentTime}
-        onAppointmentDateSelect={(date) => setFormData(prev => ({ ...prev, appointmentDate: date, appointmentTime: "" }))}
-        onAppointmentTimeChange={(value) => setFormData(prev => ({ ...prev, appointmentTime: value }))}
+        onAppointmentDateSelect={(date) => {
+          console.log('[NovoAgendamento] Selecionando data:', date);
+          setFormData(prev => ({ ...prev, appointmentDate: date, appointmentTime: "" }));
+        }}
+        onAppointmentTimeChange={(value) => {
+          console.log('[NovoAgendamento] Selecionando horário:', value);
+          setFormData(prev => ({ ...prev, appointmentTime: value }));
+        }}
       />
 
       <AdditionalInfoForm
         isMinor={formData.isMinor}
         responsibleName={formData.responsibleName}
         hasRecord={formData.hasRecord}
-        onResponsibleNameChange={(value) => setFormData(prev => ({ ...prev, responsibleName: value }))}
-        onHasRecordChange={(value) => setFormData(prev => ({ ...prev, hasRecord: value }))}
+        onResponsibleNameChange={(value) => {
+          console.log('[NovoAgendamento] Atualizando responsável:', value);
+          setFormData(prev => ({ ...prev, responsibleName: value }));
+        }}
+        onHasRecordChange={(value) => {
+          console.log('[NovoAgendamento] Atualizando info de prontuário:', value);
+          setFormData(prev => ({ ...prev, hasRecord: value }));
+        }}
       />
 
       <Button type="submit" className="w-full" disabled={isLoading}>
