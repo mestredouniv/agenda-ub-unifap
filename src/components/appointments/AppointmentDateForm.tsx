@@ -34,11 +34,10 @@ export const AppointmentDateForm = ({
   onAppointmentTimeChange,
 }: AppointmentDateFormProps) => {
   const { toast } = useToast();
-  const [lastClickTime, setLastClickTime] = useState(0);
   const [unavailableDates, setUnavailableDates] = useState<Date[]>([]);
   const { slots, isLoading, fetchUnavailableDays } = useAppointmentSlots(professionalId, appointmentDate);
 
-  // Manipulador de seleção de data com duplo clique
+  // Manipulador de seleção de data com clique único
   const handleDateSelect = useCallback(async (date: Date | undefined) => {
     console.log('[AppointmentDateForm] Tentativa de seleção de data:', date);
     
@@ -47,32 +46,24 @@ export const AppointmentDateForm = ({
       return;
     }
 
-    const now = Date.now();
-    const isDoubleClick = now - lastClickTime < 300;
-    setLastClickTime(now);
+    // Verificar disponibilidade
+    const isUnavailable = unavailableDates.some(
+      unavailableDate => format(unavailableDate, 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd')
+    );
 
-    if (isDoubleClick) {
-      console.log('[AppointmentDateForm] Duplo clique detectado');
-      
-      // Verificar disponibilidade
-      const isUnavailable = unavailableDates.some(
-        unavailableDate => format(unavailableDate, 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd')
-      );
-
-      if (isUnavailable) {
-        console.log('[AppointmentDateForm] Data indisponível:', date);
-        toast({
-          title: "Data indisponível",
-          description: "O profissional não está disponível nesta data.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      console.log('[AppointmentDateForm] Data confirmada:', date);
-      onAppointmentDateSelect(date);
+    if (isUnavailable) {
+      console.log('[AppointmentDateForm] Data indisponível:', date);
+      toast({
+        title: "Data indisponível",
+        description: "O profissional não está disponível nesta data.",
+        variant: "destructive",
+      });
+      return;
     }
-  }, [lastClickTime, onAppointmentDateSelect, toast, unavailableDates]);
+
+    console.log('[AppointmentDateForm] Data confirmada:', date);
+    onAppointmentDateSelect(date);
+  }, [onAppointmentDateSelect, toast, unavailableDates]);
 
   // Carregamento e atualização de datas indisponíveis
   useEffect(() => {
@@ -89,7 +80,7 @@ export const AppointmentDateForm = ({
 
     loadUnavailableDays();
 
-    const interval = setInterval(loadUnavailableDays, 3000);
+    const interval = setInterval(loadUnavailableDays, 2000); // Reduzido para 2 segundos
     console.log('[AppointmentDateForm] Polling configurado para datas indisponíveis');
 
     return () => {

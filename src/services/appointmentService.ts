@@ -42,6 +42,19 @@ export const fetchDailyAppointments = async (professionalId: string) => {
 };
 
 export const createNewAppointment = async (appointmentData: Omit<Appointment, 'id' | 'professional'>) => {
+  console.log('[appointmentService] Criando novo agendamento:', appointmentData);
+  
+  // Garantir que todos os campos necessários estejam presentes
+  if (!appointmentData.patient_name || !appointmentData.appointment_date || !appointmentData.appointment_time) {
+    throw new Error('Dados obrigatórios faltando');
+  }
+
+  // Validar formato da data e hora
+  const appointmentDate = new Date(appointmentData.appointment_date);
+  if (isNaN(appointmentDate.getTime())) {
+    throw new Error('Data inválida');
+  }
+
   const { data, error } = await supabase
     .from('appointments')
     .insert([{
@@ -54,7 +67,12 @@ export const createNewAppointment = async (appointmentData: Omit<Appointment, 'i
     .select()
     .single();
 
-  if (error) throw error;
+  if (error) {
+    console.error('[appointmentService] Erro ao criar agendamento:', error);
+    throw error;
+  }
+
+  console.log('[appointmentService] Agendamento criado com sucesso:', data);
   return data;
 };
 
