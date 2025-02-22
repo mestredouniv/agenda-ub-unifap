@@ -14,24 +14,24 @@ export const useAppointments = (professionalId: string) => {
   const { toast } = useToast();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
 
   const fetchAppointments = useCallback(async () => {
     try {
-      console.log('[Agenda] Iniciando busca de consultas para profissional:', professionalId);
       setIsLoading(true);
+      setError(null);
       
       const data = await fetchDailyAppointments(professionalId);
-      console.log('[Agenda] Dados recebidos do banco:', data);
-
       const formattedAppointments = formatAppointmentData(data || []);
-      console.log('[Agenda] Appointments formatados:', formattedAppointments);
       
       setAppointments(formattedAppointments);
     } catch (err) {
-      console.error('[Agenda] Erro inesperado ao buscar consultas:', err);
+      const error = err instanceof Error ? err : new Error('Erro desconhecido');
+      console.error('[Agenda] Erro ao buscar consultas:', error);
+      setError(error);
       toast({
-        title: "Erro",
-        description: "Ocorreu um erro inesperado. Por favor, tente novamente.",
+        title: "Erro ao carregar agenda",
+        description: error.message,
         variant: "destructive",
       });
     } finally {
@@ -40,60 +40,56 @@ export const useAppointments = (professionalId: string) => {
   }, [professionalId, toast]);
 
   const createAppointment = useCallback(async (appointmentData: Omit<Appointment, 'id' | 'professional'>) => {
-    console.log('[Agenda] Criando nova consulta:', appointmentData);
-    
     try {
       const data = await createNewAppointment(appointmentData);
-      console.log('[Agenda] Consulta criada com sucesso:', data);
       
       toast({
-        title: "Consulta agendada",
-        description: "A consulta foi agendada com sucesso!",
+        title: "Sucesso",
+        description: "Consulta agendada com sucesso!",
       });
 
       await fetchAppointments();
       return data;
-    } catch (error) {
-      console.error('[Agenda] Erro inesperado ao criar consulta:', error);
+    } catch (err) {
+      const error = err instanceof Error ? err : new Error('Erro ao criar agendamento');
+      console.error('[Agenda] Erro ao criar consulta:', error);
       toast({
-        title: "Erro",
-        description: "Ocorreu um erro ao agendar a consulta.",
+        title: "Erro no agendamento",
+        description: error.message,
         variant: "destructive",
       });
-      throw error; // Propagar o erro para tratamento adequado no componente
+      throw error;
     }
   }, [fetchAppointments, toast]);
 
   const updateAppointment = useCallback(async (id: string, updateData: Partial<Appointment>) => {
-    console.log('[Agenda] Iniciando atualização de consulta:', { id, updateData });
-    
     try {
       await updateExistingAppointment(id, updateData);
-      console.log('[Agenda] Consulta atualizada com sucesso');
       
       toast({
-        title: "Alterações salvas",
-        description: "As alterações foram salvas automaticamente.",
+        title: "Sucesso",
+        description: "Alterações salvas com sucesso.",
       });
 
       await fetchAppointments();
       return true;
-    } catch (error) {
-      console.error('[Agenda] Erro inesperado ao atualizar consulta:', error);
+    } catch (err) {
+      const error = err instanceof Error ? err : new Error('Erro ao atualizar agendamento');
+      console.error('[Agenda] Erro ao atualizar consulta:', error);
       toast({
-        title: "Erro",
-        description: "Ocorreu um erro ao salvar as alterações.",
+        title: "Erro ao salvar",
+        description: error.message,
         variant: "destructive",
       });
-      throw error; // Propagar o erro para tratamento adequado no componente
+      throw error;
     }
   }, [fetchAppointments, toast]);
 
   useEffect(() => {
-    console.log('[Agenda] Configurando sincronização em tempo real para profissional:', professionalId);
-    
+    let mounted = true;
+
     const channel = supabase
-      .channel('agenda-realtime')
+      .channel(`appointments-${professionalId}`)
       .on(
         'postgres_changes',
         {
@@ -104,17 +100,19 @@ export const useAppointments = (professionalId: string) => {
         },
         (payload) => {
           console.log('[Agenda] Mudança detectada:', payload);
-          fetchAppointments();
+          if (mounted) {
+            fetchAppointments();
+          }
         }
       )
       .subscribe((status) => {
-        console.log('[Agenda] Status da sincronização:', status);
+        console.log('[Agenda] Status da subscription:', status);
       });
 
     fetchAppointments();
 
     return () => {
-      console.log('[Agenda] Limpando subscription');
+      mounted = false;
       supabase.removeChannel(channel);
     };
   }, [professionalId, fetchAppointments]);
@@ -122,6 +120,7 @@ export const useAppointments = (professionalId: string) => {
   return { 
     appointments,
     isLoading,
+    error,
     fetchAppointments,
     createAppointment,
     updateAppointment

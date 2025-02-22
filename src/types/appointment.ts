@@ -11,14 +11,14 @@ export interface Appointment {
   appointment_time: string;
   display_status: 'waiting' | 'triage' | 'in_progress' | 'completed';
   priority: 'priority' | 'normal';
-  notes?: string;
+  notes?: string | null;
   actual_start_time?: string | null;
   actual_end_time?: string | null;
-  updated_at?: string;
+  updated_at?: string | null;
   deleted_at?: string | null;
-  is_minor?: boolean;
-  responsible_name?: string | null;
-  has_record?: string | null;
+  is_minor: boolean;
+  responsible_name: string | null;
+  has_record: string | null;
   phone: string;
 }
 
