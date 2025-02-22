@@ -82,7 +82,16 @@ export const NovoAgendamento = ({ professionalId, onSuccess }: NovoAgendamentoPr
       console.log('[NovoAgendamento] Data formatada:', appointmentDate);
 
       // Criar o agendamento
-      console.log('[NovoAgendamento] Preparando dados para criação');
+      console.log('[NovoAgendamento] Preparando dados para criação:', {
+        professional_id: professionalId,
+        patient_name: formData.patientName,
+        birth_date: formData.birth_date,
+        appointment_date: appointmentDate,
+        appointment_time: formData.appointmentTime,
+        is_minor: formData.isMinor,
+        phone: formData.phone
+      });
+
       const appointment = await createNewAppointment({
         professional_id: professionalId,
         patient_name: formData.patientName.trim(),
@@ -90,11 +99,11 @@ export const NovoAgendamento = ({ professionalId, onSuccess }: NovoAgendamentoPr
         appointment_date: appointmentDate,
         appointment_time: `${formData.appointmentTime}:00`,
         display_status: 'waiting',
+        priority: 'normal',
         is_minor: formData.isMinor,
         responsible_name: formData.responsibleName.trim() || null,
         has_record: formData.hasRecord || null,
-        phone: formData.phone.trim(),
-        priority: 'normal',
+        phone: formData.phone.trim()
       });
 
       console.log('[NovoAgendamento] Agendamento criado com sucesso:', appointment);
@@ -107,7 +116,9 @@ export const NovoAgendamento = ({ professionalId, onSuccess }: NovoAgendamentoPr
       console.error('[NovoAgendamento] Erro ao criar agendamento:', error);
       toast({
         title: "Erro",
-        description: error instanceof Error ? error.message : "Não foi possível realizar o agendamento. Tente novamente.",
+        description: error instanceof Error 
+          ? error.message 
+          : "Não foi possível realizar o agendamento. Tente novamente.",
         variant: "destructive",
       });
     } finally {

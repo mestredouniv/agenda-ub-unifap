@@ -16,6 +16,10 @@ export interface Appointment {
   actual_end_time?: string | null;
   updated_at?: string;
   deleted_at?: string | null;
+  is_minor?: boolean;
+  responsible_name?: string | null;
+  has_record?: string | null;
+  phone: string;
 }
 
 export interface PersonalDataFormProps {
