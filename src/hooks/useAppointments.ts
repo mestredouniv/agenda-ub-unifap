@@ -60,7 +60,7 @@ export const useAppointments = (professionalId: string) => {
         description: "Ocorreu um erro ao agendar a consulta.",
         variant: "destructive",
       });
-      return null;
+      throw error; // Propagar o erro para tratamento adequado no componente
     }
   }, [fetchAppointments, toast]);
 
@@ -85,7 +85,7 @@ export const useAppointments = (professionalId: string) => {
         description: "Ocorreu um erro ao salvar as alterações.",
         variant: "destructive",
       });
-      return false;
+      throw error; // Propagar o erro para tratamento adequado no componente
     }
   }, [fetchAppointments, toast]);
 

@@ -22,6 +22,10 @@ export const fetchDailyAppointments = async (professionalId: string) => {
       actual_end_time,
       updated_at,
       deleted_at,
+      is_minor,
+      responsible_name,
+      has_record,
+      phone,
       professionals (
         name
       )
@@ -37,7 +41,12 @@ export const fetchDailyAppointments = async (professionalId: string) => {
     .order('priority', { ascending: false })
     .order('appointment_time', { ascending: true });
 
-  if (error) throw error;
+  if (error) {
+    console.error('[Agenda] Erro ao buscar agendamentos:', error);
+    throw error;
+  }
+  
+  console.log('[Agenda] Agendamentos encontrados:', data);
   return data;
 };
 
@@ -55,36 +64,57 @@ export const createNewAppointment = async (appointmentData: Omit<Appointment, 'i
     throw new Error('Data inválida');
   }
 
-  const { data, error } = await supabase
-    .from('appointments')
-    .insert([{
-      ...appointmentData,
-      display_status: 'waiting' as const,
-      priority: appointmentData.priority || 'normal',
-      deleted_at: null,
-      updated_at: new Date().toISOString()
-    }])
-    .select()
-    .single();
+  try {
+    const { data, error } = await supabase
+      .from('appointments')
+      .insert([{
+        ...appointmentData,
+        display_status: 'waiting',
+        priority: appointmentData.priority || 'normal',
+        deleted_at: null,
+        updated_at: new Date().toISOString(),
+        phone: appointmentData.phone || '', // Garantir que phone sempre tenha um valor
+        is_minor: appointmentData.is_minor || false,
+        responsible_name: appointmentData.responsible_name || null,
+        has_record: appointmentData.has_record || null
+      }])
+      .select()
+      .single();
 
-  if (error) {
-    console.error('[appointmentService] Erro ao criar agendamento:', error);
+    if (error) {
+      console.error('[appointmentService] Erro ao criar agendamento:', error);
+      throw error;
+    }
+
+    console.log('[appointmentService] Agendamento criado com sucesso:', data);
+    return data;
+  } catch (error) {
+    console.error('[appointmentService] Erro inesperado:', error);
     throw error;
   }
-
-  console.log('[appointmentService] Agendamento criado com sucesso:', data);
-  return data;
 };
 
 export const updateExistingAppointment = async (id: string, updateData: Partial<Appointment>) => {
-  const { error } = await supabase
-    .from('appointments')
-    .update({
-      ...updateData,
-      updated_at: new Date().toISOString()
-    })
-    .eq('id', id);
+  console.log('[appointmentService] Atualizando agendamento:', { id, updateData });
+  
+  try {
+    const { error } = await supabase
+      .from('appointments')
+      .update({
+        ...updateData,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', id);
 
-  if (error) throw error;
-  return true;
+    if (error) {
+      console.error('[appointmentService] Erro ao atualizar agendamento:', error);
+      throw error;
+    }
+
+    console.log('[appointmentService] Agendamento atualizado com sucesso');
+    return true;
+  } catch (error) {
+    console.error('[appointmentService] Erro inesperado ao atualizar:', error);
+    throw error;
+  }
 };
