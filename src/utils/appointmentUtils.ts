@@ -22,7 +22,11 @@ export const formatAppointmentData = (data: any[]): Appointment[] => {
       actual_start_time: item.actual_start_time,
       actual_end_time: item.actual_end_time,
       updated_at: item.updated_at,
-      deleted_at: item.deleted_at
+      deleted_at: item.deleted_at,
+      is_minor: item.is_minor,
+      responsible_name: item.responsible_name,
+      has_record: item.has_record,
+      phone: item.phone || '' // Adicionando o campo phone com valor default vazio
     };
   });
 };
