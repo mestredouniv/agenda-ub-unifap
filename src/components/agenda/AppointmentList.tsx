@@ -1,14 +1,6 @@
-
 import { Card } from "@/components/ui/card";
-import { Appointment } from "@/types/appointment";
 import { AppointmentCard } from "@/components/appointments/AppointmentCard";
-
-interface AppointmentListProps {
-  appointments: Appointment[];
-  viewMode: 'list' | 'grid';
-  onSuccess: () => void;
-  isLoading: boolean;
-}
+import { AppointmentListProps } from "@/types/agenda";
 
 export const AppointmentList = ({
   appointments,

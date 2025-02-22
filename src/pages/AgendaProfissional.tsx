@@ -15,15 +15,16 @@ import { useAppointments } from "@/hooks/useAppointments";
 import { AgendaSidebar } from "@/components/agenda/AgendaSidebar";
 import { AppointmentList } from "@/components/agenda/AppointmentList";
 import { ProfessionalHeader } from "@/components/agenda/ProfessionalHeader";
+import { AgendaState } from "@/types/agenda";
 
 export const AgendaProfissional = () => {
   const { professionalId } = useParams<{ professionalId: string }>();
-  const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
+  const [viewMode, setViewMode] = useState<AgendaState['viewMode']>('list');
   const [isNewAppointmentOpen, setIsNewAppointmentOpen] = useState(false);
   const [isUnavailableDaysOpen, setIsUnavailableDaysOpen] = useState(false);
   const [professionalName, setProfessionalName] = useState("");
-  const [availableMonths, setAvailableMonths] = useState<{ month: number; year: number }[]>([]);
-  const [selectedMonth, setSelectedMonth] = useState<string>(() => {
+  const [availableMonths, setAvailableMonths] = useState<AgendaState['availableMonths']>([]);
+  const [selectedMonth, setSelectedMonth] = useState<AgendaState['selectedMonth']>(() => {
     const today = new Date();
     return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
   });

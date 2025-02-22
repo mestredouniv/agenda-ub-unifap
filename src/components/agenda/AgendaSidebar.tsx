@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Users, Clock, UserPlus, List, Grid, Filter } from "lucide-react";
 import { Label } from "@/components/ui/label";
@@ -13,18 +12,7 @@ import {
 } from "@/components/ui/select";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-
-interface AgendaSidebarProps {
-  appointments: number;
-  nextAppointmentTime: string;
-  viewMode: 'list' | 'grid';
-  setViewMode: (mode: 'list' | 'grid') => void;
-  onNewAppointmentClick: () => void;
-  onUnavailableDaysClick: () => void;
-  availableMonths: { month: number; year: number }[];
-  selectedMonth: string;
-  setSelectedMonth: (month: string) => void;
-}
+import { AgendaSidebarProps } from "@/types/agenda";
 
 export const AgendaSidebar = ({
   appointments,

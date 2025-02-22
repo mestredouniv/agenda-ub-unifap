@@ -1,7 +1,4 @@
-
-interface ProfessionalHeaderProps {
-  professionalName: string;
-}
+import { ProfessionalHeaderProps } from "@/types/agenda";
 
 export const ProfessionalHeader = ({ professionalName }: ProfessionalHeaderProps) => {
   return (
