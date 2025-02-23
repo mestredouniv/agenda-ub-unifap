@@ -149,7 +149,10 @@ export const UnavailableDaysSelector = ({
           <div>
             <Calendar
               mode="single"
-              onSelect={handleDaySelect}
+              onSelect={(date) => {
+                setSelectedDate(date);
+                handleDaySelect(date);
+              }}
               selected={selectedDate}
               modifiers={{
                 unavailable: unavailableDays.map(d => parseISO(d.date)),
