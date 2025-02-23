@@ -1,7 +1,11 @@
 
 import { supabase } from "@/integrations/supabase/client";
+import { Appointment } from "@/types/appointment";
+import { Database } from "@/integrations/supabase/types";
 
 const APPOINTMENTS_TABLE = 'appointments';
+
+type AppointmentInsert = Database['public']['Tables']['appointments']['Insert'];
 
 export const fetchDailyAppointments = async (professionalId: string) => {
   const today = new Date().toISOString().split('T')[0];
@@ -53,9 +57,13 @@ export const createNewAppointment = async (appointmentData: Omit<Appointment, 'i
     }
 
     // Preparar dados
-    const appointment = {
-      ...appointmentData,
-      display_status: 'waiting' as const,
+    const appointment: AppointmentInsert = {
+      patient_name: appointmentData.patient_name.trim(),
+      birth_date: appointmentData.birth_date,
+      professional_id: appointmentData.professional_id,
+      appointment_date: appointmentData.appointment_date,
+      appointment_time: appointmentData.appointment_time,
+      display_status: 'waiting',
       priority: appointmentData.priority || 'normal',
       is_minor: Boolean(appointmentData.is_minor),
       phone: appointmentData.phone.trim(),
