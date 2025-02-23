@@ -48,12 +48,31 @@ export const createNewAppointment = async (appointmentData: Omit<Appointment, 'i
   console.log('[Agenda] Iniciando criação:', appointmentData);
   
   try {
-    // Validações
+    // Validações básicas
     if (!appointmentData.patient_name?.trim() || 
         !appointmentData.appointment_date || 
         !appointmentData.appointment_time || 
         !appointmentData.phone?.trim()) {
       throw new Error('Campos obrigatórios incompletos');
+    }
+
+    // Validar data do agendamento
+    const appointmentDate = new Date(appointmentData.appointment_date);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    if (appointmentDate < today) {
+      throw new Error('Data do agendamento não pode ser no passado');
+    }
+
+    // Validar formato da data
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(appointmentData.appointment_date)) {
+      throw new Error('Formato de data inválido');
+    }
+
+    // Validar formato do horário
+    if (!/^\d{2}:\d{2}(:\d{2})?$/.test(appointmentData.appointment_time)) {
+      throw new Error('Formato de horário inválido');
     }
 
     // Preparar dados
@@ -83,14 +102,27 @@ export const createNewAppointment = async (appointmentData: Omit<Appointment, 'i
 
     if (error) {
       console.error('[Agenda] Erro na criação:', error);
-      throw error;
+      
+      // Traduzir erros do banco de dados
+      if (error.message.includes('Data do agendamento não pode ser no passado')) {
+        throw new Error('Data do agendamento não pode ser no passado');
+      } else if (error.message.includes('Nome do paciente é obrigatório')) {
+        throw new Error('Nome do paciente é obrigatório');
+      } else if (error.message.includes('Telefone é obrigatório')) {
+        throw new Error('Telefone é obrigatório');
+      } else {
+        throw new Error('Não foi possível realizar o agendamento. Tente novamente.');
+      }
     }
 
     console.log('[Agenda] Criado com sucesso:', data);
     return data;
   } catch (error) {
     console.error('[Agenda] Erro crítico na criação:', error);
-    throw error;
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error('Erro inesperado ao criar agendamento');
   }
 };
 
