@@ -1,6 +1,5 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { Appointment } from "@/types/appointment";
 
 const APPOINTMENTS_TABLE = 'appointments';
 
@@ -13,7 +12,7 @@ export const fetchDailyAppointments = async (professionalId: string) => {
       .from(APPOINTMENTS_TABLE)
       .select(`
         *,
-        professionals (
+        professionals!fk_professional (
           name
         )
       `)
@@ -71,7 +70,7 @@ export const createNewAppointment = async (appointmentData: Omit<Appointment, 'i
     const { data, error } = await supabase
       .from(APPOINTMENTS_TABLE)
       .insert([appointment])
-      .select('*, professionals(name)')
+      .select('*, professionals!fk_professional(name)')
       .single();
 
     if (error) {
