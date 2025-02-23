@@ -28,6 +28,7 @@ export const UnavailableDaysSelector = ({
   const [unavailableDays, setUnavailableDays] = useState<UnavailableDay[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
+  const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
 
   const fetchUnavailableDays = useCallback(async () => {
     try {
@@ -125,6 +126,9 @@ export const UnavailableDaysSelector = ({
         });
       }
 
+      // Mantenha o mês atual selecionado após a atualização
+      setSelectedDate(date);
+
       if (onSuccess) {
         onSuccess();
       }
@@ -149,10 +153,9 @@ export const UnavailableDaysSelector = ({
           <div>
             <Calendar
               mode="single"
-              onSelect={(date) => {
-                setSelectedDate(date);
-                handleDaySelect(date);
-              }}
+              month={currentMonth}
+              onMonthChange={setCurrentMonth}
+              onSelect={handleDaySelect}
               selected={selectedDate}
               modifiers={{
                 unavailable: unavailableDays.map(d => parseISO(d.date)),
@@ -162,6 +165,7 @@ export const UnavailableDaysSelector = ({
               }}
               className="rounded-md border"
               locale={ptBR}
+              defaultMonth={currentMonth}
             />
             <div className="text-sm text-muted-foreground mt-2">
               Clique nos dias para marcar/desmarcar ausências. Os dias em vermelho indicam que você não estará disponível para atendimento.
