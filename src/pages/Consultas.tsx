@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -32,6 +31,7 @@ import { BackToHomeButton } from "@/components/BackToHomeButton";
 import { AppointmentCard } from "@/components/appointments/AppointmentCard";
 import { AppointmentActions } from "@/components/appointments/AppointmentActions";
 import { useToast } from "@/components/ui/use-toast";
+import { getStatusBadge } from "@/utils/appointment";
 
 const Consultas = () => {
   const { toast } = useToast();
