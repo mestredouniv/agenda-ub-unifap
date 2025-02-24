@@ -216,13 +216,17 @@ export const AppointmentActions = ({ appointment, onSuccess }: AppointmentAction
     return 'bg-gray-500 hover:bg-gray-600';
   };
 
+  const isAppointmentFinished = appointment.display_status === 'completed' || 
+                               appointment.display_status === 'missed' ||
+                               appointment.display_status === 'rescheduled';
+
   return (
     <div className="flex flex-wrap gap-2">
       <Button
         size="sm"
         className={`text-white ${getTriageButtonStyle()}`}
         onClick={handleStartTriage}
-        disabled={appointment.display_status === 'completed' || appointment.display_status === 'missed'}
+        disabled={isAppointmentFinished}
       >
         {getTriageButtonText()}
       </Button>

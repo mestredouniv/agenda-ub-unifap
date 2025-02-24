@@ -9,7 +9,7 @@ export interface Appointment {
   };
   appointment_date: string;
   appointment_time: string;
-  display_status: 'waiting' | 'triage' | 'in_progress' | 'completed';
+  display_status: 'waiting' | 'triage' | 'in_progress' | 'completed' | 'missed' | 'rescheduled';
   priority: 'priority' | 'normal';
   notes?: string | null;
   actual_start_time?: string | null;
