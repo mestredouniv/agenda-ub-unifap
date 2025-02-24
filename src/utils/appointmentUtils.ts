@@ -1,4 +1,15 @@
 
+import { Appointment } from "@/types/appointment";
+
+export const formatAppointmentData = (appointments: any[]): Appointment[] => {
+  return appointments.map(appointment => ({
+    ...appointment,
+    room: appointment.room || null,
+    block: appointment.block || null,
+    ticket_number: appointment.ticket_number || null
+  }));
+};
+
 export const generateTicketNumber = () => {
   const date = new Date();
   const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');

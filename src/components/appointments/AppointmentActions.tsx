@@ -47,12 +47,14 @@ export const AppointmentActions = ({ appointment, onSuccess }: AppointmentAction
     }
 
     try {
+      const updateData: Partial<Appointment> = {
+        room,
+        block
+      };
+
       const { error } = await supabase
         .from('appointments')
-        .update({
-          room,
-          block
-        })
+        .update(updateData)
         .eq('professional_id', appointment.professional_id)
         .eq('appointment_date', appointment.appointment_date);
 
@@ -70,16 +72,17 @@ export const AppointmentActions = ({ appointment, onSuccess }: AppointmentAction
       if (!updated) return;
 
       const ticketNumber = generateTicketNumber();
+      const updateData: Partial<Appointment> = {
+        display_status: 'triage',
+        actual_start_time: new Date().toLocaleTimeString(),
+        ticket_number: ticketNumber,
+        room,
+        block
+      };
 
       const { error: updateError } = await supabase
         .from('appointments')
-        .update({
-          display_status: 'triage',
-          actual_start_time: new Date().toLocaleTimeString(),
-          ticket_number: ticketNumber,
-          room,
-          block
-        })
+        .update(updateData)
         .eq('id', appointment.id);
 
       if (updateError) throw updateError;
