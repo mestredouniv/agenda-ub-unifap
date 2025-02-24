@@ -1,4 +1,3 @@
-
 export interface AgendaSidebarProps {
   appointments: number;
   nextAppointmentTime: string;
@@ -7,8 +6,8 @@ export interface AgendaSidebarProps {
   onNewAppointmentClick: () => void;
   onUnavailableDaysClick: () => void;
   availableMonths: { month: number; year: number }[];
-  selectedMonth: string;
-  setSelectedMonth: (month: string) => void;
+  selectedDate: Date;
+  setSelectedDate: (date: Date) => void;
 }
 
 export interface AppointmentListProps {

@@ -1,15 +1,10 @@
+
 import { Button } from "@/components/ui/button";
-import { Users, Clock, UserPlus, List, Grid, Filter } from "lucide-react";
+import { Users, Clock, UserPlus, List, Grid, Calendar as CalendarIcon } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { BackToHomeButton } from "@/components/BackToHomeButton";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { AgendaSidebarProps } from "@/types/agenda";
@@ -22,11 +17,11 @@ export const AgendaSidebar = ({
   onNewAppointmentClick,
   onUnavailableDaysClick,
   availableMonths,
-  selectedMonth,
-  setSelectedMonth
+  selectedDate,
+  setSelectedDate
 }: AgendaSidebarProps) => {
   return (
-    <div className="w-64 min-h-screen bg-white border-r border-gray-200 p-4 space-y-4">
+    <div className="w-72 min-h-screen bg-white border-r border-gray-200 p-4 space-y-4">
       <div className="space-y-2">
         <h2 className="text-lg font-semibold">Agenda</h2>
         <BackToHomeButton />
@@ -56,7 +51,7 @@ export const AgendaSidebar = ({
       
       <Separator />
       
-      <div className="space-y-2">
+      <div className="space-y-4">
         <div className="flex space-x-2">
           <Button 
             variant={viewMode === 'list' ? 'default' : 'outline'} 
@@ -73,11 +68,17 @@ export const AgendaSidebar = ({
             <Grid className="h-4 w-4" />
           </Button>
         </div>
-        
-        <Button variant="outline" className="w-full justify-start">
-          <Filter className="mr-2 h-4 w-4" />
-          Filtrar
-        </Button>
+
+        <div className="bg-gray-50 rounded-lg p-4">
+          <Label className="mb-2 block">Selecionar Data</Label>
+          <Calendar
+            mode="single"
+            selected={selectedDate}
+            onSelect={(date) => date && setSelectedDate(date)}
+            locale={ptBR}
+            className="rounded-md border w-full"
+          />
+        </div>
       </div>
       
       <Separator />
@@ -94,28 +95,6 @@ export const AgendaSidebar = ({
           <span className="text-sm font-medium">Próximo:</span>
           <span className="text-sm">{nextAppointmentTime}</span>
         </div>
-      </div>
-      
-      <div className="space-y-2">
-        <Label>Filtrar por Mês</Label>
-        <Select
-          value={selectedMonth}
-          onValueChange={setSelectedMonth}
-        >
-          <SelectTrigger className="w-full">
-            <SelectValue placeholder="Selecione um mês" />
-          </SelectTrigger>
-          <SelectContent>
-            {availableMonths.map(({ month, year }) => (
-              <SelectItem 
-                key={`${year}-${month}`} 
-                value={`${year}-${String(month).padStart(2, '0')}`}
-              >
-                {format(new Date(year, month - 1), 'MMMM yyyy', { locale: ptBR })}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
       </div>
     </div>
   );

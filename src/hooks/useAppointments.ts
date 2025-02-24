@@ -1,16 +1,11 @@
 
 import { useState, useEffect, useCallback } from "react";
+import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { Appointment } from "@/types/appointment";
-import { 
-  fetchDailyAppointments, 
-  createNewAppointment, 
-  updateExistingAppointment 
-} from "@/services/appointmentService";
-import { formatAppointmentData } from "@/utils/appointmentUtils";
 
-export const useAppointments = (professionalId: string) => {
+export const useAppointments = (professionalId: string, selectedDate: Date) => {
   const { toast } = useToast();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -21,10 +16,25 @@ export const useAppointments = (professionalId: string) => {
       setIsLoading(true);
       setError(null);
       
-      const data = await fetchDailyAppointments(professionalId);
-      const formattedAppointments = formatAppointmentData(data || []);
+      const formattedDate = format(selectedDate, 'yyyy-MM-dd');
       
-      setAppointments(formattedAppointments);
+      const { data, error: fetchError } = await supabase
+        .from('appointments')
+        .select(`
+          *,
+          professionals (
+            name
+          )
+        `)
+        .eq('professional_id', professionalId)
+        .eq('appointment_date', formattedDate)
+        .is('deleted_at', null)
+        .order('priority', { ascending: false })
+        .order('appointment_time', { ascending: true });
+
+      if (fetchError) throw fetchError;
+      
+      setAppointments(data || []);
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Erro desconhecido');
       console.error('[Agenda] Erro ao buscar consultas:', error);
@@ -37,53 +47,7 @@ export const useAppointments = (professionalId: string) => {
     } finally {
       setIsLoading(false);
     }
-  }, [professionalId, toast]);
-
-  const createAppointment = useCallback(async (appointmentData: Omit<Appointment, 'id' | 'professional'>) => {
-    try {
-      const data = await createNewAppointment(appointmentData);
-      
-      toast({
-        title: "Sucesso",
-        description: "Consulta agendada com sucesso!",
-      });
-
-      await fetchAppointments();
-      return data;
-    } catch (err) {
-      const error = err instanceof Error ? err : new Error('Erro ao criar agendamento');
-      console.error('[Agenda] Erro ao criar consulta:', error);
-      toast({
-        title: "Erro no agendamento",
-        description: error.message,
-        variant: "destructive",
-      });
-      throw error;
-    }
-  }, [fetchAppointments, toast]);
-
-  const updateAppointment = useCallback(async (id: string, updateData: Partial<Appointment>) => {
-    try {
-      await updateExistingAppointment(id, updateData);
-      
-      toast({
-        title: "Sucesso",
-        description: "Alterações salvas com sucesso.",
-      });
-
-      await fetchAppointments();
-      return true;
-    } catch (err) {
-      const error = err instanceof Error ? err : new Error('Erro ao atualizar agendamento');
-      console.error('[Agenda] Erro ao atualizar consulta:', error);
-      toast({
-        title: "Erro ao salvar",
-        description: error.message,
-        variant: "destructive",
-      });
-      throw error;
-    }
-  }, [fetchAppointments, toast]);
+  }, [professionalId, selectedDate, toast]);
 
   useEffect(() => {
     let mounted = true;
@@ -96,7 +60,7 @@ export const useAppointments = (professionalId: string) => {
           event: '*',
           schema: 'public',
           table: 'appointments',
-          filter: professionalId !== "all" ? `professional_id=eq.${professionalId}` : undefined
+          filter: `professional_id=eq.${professionalId}`
         },
         (payload) => {
           console.log('[Agenda] Mudança detectada:', payload);
@@ -121,8 +85,6 @@ export const useAppointments = (professionalId: string) => {
     appointments,
     isLoading,
     error,
-    fetchAppointments,
-    createAppointment,
-    updateAppointment
+    fetchAppointments
   };
 };

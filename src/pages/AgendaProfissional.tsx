@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import {
@@ -24,12 +23,9 @@ export const AgendaProfissional = () => {
   const [isUnavailableDaysOpen, setIsUnavailableDaysOpen] = useState(false);
   const [professionalName, setProfessionalName] = useState("");
   const [availableMonths, setAvailableMonths] = useState<AgendaState['availableMonths']>([]);
-  const [selectedMonth, setSelectedMonth] = useState<AgendaState['selectedMonth']>(() => {
-    const today = new Date();
-    return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
-  });
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
 
-  const { appointments, isLoading, fetchAppointments } = useAppointments(professionalId || "");
+  const { appointments, isLoading, fetchAppointments } = useAppointments(professionalId || "", selectedDate);
 
   useEffect(() => {
     const fetchProfessionalName = async () => {
@@ -81,8 +77,8 @@ export const AgendaProfissional = () => {
           onNewAppointmentClick={() => setIsNewAppointmentOpen(true)}
           onUnavailableDaysClick={() => setIsUnavailableDaysOpen(true)}
           availableMonths={availableMonths}
-          selectedMonth={selectedMonth}
-          setSelectedMonth={setSelectedMonth}
+          selectedDate={selectedDate}
+          setSelectedDate={setSelectedDate}
         />
 
         <div className="flex-1 p-6">
