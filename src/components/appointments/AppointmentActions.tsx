@@ -11,20 +11,17 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useNavigate } from "react-router-dom";
-import { 
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { useState } from "react";
 import { Calendar, Clock, Trash2 } from "lucide-react";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { LocationInputs } from "./LocationInputs";
+import { DeleteAppointmentDialog } from "./DeleteAppointmentDialog";
+import {
+  generateTicketNumber,
+  getTriageButtonStyle,
+  getTriageButtonText,
+  getConsultButtonStyle,
+} from "@/utils/appointmentUtils";
 
 interface AppointmentActionsProps {
   appointment: Appointment;
@@ -39,12 +36,6 @@ export const AppointmentActions = ({ appointment, onSuccess }: AppointmentAction
   const [room, setRoom] = useState(appointment.room || '');
   const [block, setBlock] = useState(appointment.block || '');
 
-  const generateTicketNumber = () => {
-    const date = new Date();
-    const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
-    return `${date.getHours()}${date.getMinutes()}${random}`;
-  };
-
   const updateRoomAndBlock = async () => {
     if (!room || !block) {
       toast({
@@ -56,12 +47,11 @@ export const AppointmentActions = ({ appointment, onSuccess }: AppointmentAction
     }
 
     try {
-      // Atualizar todos os agendamentos do mesmo dia com a mesma sala e bloco
       const { error } = await supabase
         .from('appointments')
-        .update({ 
-          room: room,
-          block: block
+        .update({
+          room,
+          block
         })
         .eq('professional_id', appointment.professional_id)
         .eq('appointment_date', appointment.appointment_date);
@@ -76,19 +66,19 @@ export const AppointmentActions = ({ appointment, onSuccess }: AppointmentAction
 
   const handleStartTriage = async () => {
     try {
-      // Primeiro atualiza sala e bloco
       const updated = await updateRoomAndBlock();
       if (!updated) return;
 
-      // Gera número da senha
       const ticketNumber = generateTicketNumber();
 
       const { error: updateError } = await supabase
         .from('appointments')
-        .update({ 
+        .update({
           display_status: 'triage',
           actual_start_time: new Date().toLocaleTimeString(),
-          ticket_number: ticketNumber
+          ticket_number: ticketNumber,
+          room,
+          block
         })
         .eq('id', appointment.id);
 
@@ -234,35 +224,6 @@ export const AppointmentActions = ({ appointment, onSuccess }: AppointmentAction
     }
   };
 
-  const getTriageButtonStyle = () => {
-    switch (appointment.display_status) {
-      case 'triage':
-        return 'bg-red-500 hover:bg-red-600';
-      case 'in_progress':
-        return 'bg-green-500 hover:bg-green-600';
-      default:
-        return 'bg-blue-500 hover:bg-blue-600';
-    }
-  };
-
-  const getTriageButtonText = () => {
-    switch (appointment.display_status) {
-      case 'triage':
-        return 'Triagem em andamento';
-      case 'in_progress':
-        return 'Triagem finalizada';
-      default:
-        return 'Iniciar triagem';
-    }
-  };
-
-  const getConsultButtonStyle = () => {
-    if (appointment.display_status === 'in_progress') {
-      return 'bg-orange-500 hover:bg-orange-600';
-    }
-    return 'bg-gray-500 hover:bg-gray-600';
-  };
-
   const isAppointmentFinished = appointment.display_status === 'completed' || 
                                appointment.display_status === 'missed' ||
                                appointment.display_status === 'rescheduled';
@@ -272,26 +233,12 @@ export const AppointmentActions = ({ appointment, onSuccess }: AppointmentAction
   return (
     <div className="space-y-4">
       {showLocationInputs && (
-        <div className="grid grid-cols-2 gap-4 mb-4">
-          <div className="space-y-2">
-            <Label htmlFor="room">Sala</Label>
-            <Input
-              id="room"
-              value={room}
-              onChange={(e) => setRoom(e.target.value)}
-              placeholder="Número da sala"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="block">Bloco</Label>
-            <Input
-              id="block"
-              value={block}
-              onChange={(e) => setBlock(e.target.value)}
-              placeholder="Número/letra do bloco"
-            />
-          </div>
-        </div>
+        <LocationInputs
+          room={room}
+          block={block}
+          onRoomChange={setRoom}
+          onBlockChange={setBlock}
+        />
       )}
 
       {appointment.ticket_number && (
@@ -303,16 +250,16 @@ export const AppointmentActions = ({ appointment, onSuccess }: AppointmentAction
       <div className="flex flex-wrap gap-2">
         <Button
           size="sm"
-          className={`text-white ${getTriageButtonStyle()}`}
+          className={`text-white ${getTriageButtonStyle(appointment.display_status)}`}
           onClick={handleStartTriage}
           disabled={isAppointmentFinished}
         >
-          {getTriageButtonText()}
+          {getTriageButtonText(appointment.display_status)}
         </Button>
 
         <Button
           size="sm"
-          className={`text-white ${getConsultButtonStyle()}`}
+          className={`text-white ${getConsultButtonStyle(appointment.display_status)}`}
           onClick={handleStartAppointment}
           disabled={appointment.display_status !== 'triage'}
         >
@@ -351,22 +298,11 @@ export const AppointmentActions = ({ appointment, onSuccess }: AppointmentAction
           <Trash2 className="h-4 w-4" />
         </Button>
 
-        <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Remover agendamento</AlertDialogTitle>
-              <AlertDialogDescription>
-                Tem certeza que deseja remover este agendamento? Esta ação não pode ser desfeita.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancelar</AlertDialogCancel>
-              <AlertDialogAction onClick={handleDeleteAppointment}>
-                Confirmar
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+        <DeleteAppointmentDialog
+          open={showDeleteDialog}
+          onOpenChange={setShowDeleteDialog}
+          onConfirm={handleDeleteAppointment}
+        />
       </div>
     </div>
   );
