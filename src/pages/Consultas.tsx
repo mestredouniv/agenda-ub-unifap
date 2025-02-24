@@ -1,6 +1,9 @@
+
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { Calendar as CalendarIcon } from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
 import {
   Select,
   SelectContent,
@@ -8,6 +11,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   Table,
   TableBody,
@@ -18,19 +26,53 @@ import {
 } from "@/components/ui/table";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { BackToHomeButton } from "@/components/BackToHomeButton";
 import { AppointmentCard } from "@/components/appointments/AppointmentCard";
 import { AppointmentActions } from "@/components/appointments/AppointmentActions";
-import { useAppointments } from "@/hooks/useAppointments";
-import { getStatusBadge } from "@/utils/appointment";
 import { useToast } from "@/components/ui/use-toast";
 
 const Consultas = () => {
   const { toast } = useToast();
   const [selectedProfessional, setSelectedProfessional] = useState("all");
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [professionals, setProfessionals] = useState<any[]>([]);
-  const { appointments, fetchAppointments } = useAppointments(selectedProfessional);
+  const [appointments, setAppointments] = useState<any[]>([]);
+
+  const fetchAppointments = async () => {
+    try {
+      const formattedDate = format(selectedDate, 'yyyy-MM-dd');
+      let query = supabase
+        .from('appointments')
+        .select(`
+          *,
+          professionals (
+            name
+          )
+        `)
+        .eq('appointment_date', formattedDate)
+        .is('deleted_at', null);
+
+      if (selectedProfessional !== "all") {
+        query = query.eq('professional_id', selectedProfessional);
+      }
+
+      const { data, error } = await query
+        .order('priority', { ascending: false })
+        .order('appointment_time', { ascending: true });
+
+      if (error) throw error;
+      setAppointments(data || []);
+    } catch (error) {
+      console.error('Erro ao buscar agendamentos:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível carregar os agendamentos",
+        variant: "destructive",
+      });
+    }
+  };
 
   useEffect(() => {
     const fetchProfessionals = async () => {
@@ -54,11 +96,30 @@ const Consultas = () => {
     fetchProfessionals();
   }, [toast]);
 
+  useEffect(() => {
+    fetchAppointments();
+
+    const channel = supabase
+      .channel('appointments-changes')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'appointments',
+      }, () => {
+        fetchAppointments();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [selectedProfessional, selectedDate]);
+
   return (
     <div className="container mx-auto p-4 md:p-8">
       <BackToHomeButton />
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-        <h1 className="text-2xl font-bold">Consultas do Dia</h1>
+        <h1 className="text-2xl font-bold">Consultas</h1>
         <div className="flex flex-col md:flex-row items-start md:items-center gap-4 w-full md:w-auto">
           <Select
             value={selectedProfessional}
@@ -76,9 +137,23 @@ const Consultas = () => {
               ))}
             </SelectContent>
           </Select>
-          <p className="text-sm text-muted-foreground">
-            {format(new Date(), "EEEE, dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
-          </p>
+
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className="w-full md:w-[280px] justify-start text-left font-normal">
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {format(selectedDate, "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={selectedDate}
+                onSelect={(date) => date && setSelectedDate(date)}
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
         </div>
       </div>
       
@@ -87,7 +162,7 @@ const Consultas = () => {
         {appointments.length === 0 ? (
           <Card className="p-4">
             <p className="text-center text-muted-foreground">
-              Não há consultas agendadas para hoje
+              Não há consultas agendadas para este dia
             </p>
           </Card>
         ) : (
@@ -118,7 +193,7 @@ const Consultas = () => {
             {appointments.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={6} className="text-center text-muted-foreground">
-                  Não há consultas agendadas para hoje
+                  Não há consultas agendadas para este dia
                 </TableCell>
               </TableRow>
             ) : (

@@ -65,54 +65,73 @@ export const AppointmentActions = ({ appointment, onSuccess }: AppointmentAction
     }
   };
 
-  const handleStartTriage = async () => {
+  const handleTriageAction = async () => {
     try {
-      const updated = await updateRoomAndBlock();
-      if (!updated) return;
+      if (appointment.display_status === 'triage') {
+        // Finalizar triagem
+        const { error: updateError } = await supabase
+          .from('appointments')
+          .update({ 
+            display_status: 'waiting',
+            actual_start_time: null
+          })
+          .eq('id', appointment.id);
 
-      const ticketNumber = generateTicketNumber();
-      const updateData: Partial<Appointment> = {
-        display_status: 'triage',
-        actual_start_time: new Date().toLocaleTimeString(),
-        ticket_number: ticketNumber,
-        room,
-        block
-      };
+        if (updateError) throw updateError;
 
-      const { error: updateError } = await supabase
-        .from('appointments')
-        .update(updateData)
-        .eq('id', appointment.id);
+        toast({
+          title: "Triagem finalizada",
+          description: "O paciente está pronto para a consulta.",
+        });
+      } else {
+        // Iniciar triagem
+        const updated = await updateRoomAndBlock();
+        if (!updated) return;
 
-      if (updateError) throw updateError;
+        const ticketNumber = generateTicketNumber();
+        const updateData: Partial<Appointment> = {
+          display_status: 'triage',
+          actual_start_time: new Date().toLocaleTimeString(),
+          ticket_number: ticketNumber,
+          room,
+          block
+        };
 
-      const { error: lastCallError } = await supabase
-        .from('last_calls')
-        .insert([{
-          patient_name: appointment.patient_name,
-          professional_name: appointment.professionals.name,
-          status: 'triage'
-        }]);
+        const { error: updateError } = await supabase
+          .from('appointments')
+          .update(updateData)
+          .eq('id', appointment.id);
 
-      if (lastCallError) throw lastCallError;
+        if (updateError) throw updateError;
 
-      setCurrentPatient({
-        name: appointment.patient_name,
-        status: 'triage',
-        professional: appointment.professionals.name,
-      });
+        const { error: lastCallError } = await supabase
+          .from('last_calls')
+          .insert([{
+            patient_name: appointment.patient_name,
+            professional_name: appointment.professionals.name,
+            status: 'triage'
+          }]);
 
-      toast({
-        title: "Triagem iniciada",
-        description: `Paciente encaminhado para triagem. Senha: ${ticketNumber}`,
-      });
+        if (lastCallError) throw lastCallError;
+
+        setCurrentPatient({
+          name: appointment.patient_name,
+          status: 'triage',
+          professional: appointment.professionals.name,
+        });
+
+        toast({
+          title: "Triagem iniciada",
+          description: `Paciente encaminhado para triagem. Senha: ${ticketNumber}`,
+        });
+      }
 
       onSuccess?.();
     } catch (error) {
-      console.error('Erro ao iniciar triagem:', error);
+      console.error('Erro ao gerenciar triagem:', error);
       toast({
         title: "Erro",
-        description: "Não foi possível iniciar a triagem.",
+        description: "Não foi possível realizar a operação.",
         variant: "destructive",
       });
     }
@@ -253,17 +272,20 @@ export const AppointmentActions = ({ appointment, onSuccess }: AppointmentAction
         <Button
           size="sm"
           className={`text-white ${getTriageButtonStyle(appointment.display_status)}`}
-          onClick={handleStartTriage}
-          disabled={isAppointmentFinished}
+          onClick={handleTriageAction}
+          disabled={appointment.display_status === 'in_progress' || 
+                   appointment.display_status === 'completed' || 
+                   appointment.display_status === 'missed' || 
+                   appointment.display_status === 'rescheduled'}
         >
-          {getTriageButtonText(appointment.display_status)}
+          {appointment.display_status === 'triage' ? 'Finalizar triagem' : 'Iniciar triagem'}
         </Button>
 
         <Button
           size="sm"
           className={`text-white ${getConsultButtonStyle(appointment.display_status)}`}
           onClick={handleStartAppointment}
-          disabled={appointment.display_status !== 'triage'}
+          disabled={appointment.display_status !== 'waiting'}
         >
           {appointment.display_status === 'in_progress' ? 'Em consulta' : 'Iniciar consulta'}
         </Button>
