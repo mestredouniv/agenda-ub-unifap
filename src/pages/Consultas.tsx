@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -127,7 +126,7 @@ const Consultas = () => {
                 <TableRow key={appointment.id}>
                   <TableCell>{appointment.appointment_time}</TableCell>
                   <TableCell>{appointment.patient_name}</TableCell>
-                  <TableCell>{appointment.professional.name}</TableCell>
+                  <TableCell>{appointment.professionals.name}</TableCell>
                   <TableCell>{getStatusBadge(appointment.display_status)}</TableCell>
                   <TableCell>
                     <Badge variant={appointment.priority === 'priority' ? "destructive" : "secondary"}>

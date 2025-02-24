@@ -90,7 +90,7 @@ export const AppointmentActions = ({ appointment, onSuccess }: AppointmentAction
         .from('last_calls')
         .insert([{
           patient_name: appointment.patient_name,
-          professional_name: appointment.professional.name,
+          professional_name: appointment.professionals.name,
           status: 'triage'
         }]);
 
@@ -99,7 +99,7 @@ export const AppointmentActions = ({ appointment, onSuccess }: AppointmentAction
       setCurrentPatient({
         name: appointment.patient_name,
         status: 'triage',
-        professional: appointment.professional.name,
+        professional: appointment.professionals.name,
       });
 
       toast({
@@ -134,7 +134,7 @@ export const AppointmentActions = ({ appointment, onSuccess }: AppointmentAction
         .from('last_calls')
         .insert([{
           patient_name: appointment.patient_name,
-          professional_name: appointment.professional.name,
+          professional_name: appointment.professionals.name,
           status: 'in_progress'
         }]);
 
@@ -143,7 +143,7 @@ export const AppointmentActions = ({ appointment, onSuccess }: AppointmentAction
       setCurrentPatient({
         name: appointment.patient_name,
         status: 'in_progress',
-        professional: appointment.professional.name,
+        professional: appointment.professionals.name,
       });
 
       toast({
