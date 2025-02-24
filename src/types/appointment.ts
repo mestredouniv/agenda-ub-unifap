@@ -1,4 +1,3 @@
-
 export interface Appointment {
   id: string;
   patient_name: string;
@@ -20,6 +19,9 @@ export interface Appointment {
   responsible_name: string | null;
   has_record: string | null;
   phone: string;
+  room?: string | null;
+  block?: string | null;
+  ticket_number?: string | null;
 }
 
 export interface PersonalDataFormProps {
