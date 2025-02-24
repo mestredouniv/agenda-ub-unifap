@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Appointment } from "@/types/appointment";
 import { supabase } from "@/integrations/supabase/client";

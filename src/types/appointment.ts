@@ -1,9 +1,10 @@
+
 export interface Appointment {
   id: string;
   patient_name: string;
   birth_date: string;
   professional_id: string;
-  professional: {
+  professionals: {
     name: string;
   };
   appointment_date: string;
