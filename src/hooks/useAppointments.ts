@@ -10,6 +10,30 @@ const isValidDisplayStatus = (status: string): status is ValidDisplayStatus => {
   return ['waiting', 'triage', 'in_progress', 'completed', 'missed', 'rescheduled'].includes(status);
 };
 
+interface DatabaseAppointment {
+  id: string;
+  patient_name: string;
+  birth_date: string;
+  professional_id: string;
+  appointment_date: string;
+  appointment_time: string;
+  display_status: string | null;
+  priority: string;
+  notes: string | null;
+  actual_start_time: string | null;
+  actual_end_time: string | null;
+  updated_at: string | null;
+  deleted_at: string | null;
+  is_minor: boolean;
+  responsible_name: string | null;
+  has_record: string | null;
+  phone: string;
+  room: string | null;
+  block: string | null;
+  ticket_number: string | null;
+  professionals: { name: string } | null;
+}
+
 export const useAppointments = (professionalId: string, selectedDate: Date) => {
   const { toast } = useToast();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
@@ -52,7 +76,9 @@ export const useAppointments = (professionalId: string, selectedDate: Date) => {
           room,
           block,
           ticket_number,
-          professionals:professional_id(name)
+          professionals (
+            name
+          )
         `)
         .eq('professional_id', professionalId)
         .eq('appointment_date', formattedDate)
@@ -80,7 +106,9 @@ export const useAppointments = (professionalId: string, selectedDate: Date) => {
           appointment_time: rawItem.appointment_time,
           display_status: displayStatus,
           priority: rawItem.priority === 'priority' ? 'priority' : 'normal',
-          professionals: { name: rawItem.professionals?.name || '' },
+          professionals: { 
+            name: rawItem.professionals?.name || '' 
+          },
           is_minor: Boolean(rawItem.is_minor),
           responsible_name: rawItem.responsible_name || null,
           has_record: rawItem.has_record || null,
