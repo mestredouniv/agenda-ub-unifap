@@ -47,7 +47,7 @@ export const useAppointments = (professionalId: string, selectedDate: Date) => {
           room,
           block,
           ticket_number,
-          professionals:appointments_professional_id_fkey (
+          professionals:professional_id (
             name
           )
         `)
@@ -73,6 +73,9 @@ export const useAppointments = (professionalId: string, selectedDate: Date) => {
         // Validar priority
         const priority = item.priority === 'priority' ? 'priority' : 'normal';
 
+        // Handle professionals data
+        const professionalData = item.professionals || { name: '' };
+        
         return {
           id: item.id,
           patient_name: item.patient_name,
@@ -82,7 +85,7 @@ export const useAppointments = (professionalId: string, selectedDate: Date) => {
           appointment_time: item.appointment_time,
           display_status: displayStatus,
           priority: priority,
-          professionals: item.professionals || { name: '' },
+          professionals: { name: professionalData.name || '' },
           is_minor: Boolean(item.is_minor),
           responsible_name: item.responsible_name || null,
           has_record: item.has_record || null,
