@@ -10,6 +10,34 @@ const isValidDisplayStatus = (status: string): status is ValidDisplayStatus => {
   return ['waiting', 'triage', 'in_progress', 'completed', 'missed', 'rescheduled'].includes(status);
 };
 
+interface ProfessionalData {
+  name: string;
+}
+
+interface AppointmentData {
+  id: string;
+  patient_name: string;
+  birth_date: string;
+  professional_id: string;
+  appointment_date: string;
+  appointment_time: string;
+  display_status: string | null;
+  priority: string;
+  notes: string | null;
+  actual_start_time: string | null;
+  actual_end_time: string | null;
+  updated_at: string | null;
+  deleted_at: string | null;
+  is_minor: boolean;
+  responsible_name: string | null;
+  has_record: string | null;
+  phone: string;
+  room: string | null;
+  block: string | null;
+  ticket_number: string | null;
+  professionals: ProfessionalData | null;
+}
+
 export const useAppointments = (professionalId: string, selectedDate: Date) => {
   const { toast } = useToast();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
@@ -47,7 +75,7 @@ export const useAppointments = (professionalId: string, selectedDate: Date) => {
           room,
           block,
           ticket_number,
-          professionals:professional_id (
+          professionals (
             name
           )
         `)
@@ -62,19 +90,19 @@ export const useAppointments = (professionalId: string, selectedDate: Date) => {
       console.log('[Agenda] Dados recebidos:', data);
 
       // Transform and validate the data to match the Appointment type
-      const transformedData: Appointment[] = (data || []).map(item => {
+      const transformedData: Appointment[] = (data || []).map((item: AppointmentData) => {
         console.log('[Agenda] Transformando item:', item);
         
-        // Validar display_status
-        const displayStatus = isValidDisplayStatus(item.display_status || 'waiting') 
-          ? item.display_status 
+        // Validar display_status e garantir que é um dos valores permitidos
+        const displayStatus: ValidDisplayStatus = isValidDisplayStatus(item.display_status || 'waiting')
+          ? item.display_status as ValidDisplayStatus
           : 'waiting';
 
         // Validar priority
         const priority = item.priority === 'priority' ? 'priority' : 'normal';
 
-        // Handle professionals data
-        const professionalData = item.professionals || { name: '' };
+        // Handle professionals data safely
+        const professionalName = item.professionals?.name || '';
         
         return {
           id: item.id,
@@ -85,7 +113,7 @@ export const useAppointments = (professionalId: string, selectedDate: Date) => {
           appointment_time: item.appointment_time,
           display_status: displayStatus,
           priority: priority,
-          professionals: { name: professionalData.name || '' },
+          professionals: { name: professionalName },
           is_minor: Boolean(item.is_minor),
           responsible_name: item.responsible_name || null,
           has_record: item.has_record || null,
