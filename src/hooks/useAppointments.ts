@@ -32,9 +32,7 @@ interface DatabaseAppointment {
   room: string | null;
   block: string | null;
   ticket_number: string | null;
-  professionals: {
-    name: string;
-  } | null;
+  professionals: { name: string } | null;
 }
 
 export const useAppointments = (professionalId: string, selectedDate: Date) => {
@@ -51,11 +49,30 @@ export const useAppointments = (professionalId: string, selectedDate: Date) => {
       const formattedDate = format(selectedDate, 'yyyy-MM-dd');
       console.log('[Agenda] Buscando agendamentos para:', { professionalId, formattedDate });
       
-      const { data: rawData, error: fetchError } = await supabase
+      const { data, error: fetchError } = await supabase
         .from('appointments')
         .select(`
-          *,
-          professionals:professional_id!inner (
+          id,
+          patient_name,
+          birth_date,
+          professional_id,
+          appointment_date,
+          appointment_time,
+          display_status,
+          priority,
+          notes,
+          actual_start_time,
+          actual_end_time,
+          updated_at,
+          deleted_at,
+          is_minor,
+          responsible_name,
+          has_record,
+          phone,
+          room,
+          block,
+          ticket_number,
+          professionals!inner (
             name
           )
         `)
@@ -67,47 +84,48 @@ export const useAppointments = (professionalId: string, selectedDate: Date) => {
 
       if (fetchError) throw fetchError;
       
-      const data = rawData as DatabaseAppointment[] | null;
       console.log('[Agenda] Dados recebidos:', data);
 
       // Transform and validate the data to match the Appointment type
-      const transformedData: Appointment[] = (data || []).map((item) => {
-        console.log('[Agenda] Transformando item:', item);
+      const transformedData: Appointment[] = (data || []).map((rawItem: any) => {
+        console.log('[Agenda] Transformando item:', rawItem);
         
         // Validar display_status e garantir que é um dos valores permitidos
-        const displayStatus: ValidDisplayStatus = isValidDisplayStatus(item.display_status || 'waiting')
-          ? item.display_status as ValidDisplayStatus
+        const displayStatus: ValidDisplayStatus = isValidDisplayStatus(rawItem.display_status || 'waiting')
+          ? rawItem.display_status as ValidDisplayStatus
           : 'waiting';
 
         // Validar priority
-        const priority = item.priority === 'priority' ? 'priority' : 'normal';
+        const priority = rawItem.priority === 'priority' ? 'priority' : 'normal';
 
         // Garantir que temos os dados do profissional
-        const professionalData = item.professionals || { name: '' };
+        const professionalName = rawItem.professionals?.name || '';
         
-        return {
-          id: item.id,
-          patient_name: item.patient_name,
-          birth_date: item.birth_date,
-          professional_id: item.professional_id,
-          appointment_date: item.appointment_date,
-          appointment_time: item.appointment_time,
+        const item: Appointment = {
+          id: rawItem.id,
+          patient_name: rawItem.patient_name,
+          birth_date: rawItem.birth_date,
+          professional_id: rawItem.professional_id,
+          appointment_date: rawItem.appointment_date,
+          appointment_time: rawItem.appointment_time,
           display_status: displayStatus,
           priority: priority,
-          professionals: { name: professionalData.name },
-          is_minor: Boolean(item.is_minor),
-          responsible_name: item.responsible_name || null,
-          has_record: item.has_record || null,
-          notes: item.notes || null,
-          actual_start_time: item.actual_start_time || null,
-          actual_end_time: item.actual_end_time || null,
-          updated_at: item.updated_at || null,
-          deleted_at: item.deleted_at || null,
-          phone: item.phone || '',
-          room: item.room || null,
-          block: item.block || null,
-          ticket_number: item.ticket_number || null
+          professionals: { name: professionalName },
+          is_minor: Boolean(rawItem.is_minor),
+          responsible_name: rawItem.responsible_name || null,
+          has_record: rawItem.has_record || null,
+          notes: rawItem.notes || null,
+          actual_start_time: rawItem.actual_start_time || null,
+          actual_end_time: rawItem.actual_end_time || null,
+          updated_at: rawItem.updated_at || null,
+          deleted_at: rawItem.deleted_at || null,
+          phone: rawItem.phone || '',
+          room: rawItem.room || null,
+          block: rawItem.block || null,
+          ticket_number: rawItem.ticket_number || null
         };
+
+        return item;
       });
       
       console.log('[Agenda] Dados transformados:', transformedData);
