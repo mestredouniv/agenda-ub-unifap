@@ -10,11 +10,8 @@ const isValidDisplayStatus = (status: string): status is ValidDisplayStatus => {
   return ['waiting', 'triage', 'in_progress', 'completed', 'missed', 'rescheduled'].includes(status);
 };
 
-interface ProfessionalData {
-  name: string;
-}
-
-interface AppointmentData {
+// Interface para os dados brutos do Supabase
+interface DatabaseAppointment {
   id: string;
   patient_name: string;
   birth_date: string;
@@ -35,7 +32,9 @@ interface AppointmentData {
   room: string | null;
   block: string | null;
   ticket_number: string | null;
-  professionals: ProfessionalData | null;
+  professionals: {
+    name: string;
+  } | null;
 }
 
 export const useAppointments = (professionalId: string, selectedDate: Date) => {
@@ -52,30 +51,11 @@ export const useAppointments = (professionalId: string, selectedDate: Date) => {
       const formattedDate = format(selectedDate, 'yyyy-MM-dd');
       console.log('[Agenda] Buscando agendamentos para:', { professionalId, formattedDate });
       
-      const { data, error: fetchError } = await supabase
+      const { data: rawData, error: fetchError } = await supabase
         .from('appointments')
         .select(`
-          id,
-          patient_name,
-          birth_date,
-          professional_id,
-          appointment_date,
-          appointment_time,
-          display_status,
-          priority,
-          notes,
-          actual_start_time,
-          actual_end_time,
-          updated_at,
-          deleted_at,
-          is_minor,
-          responsible_name,
-          has_record,
-          phone,
-          room,
-          block,
-          ticket_number,
-          professionals (
+          *,
+          professionals:professional_id!inner (
             name
           )
         `)
@@ -87,10 +67,11 @@ export const useAppointments = (professionalId: string, selectedDate: Date) => {
 
       if (fetchError) throw fetchError;
       
+      const data = rawData as DatabaseAppointment[] | null;
       console.log('[Agenda] Dados recebidos:', data);
 
       // Transform and validate the data to match the Appointment type
-      const transformedData: Appointment[] = (data || []).map((item: AppointmentData) => {
+      const transformedData: Appointment[] = (data || []).map((item) => {
         console.log('[Agenda] Transformando item:', item);
         
         // Validar display_status e garantir que é um dos valores permitidos
@@ -101,8 +82,8 @@ export const useAppointments = (professionalId: string, selectedDate: Date) => {
         // Validar priority
         const priority = item.priority === 'priority' ? 'priority' : 'normal';
 
-        // Handle professionals data safely
-        const professionalName = item.professionals?.name || '';
+        // Garantir que temos os dados do profissional
+        const professionalData = item.professionals || { name: '' };
         
         return {
           id: item.id,
@@ -113,7 +94,7 @@ export const useAppointments = (professionalId: string, selectedDate: Date) => {
           appointment_time: item.appointment_time,
           display_status: displayStatus,
           priority: priority,
-          professionals: { name: professionalName },
+          professionals: { name: professionalData.name },
           is_minor: Boolean(item.is_minor),
           responsible_name: item.responsible_name || null,
           has_record: item.has_record || null,
