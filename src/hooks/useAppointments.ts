@@ -22,6 +22,7 @@ export const useAppointments = (professionalId: string, selectedDate: Date) => {
       setError(null);
       
       const formattedDate = format(selectedDate, 'yyyy-MM-dd');
+      console.log('[Agenda] Buscando agendamentos para:', { professionalId, formattedDate });
       
       const { data, error: fetchError } = await supabase
         .from('appointments')
@@ -46,7 +47,7 @@ export const useAppointments = (professionalId: string, selectedDate: Date) => {
           room,
           block,
           ticket_number,
-          professionals!appointments_professional_id_fkey (
+          professionals:appointments_professional_id_fkey (
             name
           )
         `)
@@ -58,12 +59,18 @@ export const useAppointments = (professionalId: string, selectedDate: Date) => {
 
       if (fetchError) throw fetchError;
       
+      console.log('[Agenda] Dados recebidos:', data);
+
       // Transform and validate the data to match the Appointment type
       const transformedData: Appointment[] = (data || []).map(item => {
-        const displayStatus = isValidDisplayStatus(item.display_status) 
+        console.log('[Agenda] Transformando item:', item);
+        
+        // Validar display_status
+        const displayStatus = isValidDisplayStatus(item.display_status || 'waiting') 
           ? item.display_status 
           : 'waiting';
 
+        // Validar priority
         const priority = item.priority === 'priority' ? 'priority' : 'normal';
 
         return {
@@ -84,13 +91,14 @@ export const useAppointments = (professionalId: string, selectedDate: Date) => {
           actual_end_time: item.actual_end_time || null,
           updated_at: item.updated_at || null,
           deleted_at: item.deleted_at || null,
-          phone: item.phone,
+          phone: item.phone || '',
           room: item.room || null,
           block: item.block || null,
           ticket_number: item.ticket_number || null
         };
       });
       
+      console.log('[Agenda] Dados transformados:', transformedData);
       setAppointments(transformedData);
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Erro desconhecido');
