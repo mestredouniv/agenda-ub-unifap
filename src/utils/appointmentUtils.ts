@@ -1,4 +1,6 @@
 
+import { Appointment } from "@/types/appointment";
+
 export const formatAppointmentData = (appointments: any[]): Appointment[] => {
   return appointments.map(appointment => ({
     ...appointment,
