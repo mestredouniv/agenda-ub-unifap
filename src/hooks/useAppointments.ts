@@ -5,6 +5,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { Appointment } from "@/types/appointment";
 
+type ValidDisplayStatus = Appointment['display_status'];
+const isValidDisplayStatus = (status: string): status is ValidDisplayStatus => {
+  return ['waiting', 'triage', 'in_progress', 'completed', 'missed', 'rescheduled'].includes(status);
+};
+
 export const useAppointments = (professionalId: string, selectedDate: Date) => {
   const { toast } = useToast();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
@@ -34,11 +39,32 @@ export const useAppointments = (professionalId: string, selectedDate: Date) => {
 
       if (fetchError) throw fetchError;
       
-      // Transform the data to match the Appointment type
-      const transformedData: Appointment[] = (data || []).map(item => ({
-        ...item,
-        professionals: item.professionals || { name: '' }
-      }));
+      // Transform and validate the data to match the Appointment type
+      const transformedData: Appointment[] = (data || []).map(item => {
+        const displayStatus = isValidDisplayStatus(item.display_status) 
+          ? item.display_status 
+          : 'waiting';
+
+        const priority = item.priority === 'priority' ? 'priority' : 'normal';
+
+        return {
+          ...item,
+          display_status: displayStatus,
+          priority: priority,
+          professionals: item.professionals || { name: '' },
+          is_minor: Boolean(item.is_minor),
+          responsible_name: item.responsible_name || null,
+          has_record: item.has_record || null,
+          notes: item.notes || null,
+          actual_start_time: item.actual_start_time || null,
+          actual_end_time: item.actual_end_time || null,
+          room: item.room || null,
+          block: item.block || null,
+          ticket_number: item.ticket_number || null,
+          updated_at: item.updated_at || null,
+          deleted_at: item.deleted_at || null
+        };
+      });
       
       setAppointments(transformedData);
     } catch (err) {
