@@ -26,7 +26,26 @@ export const useAppointments = (professionalId: string, selectedDate: Date) => {
       const { data, error: fetchError } = await supabase
         .from('appointments')
         .select(`
-          *,
+          id,
+          patient_name,
+          birth_date,
+          professional_id,
+          appointment_date,
+          appointment_time,
+          display_status,
+          priority,
+          notes,
+          actual_start_time,
+          actual_end_time,
+          updated_at,
+          deleted_at,
+          is_minor,
+          responsible_name,
+          has_record,
+          phone,
+          room,
+          block,
+          ticket_number,
           professionals!appointments_professional_id_fkey (
             name
           )

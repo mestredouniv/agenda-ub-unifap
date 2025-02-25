@@ -40,6 +40,7 @@ export type Database = {
           appointment_date: string
           appointment_time: string
           birth_date: string
+          block: string | null
           created_at: string | null
           deleted_at: string | null
           display_status: string | null
@@ -57,7 +58,9 @@ export type Database = {
           rescheduled_from: string | null
           rescheduled_to: string | null
           responsible_name: string | null
+          room: string | null
           status: string | null
+          ticket_number: string | null
           updated_at: string | null
         }
         Insert: {
@@ -66,6 +69,7 @@ export type Database = {
           appointment_date: string
           appointment_time: string
           birth_date: string
+          block?: string | null
           created_at?: string | null
           deleted_at?: string | null
           display_status?: string | null
@@ -83,7 +87,9 @@ export type Database = {
           rescheduled_from?: string | null
           rescheduled_to?: string | null
           responsible_name?: string | null
+          room?: string | null
           status?: string | null
+          ticket_number?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -92,6 +98,7 @@ export type Database = {
           appointment_date?: string
           appointment_time?: string
           birth_date?: string
+          block?: string | null
           created_at?: string | null
           deleted_at?: string | null
           display_status?: string | null
@@ -109,7 +116,9 @@ export type Database = {
           rescheduled_from?: string | null
           rescheduled_to?: string | null
           responsible_name?: string | null
+          room?: string | null
           status?: string | null
+          ticket_number?: string | null
           updated_at?: string | null
         }
         Relationships: [
