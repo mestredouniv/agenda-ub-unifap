@@ -22,7 +22,7 @@ export const useAppointments = (professionalId: string, selectedDate: Date) => {
         .from('appointments')
         .select(`
           *,
-          professionals (
+          professionals:professional_id (
             name
           )
         `)
@@ -34,7 +34,13 @@ export const useAppointments = (professionalId: string, selectedDate: Date) => {
 
       if (fetchError) throw fetchError;
       
-      setAppointments(data || []);
+      // Transform the data to match the Appointment type
+      const transformedData: Appointment[] = (data || []).map(item => ({
+        ...item,
+        professionals: item.professionals || { name: '' }
+      }));
+      
+      setAppointments(transformedData);
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Erro desconhecido');
       console.error('[Agenda] Erro ao buscar consultas:', error);
