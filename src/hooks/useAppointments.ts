@@ -48,7 +48,12 @@ export const useAppointments = (professionalId: string, selectedDate: Date) => {
         const priority = item.priority === 'priority' ? 'priority' : 'normal';
 
         return {
-          ...item,
+          id: item.id,
+          patient_name: item.patient_name,
+          birth_date: item.birth_date,
+          professional_id: item.professional_id,
+          appointment_date: item.appointment_date,
+          appointment_time: item.appointment_time,
           display_status: displayStatus,
           priority: priority,
           professionals: item.professionals || { name: '' },
@@ -58,11 +63,12 @@ export const useAppointments = (professionalId: string, selectedDate: Date) => {
           notes: item.notes || null,
           actual_start_time: item.actual_start_time || null,
           actual_end_time: item.actual_end_time || null,
+          updated_at: item.updated_at || null,
+          deleted_at: item.deleted_at || null,
+          phone: item.phone,
           room: item.room || null,
           block: item.block || null,
-          ticket_number: item.ticket_number || null,
-          updated_at: item.updated_at || null,
-          deleted_at: item.deleted_at || null
+          ticket_number: item.ticket_number || null
         };
       });
       
