@@ -22,7 +22,7 @@ export const useAppointments = (professionalId: string, selectedDate: Date) => {
         .from('appointments')
         .select(`
           *,
-          professionals:professional_id (
+          professionals!appointments_professional_id_fkey (
             name
           )
         `)
