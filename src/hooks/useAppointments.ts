@@ -30,10 +30,29 @@ export const useAppointments = (professionalId: string, selectedDate: Date) => {
       const formattedDate = format(selectedDate, 'yyyy-MM-dd');
       console.log('[Agenda] Buscando agendamentos para:', { professionalId, formattedDate });
       
-      const { data: appointmentsData, error: fetchError } = await supabase
+      const result = await supabase
         .from('appointments')
         .select(`
-          *,
+          id,
+          patient_name,
+          birth_date,
+          professional_id,
+          appointment_date,
+          appointment_time,
+          display_status,
+          priority,
+          is_minor,
+          responsible_name,
+          has_record,
+          notes,
+          actual_start_time,
+          actual_end_time,
+          updated_at,
+          deleted_at,
+          phone,
+          room,
+          block,
+          ticket_number,
           professionals (
             name
           )
@@ -44,52 +63,56 @@ export const useAppointments = (professionalId: string, selectedDate: Date) => {
         .order('priority', { ascending: false })
         .order('appointment_time', { ascending: true });
 
-      if (fetchError) throw fetchError;
+      if (result.error) {
+        console.error('[Agenda] Erro na busca:', result.error);
+        throw result.error;
+      }
+
+      if (!result.data) {
+        console.log('[Agenda] Nenhum dado encontrado');
+        setAppointments([]);
+        return;
+      }
       
-      console.log('[Agenda] Dados recebidos:', appointmentsData);
+      console.log('[Agenda] Dados recebidos:', result.data);
 
-      const transformedData: Appointment[] = (appointmentsData || []).map((rawItem: any) => {
-        const displayStatus: ValidDisplayStatus = isValidDisplayStatus(rawItem.display_status || 'waiting')
-          ? rawItem.display_status as ValidDisplayStatus
-          : 'waiting';
-
-        const item: Appointment = {
-          id: rawItem.id,
-          patient_name: rawItem.patient_name,
-          birth_date: rawItem.birth_date,
-          professional_id: rawItem.professional_id,
-          appointment_date: rawItem.appointment_date,
-          appointment_time: rawItem.appointment_time,
-          display_status: displayStatus,
-          priority: rawItem.priority === 'priority' ? 'priority' : 'normal',
-          professionals: { 
-            name: rawItem.professionals?.name || '' 
-          },
-          is_minor: Boolean(rawItem.is_minor),
-          responsible_name: rawItem.responsible_name || null,
-          has_record: rawItem.has_record || null,
-          notes: rawItem.notes || null,
-          actual_start_time: rawItem.actual_start_time || null,
-          actual_end_time: rawItem.actual_end_time || null,
-          updated_at: rawItem.updated_at || null,
-          deleted_at: rawItem.deleted_at || null,
-          phone: rawItem.phone || '',
-          room: rawItem.room || null,
-          block: rawItem.block || null,
-          ticket_number: rawItem.ticket_number || null
-        };
-
-        return item;
-      });
+      const transformedData: Appointment[] = result.data.map((rawItem: any) => ({
+        id: rawItem.id,
+        patient_name: rawItem.patient_name,
+        birth_date: rawItem.birth_date,
+        professional_id: rawItem.professional_id,
+        appointment_date: rawItem.appointment_date,
+        appointment_time: rawItem.appointment_time,
+        display_status: isValidDisplayStatus(rawItem.display_status) 
+          ? rawItem.display_status 
+          : 'waiting',
+        priority: rawItem.priority === 'priority' ? 'priority' : 'normal',
+        professionals: { 
+          name: rawItem.professionals?.name || '' 
+        },
+        is_minor: Boolean(rawItem.is_minor),
+        responsible_name: rawItem.responsible_name || null,
+        has_record: rawItem.has_record || null,
+        notes: rawItem.notes || null,
+        actual_start_time: rawItem.actual_start_time || null,
+        actual_end_time: rawItem.actual_end_time || null,
+        updated_at: rawItem.updated_at || null,
+        deleted_at: rawItem.deleted_at || null,
+        phone: rawItem.phone || '',
+        room: rawItem.room || null,
+        block: rawItem.block || null,
+        ticket_number: rawItem.ticket_number || null
+      }));
       
+      console.log('[Agenda] Dados transformados:', transformedData);
       setAppointments(transformedData);
     } catch (err) {
-      const error = err instanceof Error ? err : new Error('Erro desconhecido');
-      console.error('[Agenda] Erro ao buscar consultas:', error);
-      setError(error);
+      console.error('[Agenda] Erro detalhado:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Erro ao carregar os agendamentos';
+      setError(new Error(errorMessage));
       toast({
         title: "Erro ao carregar agenda",
-        description: error.message,
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -108,15 +131,19 @@ export const useAppointments = (professionalId: string, selectedDate: Date) => {
         {
           event: '*',
           schema: 'public',
-          table: 'appointments'
+          table: 'appointments',
+          filter: `professional_id=eq.${professionalId}`
         },
-        () => {
+        (payload) => {
+          console.log('[Agenda] Mudança detectada:', payload);
           if (mounted) {
             fetchAppointments();
           }
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('[Agenda] Status da subscription:', status);
+      });
 
     // Carregar dados iniciais
     fetchAppointments();
