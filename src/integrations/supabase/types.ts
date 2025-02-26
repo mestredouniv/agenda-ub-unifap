@@ -157,13 +157,6 @@ export type Database = {
             referencedRelation: "daily_appointments"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "fk_professional"
-            columns: ["professional_id"]
-            isOneToOne: false
-            referencedRelation: "professionals"
-            referencedColumns: ["id"]
-          },
         ]
       }
       childcare_consultations: {
@@ -998,13 +991,6 @@ export type Database = {
             columns: ["rescheduled_to"]
             isOneToOne: false
             referencedRelation: "daily_appointments"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fk_professional"
-            columns: ["professional_id"]
-            isOneToOne: false
-            referencedRelation: "professionals"
             referencedColumns: ["id"]
           },
         ]

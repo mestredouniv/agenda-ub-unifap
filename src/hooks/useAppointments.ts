@@ -125,7 +125,7 @@ export const useAppointments = (professionalId: string, selectedDate: Date) => {
     
     // Configurar subscription para mudanças em tempo real
     const channel = supabase
-      .channel('appointments')
+      .channel('appointments-changes')
       .on(
         'postgres_changes',
         {

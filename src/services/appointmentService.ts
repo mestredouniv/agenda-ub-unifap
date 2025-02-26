@@ -44,10 +44,11 @@ export const fetchDailyAppointments = async (professionalId: string) => {
   }
 };
 
-export const createNewAppointment = async (appointmentData: Omit<Appointment, 'id' | 'professional'>) => {
+export const createNewAppointment = async (appointmentData: Omit<Appointment, 'id' | 'professionals'>) => {
   console.log('[Agenda] Iniciando criação:', appointmentData);
   
   try {
+    // Validações
     if (!appointmentData.patient_name?.trim()) {
       throw new Error('Nome do paciente é obrigatório');
     }
@@ -64,7 +65,7 @@ export const createNewAppointment = async (appointmentData: Omit<Appointment, 'i
       throw new Error('Telefone é obrigatório');
     }
 
-    // Preparar dados
+    // Preparar dados para inserção
     const appointment: AppointmentInsert = {
       patient_name: appointmentData.patient_name.trim(),
       birth_date: appointmentData.birth_date,
@@ -76,8 +77,7 @@ export const createNewAppointment = async (appointmentData: Omit<Appointment, 'i
       is_minor: Boolean(appointmentData.is_minor),
       phone: appointmentData.phone.trim(),
       responsible_name: appointmentData.responsible_name?.trim() || null,
-      has_record: appointmentData.has_record || null,
-      updated_at: new Date().toISOString()
+      has_record: appointmentData.has_record || null
     };
 
     console.log('[Agenda] Dados preparados:', appointment);
@@ -114,10 +114,7 @@ export const updateExistingAppointment = async (id: string, updateData: Partial<
 
     const { error } = await supabase
       .from(APPOINTMENTS_TABLE)
-      .update({
-        ...updateData,
-        updated_at: new Date().toISOString()
-      })
+      .update(updateData)
       .eq('id', id);
 
     if (error) {
