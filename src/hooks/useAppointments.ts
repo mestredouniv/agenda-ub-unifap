@@ -34,7 +34,7 @@ export const useAppointments = (professionalId: string, selectedDate: Date) => {
         .from('appointments')
         .select(`
           *,
-          professionals!appointments_professional_id_fkey (
+          professionals (
             name
           )
         `)
@@ -49,8 +49,6 @@ export const useAppointments = (professionalId: string, selectedDate: Date) => {
       console.log('[Agenda] Dados recebidos:', appointmentsData);
 
       const transformedData: Appointment[] = (appointmentsData || []).map((rawItem: any) => {
-        console.log('[Agenda] Transformando item:', rawItem);
-        
         const displayStatus: ValidDisplayStatus = isValidDisplayStatus(rawItem.display_status || 'waiting')
           ? rawItem.display_status as ValidDisplayStatus
           : 'waiting';
@@ -84,7 +82,6 @@ export const useAppointments = (professionalId: string, selectedDate: Date) => {
         return item;
       });
       
-      console.log('[Agenda] Dados transformados:', transformedData);
       setAppointments(transformedData);
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Erro desconhecido');
@@ -102,37 +99,29 @@ export const useAppointments = (professionalId: string, selectedDate: Date) => {
 
   useEffect(() => {
     let mounted = true;
-
-    // Configurar subscription para mudanças em tempo real
-    const channelId = `appointments-${professionalId}-${format(selectedDate, 'yyyy-MM-dd')}`;
-    console.log('[Agenda] Configurando canal:', channelId);
     
+    // Configurar subscription para mudanças em tempo real
     const channel = supabase
-      .channel(channelId)
+      .channel('appointments')
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
-          table: 'appointments',
-          filter: `professional_id=eq.${professionalId}`
+          table: 'appointments'
         },
-        (payload) => {
-          console.log('[Agenda] Mudança detectada:', payload);
+        () => {
           if (mounted) {
             fetchAppointments();
           }
         }
       )
-      .subscribe((status) => {
-        console.log('[Agenda] Status da subscription:', status);
-      });
+      .subscribe();
 
     // Carregar dados iniciais
     fetchAppointments();
 
     return () => {
-      console.log('[Agenda] Limpando subscription:', channelId);
       mounted = false;
       supabase.removeChannel(channel);
     };

@@ -16,7 +16,7 @@ export const fetchDailyAppointments = async (professionalId: string) => {
       .from(APPOINTMENTS_TABLE)
       .select(`
         *,
-        professionals!appointments_professional_id_fkey (
+        professionals (
           name
         )
       `)
@@ -48,31 +48,20 @@ export const createNewAppointment = async (appointmentData: Omit<Appointment, 'i
   console.log('[Agenda] Iniciando criação:', appointmentData);
   
   try {
-    // Validações básicas
-    if (!appointmentData.patient_name?.trim() || 
-        !appointmentData.appointment_date || 
-        !appointmentData.appointment_time || 
-        !appointmentData.phone?.trim()) {
-      throw new Error('Campos obrigatórios incompletos');
+    if (!appointmentData.patient_name?.trim()) {
+      throw new Error('Nome do paciente é obrigatório');
     }
-
-    // Validar data do agendamento
-    const appointmentDate = new Date(appointmentData.appointment_date);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    
-    if (appointmentDate < today) {
-      throw new Error('Data do agendamento não pode ser no passado');
+    if (!appointmentData.birth_date) {
+      throw new Error('Data de nascimento é obrigatória');
     }
-
-    // Validar formato da data
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(appointmentData.appointment_date)) {
-      throw new Error('Formato de data inválido');
+    if (!appointmentData.appointment_date) {
+      throw new Error('Data da consulta é obrigatória');
     }
-
-    // Validar formato do horário
-    if (!/^\d{2}:\d{2}(:\d{2})?$/.test(appointmentData.appointment_time)) {
-      throw new Error('Formato de horário inválido');
+    if (!appointmentData.appointment_time) {
+      throw new Error('Horário da consulta é obrigatório');
+    }
+    if (!appointmentData.phone?.trim()) {
+      throw new Error('Telefone é obrigatório');
     }
 
     // Preparar dados
@@ -87,7 +76,8 @@ export const createNewAppointment = async (appointmentData: Omit<Appointment, 'i
       is_minor: Boolean(appointmentData.is_minor),
       phone: appointmentData.phone.trim(),
       responsible_name: appointmentData.responsible_name?.trim() || null,
-      has_record: appointmentData.has_record || null
+      has_record: appointmentData.has_record || null,
+      updated_at: new Date().toISOString()
     };
 
     console.log('[Agenda] Dados preparados:', appointment);
@@ -95,22 +85,24 @@ export const createNewAppointment = async (appointmentData: Omit<Appointment, 'i
     const { data, error } = await supabase
       .from(APPOINTMENTS_TABLE)
       .insert([appointment])
-      .select('*, professionals!appointments_professional_id_fkey(name)')
+      .select(`
+        *,
+        professionals (
+          name
+        )
+      `)
       .single();
 
     if (error) {
       console.error('[Agenda] Erro na criação:', error);
-      throw error;
+      throw new Error('Não foi possível criar o agendamento. Por favor, tente novamente.');
     }
 
     console.log('[Agenda] Criado com sucesso:', data);
     return data;
   } catch (error) {
     console.error('[Agenda] Erro crítico na criação:', error);
-    if (error instanceof Error) {
-      throw error;
-    }
-    throw new Error('Erro inesperado ao criar agendamento');
+    throw error;
   }
 };
 
