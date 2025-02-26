@@ -10,30 +10,6 @@ const isValidDisplayStatus = (status: string): status is ValidDisplayStatus => {
   return ['waiting', 'triage', 'in_progress', 'completed', 'missed', 'rescheduled'].includes(status);
 };
 
-interface DatabaseAppointment {
-  id: string;
-  patient_name: string;
-  birth_date: string;
-  professional_id: string;
-  appointment_date: string;
-  appointment_time: string;
-  display_status: string | null;
-  priority: string;
-  notes: string | null;
-  actual_start_time: string | null;
-  actual_end_time: string | null;
-  updated_at: string | null;
-  deleted_at: string | null;
-  is_minor: boolean;
-  responsible_name: string | null;
-  has_record: string | null;
-  phone: string;
-  room: string | null;
-  block: string | null;
-  ticket_number: string | null;
-  professionals: { name: string } | null;
-}
-
 export const useAppointments = (professionalId: string, selectedDate: Date) => {
   const { toast } = useToast();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
@@ -42,7 +18,8 @@ export const useAppointments = (professionalId: string, selectedDate: Date) => {
 
   const fetchAppointments = useCallback(async () => {
     if (!professionalId || !selectedDate) {
-      console.log('[Agenda] Parâmetros inválidos:', { professionalId, selectedDate });
+      setAppointments([]);
+      setIsLoading(false);
       return;
     }
 
@@ -53,30 +30,11 @@ export const useAppointments = (professionalId: string, selectedDate: Date) => {
       const formattedDate = format(selectedDate, 'yyyy-MM-dd');
       console.log('[Agenda] Buscando agendamentos para:', { professionalId, formattedDate });
       
-      const { data, error: fetchError } = await supabase
+      const { data: appointmentsData, error: fetchError } = await supabase
         .from('appointments')
         .select(`
-          id,
-          patient_name,
-          birth_date,
-          professional_id,
-          appointment_date,
-          appointment_time,
-          display_status,
-          priority,
-          notes,
-          actual_start_time,
-          actual_end_time,
-          updated_at,
-          deleted_at,
-          is_minor,
-          responsible_name,
-          has_record,
-          phone,
-          room,
-          block,
-          ticket_number,
-          professionals (
+          *,
+          professionals!appointments_professional_id_fkey (
             name
           )
         `)
@@ -88,9 +46,9 @@ export const useAppointments = (professionalId: string, selectedDate: Date) => {
 
       if (fetchError) throw fetchError;
       
-      console.log('[Agenda] Dados recebidos:', data);
+      console.log('[Agenda] Dados recebidos:', appointmentsData);
 
-      const transformedData: Appointment[] = (data || []).map((rawItem: any) => {
+      const transformedData: Appointment[] = (appointmentsData || []).map((rawItem: any) => {
         console.log('[Agenda] Transformando item:', rawItem);
         
         const displayStatus: ValidDisplayStatus = isValidDisplayStatus(rawItem.display_status || 'waiting')
@@ -145,8 +103,9 @@ export const useAppointments = (professionalId: string, selectedDate: Date) => {
   useEffect(() => {
     let mounted = true;
 
+    // Configurar subscription para mudanças em tempo real
     const channel = supabase
-      .channel(`appointments-${professionalId}`)
+      .channel(`appointments-${professionalId}-${format(selectedDate, 'yyyy-MM-dd')}`)
       .on(
         'postgres_changes',
         {
@@ -166,18 +125,19 @@ export const useAppointments = (professionalId: string, selectedDate: Date) => {
         console.log('[Agenda] Status da subscription:', status);
       });
 
+    // Carregar dados iniciais
     fetchAppointments();
 
     return () => {
       mounted = false;
       supabase.removeChannel(channel);
     };
-  }, [professionalId, fetchAppointments]);
+  }, [professionalId, selectedDate, fetchAppointments]);
 
   return { 
     appointments,
     isLoading,
     error,
-    fetchAppointments
+    fetchAppointments,
   };
 };
