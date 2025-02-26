@@ -16,7 +16,7 @@ export const fetchDailyAppointments = async (professionalId: string) => {
       .from(APPOINTMENTS_TABLE)
       .select(`
         *,
-        professionals!fk_professional (
+        professionals!appointments_professional_id_fkey (
           name
         )
       `)
@@ -87,9 +87,7 @@ export const createNewAppointment = async (appointmentData: Omit<Appointment, 'i
       is_minor: Boolean(appointmentData.is_minor),
       phone: appointmentData.phone.trim(),
       responsible_name: appointmentData.responsible_name?.trim() || null,
-      has_record: appointmentData.has_record || null,
-      deleted_at: null,
-      updated_at: new Date().toISOString()
+      has_record: appointmentData.has_record || null
     };
 
     console.log('[Agenda] Dados preparados:', appointment);
@@ -97,22 +95,12 @@ export const createNewAppointment = async (appointmentData: Omit<Appointment, 'i
     const { data, error } = await supabase
       .from(APPOINTMENTS_TABLE)
       .insert([appointment])
-      .select('*, professionals!fk_professional(name)')
+      .select('*, professionals!appointments_professional_id_fkey(name)')
       .single();
 
     if (error) {
       console.error('[Agenda] Erro na criação:', error);
-      
-      // Traduzir erros do banco de dados
-      if (error.message.includes('Data do agendamento não pode ser no passado')) {
-        throw new Error('Data do agendamento não pode ser no passado');
-      } else if (error.message.includes('Nome do paciente é obrigatório')) {
-        throw new Error('Nome do paciente é obrigatório');
-      } else if (error.message.includes('Telefone é obrigatório')) {
-        throw new Error('Telefone é obrigatório');
-      } else {
-        throw new Error('Não foi possível realizar o agendamento. Tente novamente.');
-      }
+      throw error;
     }
 
     console.log('[Agenda] Criado com sucesso:', data);

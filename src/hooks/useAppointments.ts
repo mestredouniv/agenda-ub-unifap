@@ -104,8 +104,11 @@ export const useAppointments = (professionalId: string, selectedDate: Date) => {
     let mounted = true;
 
     // Configurar subscription para mudanças em tempo real
+    const channelId = `appointments-${professionalId}-${format(selectedDate, 'yyyy-MM-dd')}`;
+    console.log('[Agenda] Configurando canal:', channelId);
+    
     const channel = supabase
-      .channel(`appointments-${professionalId}-${format(selectedDate, 'yyyy-MM-dd')}`)
+      .channel(channelId)
       .on(
         'postgres_changes',
         {
@@ -129,6 +132,7 @@ export const useAppointments = (professionalId: string, selectedDate: Date) => {
     fetchAppointments();
 
     return () => {
+      console.log('[Agenda] Limpando subscription:', channelId);
       mounted = false;
       supabase.removeChannel(channel);
     };
