@@ -43,7 +43,7 @@ export const createNewAppointment = async (appointmentData: Omit<Appointment, 'i
   console.log('[Agenda] Iniciando criação:', appointmentData);
   
   try {
-    // Validações
+    // Validações locais antes de enviar ao banco
     if (!appointmentData.patient_name?.trim()) {
       throw new Error('Nome do paciente é obrigatório');
     }
@@ -59,10 +59,24 @@ export const createNewAppointment = async (appointmentData: Omit<Appointment, 'i
     if (!appointmentData.phone?.trim()) {
       throw new Error('Telefone é obrigatório');
     }
+    
+    // Se for menor de idade, responsável é obrigatório
+    if (appointmentData.is_minor && !appointmentData.responsible_name?.trim()) {
+      throw new Error('Nome do responsável é obrigatório para pacientes menores de idade');
+    }
 
     const { data, error } = await supabase
       .from(APPOINTMENTS_TABLE)
-      .insert([appointmentData])
+      .insert([{
+        ...appointmentData,
+        // Garantir que campos opcionais não sejam undefined
+        notes: appointmentData.notes || null,
+        has_record: appointmentData.has_record || null,
+        responsible_name: appointmentData.responsible_name || null,
+        room: appointmentData.room || null,
+        block: appointmentData.block || null,
+        ticket_number: appointmentData.ticket_number || null
+      }])
       .select(`
         *,
         professional_name:professionals(name)
@@ -71,6 +85,21 @@ export const createNewAppointment = async (appointmentData: Omit<Appointment, 'i
 
     if (error) {
       console.error('[Agenda] Erro na criação:', error);
+      if (error.message.includes('appointments_responsible_check')) {
+        throw new Error('Nome do responsável é obrigatório para pacientes menores de idade');
+      }
+      if (error.message.includes('appointments_date_check')) {
+        throw new Error('A data da consulta não pode ser anterior à data atual');
+      }
+      if (error.message.includes('Profissional não disponível')) {
+        throw new Error('O profissional não está disponível nesta data');
+      }
+      if (error.message.includes('Horário não disponível')) {
+        throw new Error('Este horário não está disponível para agendamento');
+      }
+      if (error.message.includes('Limite de agendamentos')) {
+        throw new Error('O limite de agendamentos para este horário foi atingido');
+      }
       throw new Error('Não foi possível criar o agendamento. Por favor, tente novamente.');
     }
 

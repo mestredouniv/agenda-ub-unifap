@@ -7,7 +7,7 @@ export interface Appointment {
   appointment_date: string;
   appointment_time: string;
   display_status: 'waiting' | 'triage' | 'in_progress' | 'completed' | 'missed' | 'rescheduled';
-  priority: 'priority' | 'normal';
+  priority: 'normal' | 'priority';
   is_minor: boolean;
   responsible_name: string | null;
   has_record: string | null;
