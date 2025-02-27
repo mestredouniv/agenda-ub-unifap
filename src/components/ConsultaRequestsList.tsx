@@ -30,13 +30,13 @@ export const ConsultaRequestsList = ({
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "waiting":
-        return <Badge variant="warning">Aguardando</Badge>;
+        return <Badge variant="secondary">Aguardando</Badge>;
       case "completed":
-        return <Badge variant="success">Aprovado</Badge>;
+        return <Badge variant="default">Aprovado</Badge>;
       case "missed":
         return <Badge variant="destructive">Rejeitado</Badge>;
       default:
-        return <Badge variant="secondary">Pendente</Badge>;
+        return <Badge variant="outline">Pendente</Badge>;
     }
   };
 
