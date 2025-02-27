@@ -44,7 +44,7 @@ const AppointmentRequest = () => {
   const { toast } = useToast();
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [ticketNumber, setTicketNumber] = useState<string>("");
-  const [formData, setFormData] = useState<Omit<AppointmentRequest, "id" | "status" | "message">>({
+  const [formData, setFormData<Omit<AppointmentRequest, "id" | "status" | "message">>] = useState({
     professionalId: "",
     patientName: "",
     cpf: "",
@@ -54,6 +54,8 @@ const AppointmentRequest = () => {
     preferredDate: undefined,
     preferredTime: "",
   });
+
+  const [errors, setErrors] = useState({});
 
   const handleFormChange = (field: string, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -127,9 +129,11 @@ const AppointmentRequest = () => {
                   cpf: formData.cpf,
                   sus: formData.sus,
                   age: formData.age,
-                  phone: formData.phone
+                  phone: formData.phone,
+                  birth_date: "",
                 }}
                 onChange={handleFormChange}
+                errors={errors}
               />
 
               <div className="bg-blue-50 p-4 rounded-md flex items-start gap-2">

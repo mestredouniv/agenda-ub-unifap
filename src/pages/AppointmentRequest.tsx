@@ -132,7 +132,9 @@ const AppointmentRequest = () => {
                   cpf: formData.cpf,
                   sus: formData.sus,
                   age: formData.age,
-                  phone: formData.phone
+                  phone: formData.phone,
+                  birth_date: formData.birth_date || "",
+                  responsible: formData.responsible,
                 }}
                 onChange={handleFormChange}
               />
