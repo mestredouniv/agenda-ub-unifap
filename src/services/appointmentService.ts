@@ -1,11 +1,8 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { Appointment } from "@/types/appointment";
-import { Database } from "@/integrations/supabase/types";
 
 const APPOINTMENTS_TABLE = 'appointments';
-
-type AppointmentInsert = Database['public']['Tables']['appointments']['Insert'];
 
 export const fetchDailyAppointments = async (professionalId: string) => {
   const today = new Date().toISOString().split('T')[0];
@@ -16,9 +13,7 @@ export const fetchDailyAppointments = async (professionalId: string) => {
       .from(APPOINTMENTS_TABLE)
       .select(`
         *,
-        professionals (
-          name
-        )
+        professional_name:professionals(name)
       `)
       .eq('appointment_date', today)
       .is('deleted_at', null);
@@ -44,7 +39,7 @@ export const fetchDailyAppointments = async (professionalId: string) => {
   }
 };
 
-export const createNewAppointment = async (appointmentData: Omit<Appointment, 'id' | 'professionals'>) => {
+export const createNewAppointment = async (appointmentData: Omit<Appointment, 'id' | 'professional_name'>) => {
   console.log('[Agenda] Iniciando criação:', appointmentData);
   
   try {
@@ -65,31 +60,12 @@ export const createNewAppointment = async (appointmentData: Omit<Appointment, 'i
       throw new Error('Telefone é obrigatório');
     }
 
-    // Preparar dados para inserção
-    const appointment: AppointmentInsert = {
-      patient_name: appointmentData.patient_name.trim(),
-      birth_date: appointmentData.birth_date,
-      professional_id: appointmentData.professional_id,
-      appointment_date: appointmentData.appointment_date,
-      appointment_time: appointmentData.appointment_time,
-      display_status: 'waiting',
-      priority: appointmentData.priority || 'normal',
-      is_minor: Boolean(appointmentData.is_minor),
-      phone: appointmentData.phone.trim(),
-      responsible_name: appointmentData.responsible_name?.trim() || null,
-      has_record: appointmentData.has_record || null
-    };
-
-    console.log('[Agenda] Dados preparados:', appointment);
-
     const { data, error } = await supabase
       .from(APPOINTMENTS_TABLE)
-      .insert([appointment])
+      .insert([appointmentData])
       .select(`
         *,
-        professionals (
-          name
-        )
+        professional_name:professionals(name)
       `)
       .single();
 

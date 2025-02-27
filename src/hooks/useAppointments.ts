@@ -30,32 +30,11 @@ export const useAppointments = (professionalId: string, selectedDate: Date) => {
       const formattedDate = format(selectedDate, 'yyyy-MM-dd');
       console.log('[Agenda] Buscando agendamentos para:', { professionalId, formattedDate });
       
-      const result = await supabase
+      const { data, error } = await supabase
         .from('appointments')
         .select(`
-          id,
-          patient_name,
-          birth_date,
-          professional_id,
-          appointment_date,
-          appointment_time,
-          display_status,
-          priority,
-          is_minor,
-          responsible_name,
-          has_record,
-          notes,
-          actual_start_time,
-          actual_end_time,
-          updated_at,
-          deleted_at,
-          phone,
-          room,
-          block,
-          ticket_number,
-          professionals (
-            name
-          )
+          *,
+          professional_name:professionals(name)
         `)
         .eq('professional_id', professionalId)
         .eq('appointment_date', formattedDate)
@@ -63,49 +42,19 @@ export const useAppointments = (professionalId: string, selectedDate: Date) => {
         .order('priority', { ascending: false })
         .order('appointment_time', { ascending: true });
 
-      if (result.error) {
-        console.error('[Agenda] Erro na busca:', result.error);
-        throw result.error;
+      if (error) {
+        console.error('[Agenda] Erro na busca:', error);
+        throw error;
       }
 
-      if (!result.data) {
+      if (!data) {
         console.log('[Agenda] Nenhum dado encontrado');
         setAppointments([]);
         return;
       }
       
-      console.log('[Agenda] Dados recebidos:', result.data);
-
-      const transformedData: Appointment[] = result.data.map((rawItem: any) => ({
-        id: rawItem.id,
-        patient_name: rawItem.patient_name,
-        birth_date: rawItem.birth_date,
-        professional_id: rawItem.professional_id,
-        appointment_date: rawItem.appointment_date,
-        appointment_time: rawItem.appointment_time,
-        display_status: isValidDisplayStatus(rawItem.display_status) 
-          ? rawItem.display_status 
-          : 'waiting',
-        priority: rawItem.priority === 'priority' ? 'priority' : 'normal',
-        professionals: { 
-          name: rawItem.professionals?.name || '' 
-        },
-        is_minor: Boolean(rawItem.is_minor),
-        responsible_name: rawItem.responsible_name || null,
-        has_record: rawItem.has_record || null,
-        notes: rawItem.notes || null,
-        actual_start_time: rawItem.actual_start_time || null,
-        actual_end_time: rawItem.actual_end_time || null,
-        updated_at: rawItem.updated_at || null,
-        deleted_at: rawItem.deleted_at || null,
-        phone: rawItem.phone || '',
-        room: rawItem.room || null,
-        block: rawItem.block || null,
-        ticket_number: rawItem.ticket_number || null
-      }));
-      
-      console.log('[Agenda] Dados transformados:', transformedData);
-      setAppointments(transformedData);
+      console.log('[Agenda] Dados recebidos:', data);
+      setAppointments(data);
     } catch (err) {
       console.error('[Agenda] Erro detalhado:', err);
       const errorMessage = err instanceof Error ? err.message : 'Erro ao carregar os agendamentos';
@@ -123,7 +72,6 @@ export const useAppointments = (professionalId: string, selectedDate: Date) => {
   useEffect(() => {
     let mounted = true;
     
-    // Configurar subscription para mudanças em tempo real
     const channel = supabase
       .channel('appointments-changes')
       .on(
@@ -145,7 +93,6 @@ export const useAppointments = (professionalId: string, selectedDate: Date) => {
         console.log('[Agenda] Status da subscription:', status);
       });
 
-    // Carregar dados iniciais
     fetchAppointments();
 
     return () => {
