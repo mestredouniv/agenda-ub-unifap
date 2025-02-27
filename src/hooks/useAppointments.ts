@@ -4,6 +4,7 @@ import { format } from "date-fns";
 import { Appointment } from "@/types/appointment";
 import { useToast } from "@/components/ui/use-toast";
 import { fetchDailyAppointments } from "@/services/appointmentService";
+import { supabase } from "@/integrations/supabase/client";
 
 export const useAppointments = (professionalId: string, selectedDate: Date) => {
   const { toast } = useToast();
@@ -25,7 +26,13 @@ export const useAppointments = (professionalId: string, selectedDate: Date) => {
       const data = await fetchDailyAppointments(professionalId);
       console.log('[useAppointments] Dados recebidos:', data);
       
-      setAppointments(data);
+      // Transformar os dados para corresponder ao tipo Appointment
+      const formattedData: Appointment[] = data.map(item => ({
+        ...item,
+        professional_name: item.professionals?.name || ''
+      }));
+      
+      setAppointments(formattedData);
     } catch (err) {
       console.error('[useAppointments] Erro:', err);
       setError(err instanceof Error ? err : new Error('Erro ao carregar agendamentos'));
@@ -48,10 +55,8 @@ export const useAppointments = (professionalId: string, selectedDate: Date) => {
       await fetchAppointments();
     };
 
-    // Carregar agendamentos iniciais
     loadAppointments();
 
-    // Configurar real-time updates
     const channel = supabase
       .channel('appointments-changes')
       .on(
@@ -83,6 +88,6 @@ export const useAppointments = (professionalId: string, selectedDate: Date) => {
     appointments,
     isLoading,
     error,
-    refetch: fetchAppointments,
+    fetchAppointments // Retornando a função fetchAppointments explicitamente
   };
 };
