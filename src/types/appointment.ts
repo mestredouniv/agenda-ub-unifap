@@ -41,9 +41,11 @@ export interface PersonalDataFormProps {
 }
 
 export interface BasicPersonalData {
-  name: string;
+  patientName: string;
+  age: string;
   birth_date: string;
   cpf: string;
-  sus_card: string;
+  sus: string;
   phone: string;
+  responsible?: string;
 }

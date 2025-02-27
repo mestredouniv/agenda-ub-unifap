@@ -99,7 +99,8 @@ export const PatientDetails = ({
                   cpf: patient.cpf || "",
                   sus: patient.sus_number || "",
                   age: "",
-                  phone: patient.phone || ""
+                  phone: patient.phone || "",
+                  birth_date: patient.birth_date || "",
                 }}
                 onChange={onPersonalDataChange}
               />

@@ -15,7 +15,8 @@ import { TreatmentDataForm } from "./TreatmentDataForm";
 import { BasicPersonalData } from "@/types/appointment";
 
 interface PatientRegistrationDialogProps {
-  personalData: BasicPersonalData & {
+  personalData: Omit<BasicPersonalData, 'birth_date'> & {
+    birth_date: string;
     address: string;
     cep: string;
     neighborhood: string;
@@ -61,7 +62,15 @@ export const PatientRegistrationDialog = ({
           </TabsList>
           <TabsContent value="personal">
             <PersonalDataForm
-              formData={personalData}
+              formData={{
+                patientName: personalData.patientName,
+                age: personalData.age,
+                birth_date: personalData.birth_date,
+                cpf: personalData.cpf,
+                sus: personalData.sus,
+                phone: personalData.phone,
+                responsible: personalData.responsible,
+              }}
               onChange={onPersonalDataChange}
             />
           </TabsContent>
