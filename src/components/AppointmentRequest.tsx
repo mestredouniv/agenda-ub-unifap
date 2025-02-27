@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -31,6 +32,7 @@ interface AppointmentRequest {
   phone: string;
   preferredDate: Date | undefined;
   preferredTime: string;
+  birth_date: string;
   responsible?: string;
   status: "pending" | "approved" | "rejected" | "rescheduled" | "direct_visit";
   message?: string;
@@ -44,7 +46,7 @@ const AppointmentRequest = () => {
   const { toast } = useToast();
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [ticketNumber, setTicketNumber] = useState<string>("");
-  const [formData, setFormData<Omit<AppointmentRequest, "id" | "status" | "message">>] = useState({
+  const [formData, setFormData] = useState<Omit<AppointmentRequest, "id" | "status" | "message">>({
     professionalId: "",
     patientName: "",
     cpf: "",
@@ -53,9 +55,10 @@ const AppointmentRequest = () => {
     phone: "",
     preferredDate: undefined,
     preferredTime: "",
+    birth_date: "",
   });
 
-  const [errors, setErrors] = useState({});
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const handleFormChange = (field: string, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -70,7 +73,6 @@ const AppointmentRequest = () => {
       id: newTicketNumber,
       ...formData,
       status: "pending",
-      preferredDate: formData.preferredDate,
     };
     
     // Salvar na lista geral de agendamentos
@@ -130,7 +132,8 @@ const AppointmentRequest = () => {
                   sus: formData.sus,
                   age: formData.age,
                   phone: formData.phone,
-                  birth_date: "",
+                  birth_date: formData.birth_date,
+                  responsible: formData.responsible,
                 }}
                 onChange={handleFormChange}
                 errors={errors}
