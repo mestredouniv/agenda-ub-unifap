@@ -1,6 +1,5 @@
 
 import { useState, useEffect, useCallback } from "react";
-import { format } from "date-fns";
 import { Appointment } from "@/types/appointment";
 import { useToast } from "@/components/ui/use-toast";
 import { fetchDailyAppointments } from "@/services/appointmentService";
@@ -57,8 +56,10 @@ export const useAppointments = (professionalId: string, selectedDate: Date) => {
 
     loadAppointments();
 
+    // Configurar channel específico para este profissional
+    const channelName = `appointments-${professionalId}`;
     const channel = supabase
-      .channel('appointments-changes')
+      .channel(channelName)
       .on(
         'postgres_changes',
         {
@@ -68,26 +69,36 @@ export const useAppointments = (professionalId: string, selectedDate: Date) => {
           filter: `professional_id=eq.${professionalId}`
         },
         (payload) => {
-          console.log('[useAppointments] Mudança detectada:', payload);
+          console.log(`[useAppointments] Mudança detectada no canal ${channelName}:`, payload);
           if (mounted) {
             fetchAppointments();
           }
         }
       )
       .subscribe((status) => {
-        console.log('[useAppointments] Status da subscription:', status);
+        console.log(`[useAppointments] Status da subscription no canal ${channelName}:`, status);
+        if (status === 'CHANNEL_ERROR') {
+          console.error('[useAppointments] Erro no canal de realtime');
+          toast({
+            title: "Erro de sincronização",
+            description: "Houve um problema na sincronização em tempo real. Atualizando dados...",
+            variant: "destructive",
+          });
+          fetchAppointments();
+        }
       });
 
     return () => {
+      console.log(`[useAppointments] Limpando subscription do canal ${channelName}`);
       mounted = false;
       supabase.removeChannel(channel);
     };
-  }, [professionalId, selectedDate, fetchAppointments]);
+  }, [professionalId, selectedDate, fetchAppointments, toast]);
 
   return { 
     appointments,
     isLoading,
     error,
-    fetchAppointments // Retornando a função fetchAppointments explicitamente
+    fetchAppointments
   };
 };
