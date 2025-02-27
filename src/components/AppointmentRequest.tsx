@@ -22,8 +22,7 @@ import { PersonalDataForm } from "@/components/PersonalDataForm";
 import { AppointmentSelection } from "@/components/AppointmentSelection";
 import { professionals } from "@/data/professionals";
 
-interface AppointmentRequest {
-  id: string;
+interface AppointmentFormData {
   professionalId: string;
   patientName: string;
   cpf: string;
@@ -34,6 +33,10 @@ interface AppointmentRequest {
   preferredTime: string;
   birth_date: string;
   responsible?: string;
+}
+
+interface AppointmentRequest extends AppointmentFormData {
+  id: string;
   status: "pending" | "approved" | "rejected" | "rescheduled" | "direct_visit";
   message?: string;
 }
@@ -46,7 +49,7 @@ const AppointmentRequest = () => {
   const { toast } = useToast();
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [ticketNumber, setTicketNumber] = useState<string>("");
-  const [formData, setFormData] = useState<Omit<AppointmentRequest, "id" | "status" | "message">>({
+  const [formData, setFormData] = useState<AppointmentFormData>({
     professionalId: "",
     patientName: "",
     cpf: "",
@@ -56,6 +59,7 @@ const AppointmentRequest = () => {
     preferredDate: undefined,
     preferredTime: "",
     birth_date: "",
+    responsible: "",
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -75,12 +79,10 @@ const AppointmentRequest = () => {
       status: "pending",
     };
     
-    // Salvar na lista geral de agendamentos
     const appointments = JSON.parse(localStorage.getItem("appointments") || "[]");
     appointments.push(appointment);
     localStorage.setItem("appointments", JSON.stringify(appointments));
 
-    // Adicionar à agenda do profissional específico
     const professionalSchedule = JSON.parse(
       localStorage.getItem(`schedule-${formData.professionalId}`) || "[]"
     );
