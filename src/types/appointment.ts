@@ -20,5 +20,30 @@ export interface Appointment {
   room?: string | null;
   block?: string | null;
   ticket_number?: string | null;
-  professional_name?: string; // Nome do profissional vem como campo calculado
+  professional_name?: string;
+  professionals?: {
+    name: string;
+  };
+}
+
+export interface PersonalDataFormProps {
+  formData: {
+    patientName: string;
+    age: string;
+    birth_date: string;
+    cpf: string;
+    sus: string;
+    phone: string;
+    responsible?: string;
+  };
+  onChange: (field: string, value: string) => void;
+  errors?: Record<string, string>;
+}
+
+export interface BasicPersonalData {
+  name: string;
+  birth_date: string;
+  cpf: string;
+  sus_card: string;
+  phone: string;
 }

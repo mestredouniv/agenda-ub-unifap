@@ -1,6 +1,5 @@
 
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Appointment } from "@/types/appointment";
 import { AppointmentActions } from "./AppointmentActions";
 import { getStatusBadge } from "@/utils/appointment";
@@ -38,7 +37,7 @@ export const AppointmentCard = ({ appointment, onSuccess }: AppointmentCardProps
           {getStatusBadge(appointment.display_status)}
         </div>
         <div className="text-sm text-gray-600">
-          <p>Profissional: {appointment.professionals?.name || 'Não especificado'}</p>
+          <p>Profissional: {appointment.professionals?.name || appointment.professional_name || 'Não especificado'}</p>
           {appointment.notes && (
             <p className="mt-2 text-gray-700">
               Observações: {appointment.notes}

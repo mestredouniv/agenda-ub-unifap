@@ -34,7 +34,9 @@ export const useAppointments = (professionalId: string, selectedDate: Date) => {
         .from('appointments')
         .select(`
           *,
-          professional_name:professionals(name)
+          professionals (
+            name
+          )
         `)
         .eq('professional_id', professionalId)
         .eq('appointment_date', formattedDate)
@@ -54,7 +56,15 @@ export const useAppointments = (professionalId: string, selectedDate: Date) => {
       }
       
       console.log('[Agenda] Dados recebidos:', data);
-      setAppointments(data);
+      
+      const typedAppointments = data.map(appointment => ({
+        ...appointment,
+        display_status: isValidDisplayStatus(appointment.display_status) 
+          ? appointment.display_status 
+          : 'waiting'
+      })) as Appointment[];
+
+      setAppointments(typedAppointments);
     } catch (err) {
       console.error('[Agenda] Erro detalhado:', err);
       const errorMessage = err instanceof Error ? err.message : 'Erro ao carregar os agendamentos';
