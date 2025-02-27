@@ -1,14 +1,9 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { format } from "date-fns";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/components/ui/use-toast";
 import { Appointment } from "@/types/appointment";
-
-type ValidDisplayStatus = Appointment['display_status'];
-const isValidDisplayStatus = (status: string): status is ValidDisplayStatus => {
-  return ['waiting', 'triage', 'in_progress', 'completed', 'missed', 'rescheduled'].includes(status);
-};
+import { useToast } from "@/components/ui/use-toast";
+import { fetchDailyAppointments } from "@/services/appointmentService";
 
 export const useAppointments = (professionalId: string, selectedDate: Date) => {
   const { toast } = useToast();
@@ -27,51 +22,17 @@ export const useAppointments = (professionalId: string, selectedDate: Date) => {
       setIsLoading(true);
       setError(null);
       
-      const formattedDate = format(selectedDate, 'yyyy-MM-dd');
-      console.log('[Agenda] Buscando agendamentos para:', { professionalId, formattedDate });
+      const data = await fetchDailyAppointments(professionalId);
+      console.log('[useAppointments] Dados recebidos:', data);
       
-      const { data, error } = await supabase
-        .from('appointments')
-        .select(`
-          *,
-          professionals (
-            name
-          )
-        `)
-        .eq('professional_id', professionalId)
-        .eq('appointment_date', formattedDate)
-        .is('deleted_at', null)
-        .order('priority', { ascending: false })
-        .order('appointment_time', { ascending: true });
-
-      if (error) {
-        console.error('[Agenda] Erro na busca:', error);
-        throw error;
-      }
-
-      if (!data) {
-        console.log('[Agenda] Nenhum dado encontrado');
-        setAppointments([]);
-        return;
-      }
-      
-      console.log('[Agenda] Dados recebidos:', data);
-      
-      const typedAppointments = data.map(appointment => ({
-        ...appointment,
-        display_status: isValidDisplayStatus(appointment.display_status) 
-          ? appointment.display_status 
-          : 'waiting'
-      })) as Appointment[];
-
-      setAppointments(typedAppointments);
+      setAppointments(data);
     } catch (err) {
-      console.error('[Agenda] Erro detalhado:', err);
-      const errorMessage = err instanceof Error ? err.message : 'Erro ao carregar os agendamentos';
-      setError(new Error(errorMessage));
+      console.error('[useAppointments] Erro:', err);
+      setError(err instanceof Error ? err : new Error('Erro ao carregar agendamentos'));
+      
       toast({
         title: "Erro ao carregar agenda",
-        description: errorMessage,
+        description: err instanceof Error ? err.message : 'Erro ao carregar agendamentos',
         variant: "destructive",
       });
     } finally {
@@ -82,6 +43,15 @@ export const useAppointments = (professionalId: string, selectedDate: Date) => {
   useEffect(() => {
     let mounted = true;
     
+    const loadAppointments = async () => {
+      if (!mounted) return;
+      await fetchAppointments();
+    };
+
+    // Carregar agendamentos iniciais
+    loadAppointments();
+
+    // Configurar real-time updates
     const channel = supabase
       .channel('appointments-changes')
       .on(
@@ -93,17 +63,15 @@ export const useAppointments = (professionalId: string, selectedDate: Date) => {
           filter: `professional_id=eq.${professionalId}`
         },
         (payload) => {
-          console.log('[Agenda] Mudança detectada:', payload);
+          console.log('[useAppointments] Mudança detectada:', payload);
           if (mounted) {
             fetchAppointments();
           }
         }
       )
       .subscribe((status) => {
-        console.log('[Agenda] Status da subscription:', status);
+        console.log('[useAppointments] Status da subscription:', status);
       });
-
-    fetchAppointments();
 
     return () => {
       mounted = false;
@@ -115,6 +83,6 @@ export const useAppointments = (professionalId: string, selectedDate: Date) => {
     appointments,
     isLoading,
     error,
-    fetchAppointments,
+    refetch: fetchAppointments,
   };
 };
