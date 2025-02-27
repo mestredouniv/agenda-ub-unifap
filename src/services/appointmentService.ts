@@ -18,7 +18,7 @@ export const fetchDailyAppointments = async (professionalId: string) => {
       .from(APPOINTMENTS_TABLE)
       .select(`
         *,
-        professional_name:professionals(name)
+        professionals(name)
       `)
       .eq('appointment_date', today)
       .is('deleted_at', null);

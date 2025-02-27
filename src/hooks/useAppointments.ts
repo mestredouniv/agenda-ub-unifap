@@ -5,6 +5,12 @@ import { useToast } from "@/components/ui/use-toast";
 import { fetchDailyAppointments } from "@/services/appointmentService";
 import { supabase } from "@/integrations/supabase/client";
 
+interface AppointmentWithProfessional extends Omit<Appointment, 'professional_name'> {
+  professionals?: {
+    name: string;
+  };
+}
+
 export const useAppointments = (professionalId: string, selectedDate: Date) => {
   const { toast } = useToast();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
@@ -26,7 +32,7 @@ export const useAppointments = (professionalId: string, selectedDate: Date) => {
       console.log('[useAppointments] Dados recebidos:', data);
       
       // Transformar os dados para corresponder ao tipo Appointment
-      const formattedData: Appointment[] = data.map(item => ({
+      const formattedData: Appointment[] = (data as AppointmentWithProfessional[]).map(item => ({
         ...item,
         professional_name: item.professionals?.name || ''
       }));
