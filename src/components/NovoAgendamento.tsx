@@ -86,7 +86,7 @@ export const NovoAgendamento = ({ professionalId, onSuccess }: NovoAgendamentoPr
         patient_name: formData.patientName.trim(),
         birth_date: formData.birth_date,
         appointment_date: appointmentDate,
-        appointment_time: `${formData.appointmentTime}:00`,
+        appointment_time: formData.appointmentTime,
         display_status: 'waiting',
         priority: 'normal',
         is_minor: formData.isMinor,
