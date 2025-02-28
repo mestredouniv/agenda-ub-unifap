@@ -80,7 +80,7 @@ export const AppointmentDateForm = ({
 
     loadUnavailableDays();
 
-    const interval = setInterval(loadUnavailableDays, 2000); // Reduzido para 2 segundos
+    const interval = setInterval(loadUnavailableDays, 5000);
     console.log('[AppointmentDateForm] Polling configurado para datas indisponíveis');
 
     return () => {
@@ -88,6 +88,22 @@ export const AppointmentDateForm = ({
       console.log('[AppointmentDateForm] Limpeza do polling');
     };
   }, [fetchUnavailableDays]);
+
+  // Transformar os horários dos slots para o formato esperado pelo backend
+  const formatTimeForDisplay = (time: string): string => {
+    return time.substring(0, 5); // Retorna apenas HH:MM da string HH:MM:SS
+  };
+
+  const formatTimeForBackend = (time: string): string => {
+    return `${time}:00`; // Adiciona :00 para formato HH:MM:SS
+  };
+
+  const handleTimeSelection = (displayTime: string) => {
+    console.log('[AppointmentDateForm] Horário selecionado para exibição:', displayTime);
+    const backendTime = formatTimeForBackend(displayTime);
+    console.log('[AppointmentDateForm] Horário formatado para backend:', backendTime);
+    onAppointmentTimeChange(backendTime);
+  };
 
   return (
     <div className="space-y-4">
@@ -141,8 +157,8 @@ export const AppointmentDateForm = ({
       <div>
         <Label>Horário da Consulta *</Label>
         <Select
-          value={appointmentTime}
-          onValueChange={onAppointmentTimeChange}
+          value={appointmentTime ? formatTimeForDisplay(appointmentTime) : ""}
+          onValueChange={handleTimeSelection}
           disabled={!appointmentDate || isLoading || slots.length === 0}
         >
           <SelectTrigger>
@@ -160,10 +176,10 @@ export const AppointmentDateForm = ({
             {slots.map((slot) => (
               <SelectItem 
                 key={slot.time} 
-                value={slot.time}
+                value={formatTimeForDisplay(slot.time)}
                 disabled={!slot.available}
               >
-                {slot.time} ({slot.currentAppointments}/{slot.maxAppointments} agendamentos)
+                {formatTimeForDisplay(slot.time)} ({slot.currentAppointments}/{slot.maxAppointments} agendamentos)
               </SelectItem>
             ))}
           </SelectContent>

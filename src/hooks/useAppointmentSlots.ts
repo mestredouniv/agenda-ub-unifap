@@ -60,33 +60,45 @@ export const useAppointmentSlots = (professionalId: string, selectedDate: Date |
         throw slotsError;
       }
 
-      // Formato dos slots
-      const formattedSlots: Slot[] = [];
-      
-      // Para cada slot, verifica quantos agendamentos já existem
-      for (const slot of (availableSlots || [])) {
-        const { data: existingAppointments, error: countError } = await supabase
-          .from('appointments')
-          .select('id')
-          .eq('professional_id', professionalId)
-          .eq('appointment_date', formattedDate)
-          .eq('appointment_time', slot.time_slot)
-          .is('deleted_at', null);
-          
-        if (countError) {
-          console.error('[useAppointmentSlots] Erro ao contar agendamentos:', countError);
-          continue;
-        }
+      if (!availableSlots || availableSlots.length === 0) {
+        console.log('[useAppointmentSlots] Nenhum slot disponível para este profissional');
+        setSlots([]);
+        setIsLoading(false);
+        return;
+      }
+
+      // Busca todos os agendamentos para a data selecionada em uma única consulta
+      const { data: existingAppointments, error: appointmentsError } = await supabase
+        .from('appointments')
+        .select('appointment_time')
+        .eq('professional_id', professionalId)
+        .eq('appointment_date', formattedDate)
+        .is('deleted_at', null);
         
-        const count = existingAppointments?.length || 0;
-        formattedSlots.push({
+      if (appointmentsError) {
+        console.error('[useAppointmentSlots] Erro ao buscar agendamentos:', appointmentsError);
+        throw appointmentsError;
+      }
+
+      // Contagem de agendamentos por horário
+      const appointmentCounts: Record<string, number> = {};
+      (existingAppointments || []).forEach(appointment => {
+        const time = appointment.appointment_time;
+        appointmentCounts[time] = (appointmentCounts[time] || 0) + 1;
+      });
+
+      // Formato dos slots
+      const formattedSlots: Slot[] = availableSlots.map(slot => {
+        const count = appointmentCounts[slot.time_slot] || 0;
+        return {
           time: slot.time_slot,
           available: count < slot.max_appointments,
           maxAppointments: slot.max_appointments,
           currentAppointments: count
-        });
-      }
+        };
+      });
       
+      console.log('[useAppointmentSlots] Slots formatados:', formattedSlots);
       setSlots(formattedSlots);
     } catch (error) {
       console.error('[useAppointmentSlots] Erro ao buscar slots:', error);
@@ -122,10 +134,16 @@ export const useAppointmentSlots = (professionalId: string, selectedDate: Date |
   }, [professionalId]);
 
   useEffect(() => {
-    fetchAvailableSlots();
+    let mounted = true;
+    
+    const loadData = async () => {
+      if (mounted) await fetchAvailableSlots();
+    };
+    
+    loadData();
     
     // Configura canal para updates
-    const channelName = `slots-${professionalId}`;
+    const channelName = `slots-${professionalId}-${selectedDate?.toISOString().split('T')[0] || 'no-date'}`;
     const channel = supabase
       .channel(channelName)
       .on(
@@ -133,20 +151,24 @@ export const useAppointmentSlots = (professionalId: string, selectedDate: Date |
         {
           event: '*',
           schema: 'public',
-          table: 'professional_available_slots'
+          table: 'professional_available_slots',
+          filter: `professional_id=eq.${professionalId}`
         },
-        () => fetchAvailableSlots()
+        () => { if (mounted) fetchAvailableSlots(); }
       )
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
-          table: 'professional_unavailable_days'
+          table: 'professional_unavailable_days',
+          filter: `professional_id=eq.${professionalId}`
         },
-        () => {
-          fetchUnavailableDays();
-          fetchAvailableSlots();
+        () => { 
+          if (mounted) {
+            fetchUnavailableDays();
+            fetchAvailableSlots();
+          }
         }
       )
       .on(
@@ -154,18 +176,20 @@ export const useAppointmentSlots = (professionalId: string, selectedDate: Date |
         {
           event: '*',
           schema: 'public',
-          table: 'appointments'
+          table: 'appointments',
+          filter: `professional_id=eq.${professionalId}`
         },
-        () => fetchAvailableSlots()
+        () => { if (mounted) fetchAvailableSlots(); }
       )
       .subscribe((status) => {
         console.log('[useAppointmentSlots] Status da subscription:', status);
       });
       
-    console.log('[useAppointmentSlots] Subscription configurada');
+    console.log('[useAppointmentSlots] Subscription configurada:', channelName);
     
     return () => {
       console.log('[useAppointmentSlots] Limpando subscription');
+      mounted = false;
       supabase.removeChannel(channel);
     };
   }, [professionalId, selectedDate, fetchAvailableSlots, fetchUnavailableDays]);

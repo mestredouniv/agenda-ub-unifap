@@ -6,7 +6,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { PatientInfoForm } from "@/components/appointments/PatientInfoForm";
 import { AppointmentDateForm } from "@/components/appointments/AppointmentDateForm";
 import { AdditionalInfoForm } from "@/components/appointments/AdditionalInfoForm";
-import { createNewAppointment } from "@/services/appointmentService";
+import { criarAgendamento } from "@/services/agendamentoSimples";
 
 interface NovoAgendamentoProps {
   professionalId: string;
@@ -80,26 +80,39 @@ export const NovoAgendamento = ({ professionalId, onSuccess }: NovoAgendamentoPr
 
       const appointmentDate = format(formData.appointmentDate, 'yyyy-MM-dd');
       console.log('[NovoAgendamento] Data formatada:', appointmentDate);
+      console.log('[NovoAgendamento] Horário selecionado:', formData.appointmentTime);
 
-      const appointment = await createNewAppointment({
+      // Usando o novo serviço simplificado
+      const agendamento = await criarAgendamento({
         professional_id: professionalId,
-        patient_name: formData.patientName.trim(),
+        patient_name: formData.patientName,
         birth_date: formData.birth_date,
         appointment_date: appointmentDate,
         appointment_time: formData.appointmentTime,
-        display_status: 'waiting',
-        priority: 'normal',
+        phone: formData.phone,
         is_minor: formData.isMinor,
-        responsible_name: formData.responsibleName.trim() || null,
-        has_record: formData.hasRecord || null,
-        phone: formData.phone.trim()
+        responsible_name: formData.isMinor ? formData.responsibleName : null,
+        has_record: formData.hasRecord || null
       });
 
-      console.log('[NovoAgendamento] Agendamento criado com sucesso:', appointment);
+      console.log('[NovoAgendamento] Agendamento criado com sucesso:', agendamento);
       toast({
         title: "Sucesso",
         description: "Agendamento realizado com sucesso!",
       });
+      
+      // Limpar formulário
+      setFormData({
+        patientName: "",
+        birth_date: "",
+        appointmentDate: undefined,
+        appointmentTime: "",
+        phone: "",
+        isMinor: false,
+        responsibleName: "",
+        hasRecord: "",
+      });
+      
       onSuccess();
     } catch (error) {
       console.error('[NovoAgendamento] Erro ao criar agendamento:', error);
