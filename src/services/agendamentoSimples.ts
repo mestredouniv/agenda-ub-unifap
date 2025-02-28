@@ -55,8 +55,8 @@ export const criarAgendamento = async (dados: {
       is_minor: dados.is_minor,
       responsible_name: dados.responsible_name?.trim() || null,
       has_record: dados.has_record || null,
-      display_status: 'waiting',
-      priority: 'normal',
+      display_status: 'waiting' as const,
+      priority: 'normal' as const,
       updated_at: new Date().toISOString()
     };
 
@@ -64,7 +64,7 @@ export const criarAgendamento = async (dados: {
 
     const { data, error } = await supabase
       .from('appointments')
-      .insert([dadosCompletos])
+      .insert(dadosCompletos)
       .select()
       .single();
 
