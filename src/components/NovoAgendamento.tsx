@@ -82,7 +82,7 @@ export const NovoAgendamento = ({ professionalId, onSuccess }: NovoAgendamentoPr
       console.log('[NovoAgendamento] Data formatada:', appointmentDate);
       console.log('[NovoAgendamento] Horário selecionado:', formData.appointmentTime);
 
-      // Usando o novo serviço simplificado
+      // Usando o serviço simplificado
       const agendamento = await criarAgendamento({
         professional_id: professionalId,
         patient_name: formData.patientName,
@@ -113,6 +113,7 @@ export const NovoAgendamento = ({ professionalId, onSuccess }: NovoAgendamentoPr
         hasRecord: "",
       });
       
+      // Chamar o callback de sucesso somente após garantir que o agendamento foi criado
       onSuccess();
     } catch (error) {
       console.error('[NovoAgendamento] Erro ao criar agendamento:', error);

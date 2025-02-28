@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import {
@@ -104,6 +105,7 @@ export const AgendaProfissional = () => {
               professionalId={professionalId}
               onSuccess={() => {
                 setIsNewAppointmentOpen(false);
+                // Forçamos a recarga imediata dos agendamentos após um novo agendamento
                 fetchAppointments();
               }}
             />

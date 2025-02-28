@@ -16,7 +16,7 @@ export const criarAgendamento = async (dados: {
   is_minor: boolean;
   responsible_name?: string | null;
   has_record?: string | null;
-}) => {
+}): Promise<Appointment> => {
   console.log('[AgendamentoSimples] Iniciando criação de agendamento:', dados);
   
   try {
@@ -44,7 +44,7 @@ export const criarAgendamento = async (dados: {
       throw new Error('Profissional não disponível nesta data');
     }
 
-    // Tentamos criar o agendamento diretamente
+    // Preparar dados para inserção
     const dadosCompletos = {
       professional_id: dados.professional_id,
       patient_name: dados.patient_name.trim(),
@@ -55,13 +55,15 @@ export const criarAgendamento = async (dados: {
       is_minor: dados.is_minor,
       responsible_name: dados.responsible_name?.trim() || null,
       has_record: dados.has_record || null,
-      display_status: 'waiting' as const,
-      priority: 'normal' as const,
-      updated_at: new Date().toISOString()
+      // Usando valores específicos em vez de strings genéricas
+      display_status: 'waiting' as 'waiting' | 'triage' | 'in_progress' | 'completed' | 'missed' | 'rescheduled',
+      priority: 'normal' as 'normal' | 'priority',
+      // Deixar o updated_at ser definido pelo banco de dados
     };
 
     console.log('[AgendamentoSimples] Enviando dados para inserção:', dadosCompletos);
 
+    // Tentar inserir o agendamento
     const { data, error } = await supabase
       .from('appointments')
       .insert(dadosCompletos)
@@ -73,6 +75,10 @@ export const criarAgendamento = async (dados: {
       throw new Error(`Não foi possível criar o agendamento: ${error.message}`);
     }
 
+    if (!data) {
+      throw new Error('Não foi possível criar o agendamento: nenhum dado retornado');
+    }
+
     // Busca informações do profissional
     const { data: profissional } = await supabase
       .from('professionals')
@@ -80,8 +86,8 @@ export const criarAgendamento = async (dados: {
       .eq('id', dados.professional_id)
       .single();
 
-    // Combina os dados
-    const agendamentoCompleto = {
+    // Combina os dados para retornar um objeto completo
+    const agendamentoCompleto: Appointment = {
       ...data,
       professional_name: profissional?.name || 'Profissional'
     };
