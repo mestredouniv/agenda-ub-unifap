@@ -1,3 +1,4 @@
+
 export interface AgendaSidebarProps {
   appointments: number;
   nextAppointmentTime: string;
