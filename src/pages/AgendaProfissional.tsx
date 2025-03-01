@@ -16,9 +16,11 @@ import { AgendaSidebar } from "@/components/agenda/AgendaSidebar";
 import { AppointmentList } from "@/components/agenda/AppointmentList";
 import { ProfessionalHeader } from "@/components/agenda/ProfessionalHeader";
 import { AgendaState } from "@/types/agenda";
+import { useToast } from "@/components/ui/use-toast";
 
 export const AgendaProfissional = () => {
   const { professionalId } = useParams<{ professionalId: string }>();
+  const { toast } = useToast();
   const [viewMode, setViewMode] = useState<AgendaState['viewMode']>('list');
   const [isNewAppointmentOpen, setIsNewAppointmentOpen] = useState(false);
   const [isUnavailableDaysOpen, setIsUnavailableDaysOpen] = useState(false);
@@ -39,12 +41,19 @@ export const AgendaProfissional = () => {
         
         if (data && !error) {
           setProfessionalName(data.name);
+        } else if (error) {
+          console.error("Erro ao buscar nome do profissional:", error);
+          toast({
+            title: "Erro",
+            description: "Não foi possível carregar os dados do profissional.",
+            variant: "destructive",
+          });
         }
       }
     };
 
     fetchProfessionalName();
-  }, [professionalId]);
+  }, [professionalId, toast]);
 
   useEffect(() => {
     const fetchAvailableMonths = async () => {
@@ -58,12 +67,21 @@ export const AgendaProfissional = () => {
         
         if (data && !error) {
           setAvailableMonths(data);
+        } else if (error) {
+          console.error("Erro ao buscar meses disponíveis:", error);
         }
       }
     };
 
     fetchAvailableMonths();
   }, [professionalId]);
+
+  const handleAppointmentSuccess = () => {
+    console.log("[AgendaProfissional] Agendamento criado com sucesso, atualizando lista...");
+    setIsNewAppointmentOpen(false);
+    // Forçamos a recarga imediata dos agendamentos após um novo agendamento
+    fetchAppointments();
+  };
 
   if (!professionalId) return <div>ID do profissional não encontrado</div>;
 
@@ -79,7 +97,11 @@ export const AgendaProfissional = () => {
           onUnavailableDaysClick={() => setIsUnavailableDaysOpen(true)}
           availableMonths={availableMonths}
           selectedDate={selectedDate}
-          setSelectedDate={setSelectedDate}
+          setSelectedDate={(date) => {
+            setSelectedDate(date);
+            // Recarregar agendamentos quando a data mudar
+            setTimeout(() => fetchAppointments(), 100);
+          }}
         />
 
         <div className="flex-1 p-6">
@@ -103,11 +125,7 @@ export const AgendaProfissional = () => {
           <div className="mt-4">
             <NovoAgendamento
               professionalId={professionalId}
-              onSuccess={() => {
-                setIsNewAppointmentOpen(false);
-                // Forçamos a recarga imediata dos agendamentos após um novo agendamento
-                fetchAppointments();
-              }}
+              onSuccess={handleAppointmentSuccess}
             />
           </div>
         </SheetContent>

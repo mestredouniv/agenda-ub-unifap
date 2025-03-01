@@ -27,6 +27,19 @@ export const NovoAgendamento = ({ professionalId, onSuccess }: NovoAgendamentoPr
     hasRecord: "" as "yes" | "no" | "electronic" | "",
   });
 
+  const resetForm = () => {
+    setFormData({
+      patientName: "",
+      birth_date: "",
+      appointmentDate: undefined,
+      appointmentTime: "",
+      phone: "",
+      isMinor: false,
+      responsibleName: "",
+      hasRecord: "",
+    });
+  };
+
   const validateForm = () => {
     console.log('[NovoAgendamento] Validando formulário:', formData);
 
@@ -102,19 +115,12 @@ export const NovoAgendamento = ({ professionalId, onSuccess }: NovoAgendamentoPr
       });
       
       // Limpar formulário
-      setFormData({
-        patientName: "",
-        birth_date: "",
-        appointmentDate: undefined,
-        appointmentTime: "",
-        phone: "",
-        isMinor: false,
-        responsibleName: "",
-        hasRecord: "",
-      });
+      resetForm();
       
-      // Chamar o callback de sucesso somente após garantir que o agendamento foi criado
-      onSuccess();
+      // Chamar o callback de sucesso somente após garantir que o agendamento foi criado com sucesso
+      setTimeout(() => {
+        onSuccess();
+      }, 500);
     } catch (error) {
       console.error('[NovoAgendamento] Erro ao criar agendamento:', error);
       toast({

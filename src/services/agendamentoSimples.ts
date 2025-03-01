@@ -2,6 +2,9 @@
 import { supabase } from "@/integrations/supabase/client";
 import { Appointment } from "@/types/appointment";
 
+type AppointmentStatus = 'waiting' | 'triage' | 'in_progress' | 'completed' | 'missed' | 'rescheduled';
+type AppointmentPriority = 'normal' | 'priority';
+
 /**
  * Serviço simplificado para criação de agendamentos
  * Abordagem mais direta com menos verificações complexas
@@ -44,7 +47,7 @@ export const criarAgendamento = async (dados: {
       throw new Error('Profissional não disponível nesta data');
     }
 
-    // Preparar dados para inserção
+    // Preparar dados para inserção com tipagem correta
     const dadosCompletos = {
       professional_id: dados.professional_id,
       patient_name: dados.patient_name.trim(),
@@ -55,10 +58,8 @@ export const criarAgendamento = async (dados: {
       is_minor: dados.is_minor,
       responsible_name: dados.responsible_name?.trim() || null,
       has_record: dados.has_record || null,
-      // Usando valores específicos em vez de strings genéricas
-      display_status: 'waiting' as 'waiting' | 'triage' | 'in_progress' | 'completed' | 'missed' | 'rescheduled',
-      priority: 'normal' as 'normal' | 'priority',
-      // Deixar o updated_at ser definido pelo banco de dados
+      display_status: 'waiting' as AppointmentStatus,
+      priority: 'normal' as AppointmentPriority
     };
 
     console.log('[AgendamentoSimples] Enviando dados para inserção:', dadosCompletos);
