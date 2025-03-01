@@ -1,22 +1,14 @@
 
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { NovoAgendamento } from "@/components/NovoAgendamento";
-import { UnavailableDaysSelector } from "@/components/UnavailableDaysSelector";
+import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAppointments } from "@/hooks/useAppointments";
 import { AgendaSidebar } from "@/components/agenda/AgendaSidebar";
-import { AppointmentList } from "@/components/agenda/AppointmentList";
-import { ProfessionalHeader } from "@/components/agenda/ProfessionalHeader";
+import { AgendaContent } from "@/components/agenda/AgendaContent";
+import { NewAppointmentSheet } from "@/components/agenda/NewAppointmentSheet";
+import { UnavailableDaysDialog } from "@/components/agenda/UnavailableDaysDialog";
 import { AgendaState } from "@/types/agenda";
-import { useToast } from "@/components/ui/use-toast";
 
 export const AgendaProfissional = () => {
   const { professionalId } = useParams<{ professionalId: string }>();
@@ -104,53 +96,28 @@ export const AgendaProfissional = () => {
           }}
         />
 
-        <div className="flex-1 p-6">
-          <div className="max-w-5xl mx-auto space-y-6">
-            <ProfessionalHeader professionalName={professionalName} />
-            <AppointmentList
-              appointments={appointments}
-              viewMode={viewMode}
-              onSuccess={fetchAppointments}
-              isLoading={isLoading}
-            />
-          </div>
-        </div>
+        <AgendaContent
+          professionalName={professionalName}
+          appointments={appointments}
+          viewMode={viewMode}
+          isLoading={isLoading}
+          onSuccess={fetchAppointments}
+        />
       </div>
 
-      <Sheet open={isNewAppointmentOpen} onOpenChange={setIsNewAppointmentOpen}>
-        <SheetContent side="right" className="w-[400px] sm:w-[540px]">
-          <SheetHeader>
-            <SheetTitle>Novo Agendamento</SheetTitle>
-          </SheetHeader>
-          <div className="mt-4">
-            <NovoAgendamento
-              professionalId={professionalId}
-              onSuccess={handleAppointmentSuccess}
-            />
-          </div>
-        </SheetContent>
-      </Sheet>
+      <NewAppointmentSheet
+        isOpen={isNewAppointmentOpen}
+        onOpenChange={setIsNewAppointmentOpen}
+        professionalId={professionalId}
+        onSuccess={handleAppointmentSuccess}
+      />
 
-      <Dialog 
-        open={isUnavailableDaysOpen} 
+      <UnavailableDaysDialog
+        isOpen={isUnavailableDaysOpen}
         onOpenChange={setIsUnavailableDaysOpen}
-        modal={true}
-      >
-        <DialogContent className="max-w-4xl">
-          <DialogHeader>
-            <DialogTitle>Organizar Meus Horários</DialogTitle>
-            <DialogDescription>
-              Selecione os dias em que você não estará disponível para atendimento
-            </DialogDescription>
-          </DialogHeader>
-          <UnavailableDaysSelector
-            professionalId={professionalId}
-            onSuccess={() => {
-              fetchAppointments();
-            }}
-          />
-        </DialogContent>
-      </Dialog>
+        professionalId={professionalId}
+        onSuccess={fetchAppointments}
+      />
     </div>
   );
 };
