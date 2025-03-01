@@ -44,7 +44,7 @@ export const criarAgendamento = async (dados: {
       throw new Error('Profissional não disponível nesta data');
     }
 
-    // Preparar dados para inserção com string literals para evitar problemas de tipo
+    // Preparar dados para inserção com valores específicos para os campos enumerados
     const dadosCompletos = {
       professional_id: dados.professional_id,
       patient_name: dados.patient_name.trim(),
@@ -55,8 +55,8 @@ export const criarAgendamento = async (dados: {
       is_minor: dados.is_minor,
       responsible_name: dados.responsible_name?.trim() || null,
       has_record: dados.has_record || null,
-      display_status: 'waiting',
-      priority: 'normal'
+      display_status: 'waiting' as const,  // Explicitamente definido como literal
+      priority: 'normal' as const  // Explicitamente definido como literal
     };
 
     console.log('[AgendamentoSimples] Enviando dados para inserção:', dadosCompletos);

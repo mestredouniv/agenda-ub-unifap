@@ -1,0 +1,156 @@
+
+import { useState } from "react";
+import { format } from "date-fns";
+import { useToast } from "@/components/ui/use-toast";
+import { criarAgendamento } from "@/services/agendamentoSimples";
+
+export type AppointmentFormData = {
+  patientName: string;
+  birth_date: string;
+  appointmentDate: Date | undefined;
+  appointmentTime: string;
+  phone: string;
+  isMinor: boolean;
+  responsibleName: string;
+  hasRecord: "yes" | "no" | "electronic" | "";
+};
+
+interface UseAppointmentFormProps {
+  professionalId: string;
+  onSuccess: () => void;
+}
+
+export const useAppointmentForm = ({ professionalId, onSuccess }: UseAppointmentFormProps) => {
+  const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
+  const [formData, setFormData] = useState<AppointmentFormData>({
+    patientName: "",
+    birth_date: "",
+    appointmentDate: undefined,
+    appointmentTime: "",
+    phone: "",
+    isMinor: false,
+    responsibleName: "",
+    hasRecord: "",
+  });
+
+  const resetForm = () => {
+    console.log('[useAppointmentForm] Resetting form');
+    setFormData({
+      patientName: "",
+      birth_date: "",
+      appointmentDate: undefined,
+      appointmentTime: "",
+      phone: "",
+      isMinor: false,
+      responsibleName: "",
+      hasRecord: "",
+    });
+  };
+
+  const validateForm = () => {
+    console.log('[useAppointmentForm] Validando formulário:', formData);
+
+    const errors: string[] = [];
+
+    if (!formData.patientName?.trim()) {
+      errors.push("Nome do paciente é obrigatório");
+    }
+    if (!formData.birth_date) {
+      errors.push("Data de nascimento é obrigatória");
+    }
+    if (!formData.appointmentDate) {
+      errors.push("Data da consulta é obrigatória");
+    }
+    if (!formData.appointmentTime) {
+      errors.push("Horário da consulta é obrigatório");
+    }
+    if (!formData.phone?.trim()) {
+      errors.push("Telefone é obrigatório");
+    }
+    if (formData.isMinor && !formData.responsibleName?.trim()) {
+      errors.push("Nome do responsável é obrigatório para pacientes menores de idade");
+    }
+
+    if (errors.length > 0) {
+      console.log('[useAppointmentForm] Erros de validação:', errors);
+      toast({
+        title: "Campos obrigatórios",
+        description: errors.join(", "),
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    return true;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    console.log('[useAppointmentForm] Iniciando submissão do formulário:', formData);
+
+    if (!validateForm()) {
+      return;
+    }
+
+    setIsLoading(true);
+    
+    try {
+      if (!formData.appointmentDate) {
+        throw new Error("Data da consulta não selecionada");
+      }
+
+      const appointmentDate = format(formData.appointmentDate, 'yyyy-MM-dd');
+      console.log('[useAppointmentForm] Data formatada:', appointmentDate);
+      console.log('[useAppointmentForm] Horário selecionado:', formData.appointmentTime);
+
+      // Usando o serviço reescrito
+      await criarAgendamento({
+        professional_id: professionalId,
+        patient_name: formData.patientName,
+        birth_date: formData.birth_date,
+        appointment_date: appointmentDate,
+        appointment_time: formData.appointmentTime,
+        phone: formData.phone,
+        is_minor: formData.isMinor,
+        responsible_name: formData.isMinor ? formData.responsibleName : null,
+        has_record: formData.hasRecord || null
+      });
+
+      console.log('[useAppointmentForm] Agendamento criado com sucesso');
+      
+      toast({
+        title: "Sucesso",
+        description: "Agendamento realizado com sucesso!",
+      });
+      
+      // Limpar formulário e chamar callback de sucesso
+      resetForm();
+      onSuccess();
+      
+    } catch (error) {
+      console.error('[useAppointmentForm] Erro ao criar agendamento:', error);
+      toast({
+        title: "Erro",
+        description: error instanceof Error 
+          ? error.message 
+          : "Não foi possível realizar o agendamento. Tente novamente.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const updateFormData = (field: keyof AppointmentFormData, value: any) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  return {
+    formData,
+    isLoading,
+    updateFormData,
+    handleSubmit,
+    resetForm
+  };
+};
