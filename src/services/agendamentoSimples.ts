@@ -2,12 +2,9 @@
 import { supabase } from "@/integrations/supabase/client";
 import { Appointment } from "@/types/appointment";
 
-type AppointmentStatus = 'waiting' | 'triage' | 'in_progress' | 'completed' | 'missed' | 'rescheduled';
-type AppointmentPriority = 'normal' | 'priority';
-
 /**
- * Serviço simplificado para criação de agendamentos
- * Abordagem mais direta com menos verificações complexas
+ * Serviço reescrito para criação de agendamentos
+ * Abordagem mais simplificada e robusta
  */
 export const criarAgendamento = async (dados: {
   professional_id: string;
@@ -22,17 +19,17 @@ export const criarAgendamento = async (dados: {
 }): Promise<Appointment> => {
   console.log('[AgendamentoSimples] Iniciando criação de agendamento:', dados);
   
-  try {
-    // Validação básica
-    if (!dados.patient_name?.trim()) throw new Error('Nome do paciente é obrigatório');
-    if (!dados.birth_date) throw new Error('Data de nascimento é obrigatória');
-    if (!dados.phone?.trim()) throw new Error('Telefone é obrigatório');
-    if (!dados.appointment_date) throw new Error('Data da consulta é obrigatória');
-    if (!dados.appointment_time) throw new Error('Horário é obrigatório');
-    if (dados.is_minor && !dados.responsible_name?.trim()) {
-      throw new Error('Nome do responsável é obrigatório para pacientes menores de idade');
-    }
+  // Validação básica
+  if (!dados.patient_name?.trim()) throw new Error('Nome do paciente é obrigatório');
+  if (!dados.birth_date) throw new Error('Data de nascimento é obrigatória');
+  if (!dados.phone?.trim()) throw new Error('Telefone é obrigatório');
+  if (!dados.appointment_date) throw new Error('Data da consulta é obrigatória');
+  if (!dados.appointment_time) throw new Error('Horário é obrigatório');
+  if (dados.is_minor && !dados.responsible_name?.trim()) {
+    throw new Error('Nome do responsável é obrigatório para pacientes menores de idade');
+  }
 
+  try {
     // Verificamos se o dia está bloqueado para o profissional
     const { data: diaIndisponivel, error: erroDia } = await supabase
       .from('professional_unavailable_days')
@@ -47,7 +44,7 @@ export const criarAgendamento = async (dados: {
       throw new Error('Profissional não disponível nesta data');
     }
 
-    // Preparar dados para inserção com tipagem correta
+    // Preparar dados para inserção com string literals para evitar problemas de tipo
     const dadosCompletos = {
       professional_id: dados.professional_id,
       patient_name: dados.patient_name.trim(),
@@ -58,8 +55,8 @@ export const criarAgendamento = async (dados: {
       is_minor: dados.is_minor,
       responsible_name: dados.responsible_name?.trim() || null,
       has_record: dados.has_record || null,
-      display_status: 'waiting' as AppointmentStatus,
-      priority: 'normal' as AppointmentPriority
+      display_status: 'waiting',
+      priority: 'normal'
     };
 
     console.log('[AgendamentoSimples] Enviando dados para inserção:', dadosCompletos);
@@ -68,7 +65,7 @@ export const criarAgendamento = async (dados: {
     const { data, error } = await supabase
       .from('appointments')
       .insert(dadosCompletos)
-      .select()
+      .select('*')
       .single();
 
     if (error) {

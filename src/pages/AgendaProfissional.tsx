@@ -79,7 +79,7 @@ export const AgendaProfissional = () => {
   const handleAppointmentSuccess = () => {
     console.log("[AgendaProfissional] Agendamento criado com sucesso, atualizando lista...");
     setIsNewAppointmentOpen(false);
-    // Forçamos a recarga imediata dos agendamentos após um novo agendamento
+    // Atualizar a lista de agendamentos
     fetchAppointments();
   };
 
@@ -100,7 +100,7 @@ export const AgendaProfissional = () => {
           setSelectedDate={(date) => {
             setSelectedDate(date);
             // Recarregar agendamentos quando a data mudar
-            setTimeout(() => fetchAppointments(), 100);
+            fetchAppointments();
           }}
         />
 

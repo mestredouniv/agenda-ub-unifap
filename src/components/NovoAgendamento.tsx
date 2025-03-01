@@ -86,6 +86,7 @@ export const NovoAgendamento = ({ professionalId, onSuccess }: NovoAgendamentoPr
     }
 
     setIsLoading(true);
+    
     try {
       if (!formData.appointmentDate) {
         throw new Error("Data da consulta não selecionada");
@@ -95,8 +96,8 @@ export const NovoAgendamento = ({ professionalId, onSuccess }: NovoAgendamentoPr
       console.log('[NovoAgendamento] Data formatada:', appointmentDate);
       console.log('[NovoAgendamento] Horário selecionado:', formData.appointmentTime);
 
-      // Usando o serviço simplificado
-      const agendamento = await criarAgendamento({
+      // Usando o serviço reescrito
+      await criarAgendamento({
         professional_id: professionalId,
         patient_name: formData.patientName,
         birth_date: formData.birth_date,
@@ -108,19 +109,17 @@ export const NovoAgendamento = ({ professionalId, onSuccess }: NovoAgendamentoPr
         has_record: formData.hasRecord || null
       });
 
-      console.log('[NovoAgendamento] Agendamento criado com sucesso:', agendamento);
+      console.log('[NovoAgendamento] Agendamento criado com sucesso');
+      
       toast({
         title: "Sucesso",
         description: "Agendamento realizado com sucesso!",
       });
       
-      // Limpar formulário
+      // Limpar formulário e chamar callback de sucesso
       resetForm();
+      onSuccess();
       
-      // Chamar o callback de sucesso somente após garantir que o agendamento foi criado com sucesso
-      setTimeout(() => {
-        onSuccess();
-      }, 500);
     } catch (error) {
       console.error('[NovoAgendamento] Erro ao criar agendamento:', error);
       toast({
