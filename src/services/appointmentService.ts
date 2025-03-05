@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { Appointment } from "@/types/appointment";
 import { Database } from "@/integrations/supabase/types";
@@ -41,7 +42,7 @@ export const fetchDailyAppointments = async (professionalId: string) => {
   }
 };
 
-export const createNewAppointment = async (appointmentData: Omit<Appointment, 'id' | 'professional'>) => {
+export const createNewAppointment = async (appointmentData: Omit<Appointment, 'id' | 'professionals'>) => {
   console.log('[Agenda] Iniciando criação:', appointmentData);
   
   try {
@@ -94,7 +95,7 @@ export const createNewAppointment = async (appointmentData: Omit<Appointment, 'i
     const { data, error } = await supabase
       .from(APPOINTMENTS_TABLE)
       .insert([appointment])
-      .select('*, professionals!fk_professional(name)')
+      .select('*, professionals:professional_id(name)')
       .single();
 
     if (error) {

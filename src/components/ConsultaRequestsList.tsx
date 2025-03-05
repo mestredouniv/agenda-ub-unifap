@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -38,8 +37,8 @@ export const ConsultaRequestsList = () => {
         patientName: appointment.patient_name,
         preferredDate: appointment.appointment_date,
         preferredTime: appointment.appointment_time,
-        status: appointment.status as AppointmentRequest['status'],
-        message: appointment.medical_record_type
+        status: appointment.display_status as AppointmentRequest['status'],
+        message: appointment.has_record
       })));
     };
 
