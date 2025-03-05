@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Appointment } from "@/types/appointment";
 
@@ -30,7 +29,20 @@ export const criarAgendamento = async (dados: {
   }
 
   try {
-    // Verificamos se o dia está bloqueado para o profissional
+    // 1. Verificar se o slot de horário existe para o profissional
+    const { data: slot, error: slotError } = await supabase
+      .from('professional_available_slots')
+      .select('*')
+      .eq('professional_id', dados.professional_id)
+      .eq('time_slot', dados.appointment_time)
+      .single();
+
+    if (slotError || !slot) {
+      console.error('[AgendamentoSimples] Erro ao verificar slot:', slotError);
+      throw new Error('Horário não disponível para agendamento');
+    }
+
+    // 2. Verificar se o dia está bloqueado para o profissional
     const { data: diaIndisponivel, error: erroDia } = await supabase
       .from('professional_unavailable_days')
       .select('date')
@@ -40,8 +52,29 @@ export const criarAgendamento = async (dados: {
 
     if (erroDia) {
       console.error('[AgendamentoSimples] Erro ao verificar disponibilidade do dia:', erroDia);
-    } else if (diaIndisponivel) {
+      throw new Error('Erro ao verificar disponibilidade do profissional');
+    } 
+    
+    if (diaIndisponivel) {
       throw new Error('Profissional não disponível nesta data');
+    }
+
+    // 3. Verificar número de agendamentos existentes para este horário
+    const { data: agendamentosExistentes, error: erroContagem } = await supabase
+      .from('appointments')
+      .select('id')
+      .eq('professional_id', dados.professional_id)
+      .eq('appointment_date', dados.appointment_date)
+      .eq('appointment_time', dados.appointment_time)
+      .is('deleted_at', null);
+
+    if (erroContagem) {
+      console.error('[AgendamentoSimples] Erro ao contar agendamentos:', erroContagem);
+      throw new Error('Erro ao verificar disponibilidade do horário');
+    }
+
+    if ((agendamentosExistentes?.length || 0) >= slot.max_appointments) {
+      throw new Error('Horário não possui mais vagas disponíveis');
     }
 
     // Preparar dados para inserção com valores específicos para os campos enumerados
@@ -55,8 +88,9 @@ export const criarAgendamento = async (dados: {
       is_minor: dados.is_minor,
       responsible_name: dados.responsible_name?.trim() || null,
       has_record: dados.has_record || null,
-      display_status: 'waiting' as const,  // Explicitamente definido como literal
-      priority: 'normal' as const  // Explicitamente definido como literal
+      display_status: 'waiting' as const,
+      priority: 'normal' as const,
+      created_at: new Date().toISOString()
     };
 
     console.log('[AgendamentoSimples] Enviando dados para inserção:', dadosCompletos);
@@ -65,29 +99,25 @@ export const criarAgendamento = async (dados: {
     const { data, error } = await supabase
       .from('appointments')
       .insert(dadosCompletos)
-      .select('*')
+      .select('*, professionals(name)')
       .single();
 
     if (error) {
       console.error('[AgendamentoSimples] Erro na inserção:', error);
-      throw new Error(`Não foi possível criar o agendamento: ${error.message}`);
+      if (error.code === '23505') {
+        throw new Error('Já existe um agendamento para este horário');
+      }
+      throw new Error('Não foi possível criar o agendamento. Por favor, tente novamente.');
     }
 
     if (!data) {
       throw new Error('Não foi possível criar o agendamento: nenhum dado retornado');
     }
 
-    // Busca informações do profissional
-    const { data: profissional } = await supabase
-      .from('professionals')
-      .select('name')
-      .eq('id', dados.professional_id)
-      .single();
-
-    // Combina os dados para retornar um objeto completo
+    // Formatar o objeto de retorno
     const agendamentoCompleto: Appointment = {
       ...data,
-      professional_name: profissional?.name || 'Profissional'
+      professional_name: data.professionals?.name || 'Profissional'
     };
 
     console.log('[AgendamentoSimples] Agendamento criado com sucesso:', agendamentoCompleto);

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { format } from "date-fns";
 import { useToast } from "@/components/ui/use-toast";
@@ -104,8 +103,7 @@ export const useAppointmentForm = ({ professionalId, onSuccess }: UseAppointment
       console.log('[useAppointmentForm] Data formatada:', appointmentDate);
       console.log('[useAppointmentForm] Horário selecionado:', formData.appointmentTime);
 
-      // Usando o serviço reescrito
-      await criarAgendamento({
+      const result = await criarAgendamento({
         professional_id: professionalId,
         patient_name: formData.patientName,
         birth_date: formData.birth_date,
@@ -117,24 +115,27 @@ export const useAppointmentForm = ({ professionalId, onSuccess }: UseAppointment
         has_record: formData.hasRecord || null
       });
 
-      console.log('[useAppointmentForm] Agendamento criado com sucesso');
+      console.log('[useAppointmentForm] Agendamento criado com sucesso:', result);
       
       toast({
-        title: "Sucesso",
+        title: "Sucesso!",
         description: "Agendamento realizado com sucesso!",
       });
       
-      // Limpar formulário e chamar callback de sucesso
       resetForm();
       onSuccess();
       
     } catch (error) {
       console.error('[useAppointmentForm] Erro ao criar agendamento:', error);
+      
+      // Mensagem de erro mais específica
+      const errorMessage = error instanceof Error 
+        ? error.message 
+        : "Não foi possível realizar o agendamento. Tente novamente.";
+        
       toast({
-        title: "Erro",
-        description: error instanceof Error 
-          ? error.message 
-          : "Não foi possível realizar o agendamento. Tente novamente.",
+        title: "Erro no agendamento",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
