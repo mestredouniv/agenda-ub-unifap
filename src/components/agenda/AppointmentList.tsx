@@ -1,4 +1,3 @@
-
 import { Card } from "@/components/ui/card";
 import { AppointmentCard } from "@/components/appointments/AppointmentCard";
 import { AppointmentListProps } from "@/types/agenda";

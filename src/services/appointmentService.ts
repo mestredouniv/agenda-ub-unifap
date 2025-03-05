@@ -14,45 +14,34 @@ export const fetchDailyAppointments = async (professionalId: string) => {
     }
 
     const today = new Date().toISOString().split('T')[0];
-    
-    // Obtemos primeiro os dados do profissional
-    const { data: professionalData, error: professionalError } = await supabase
-      .from('professionals')
-      .select('name')
-      .eq('id', professionalId)
-      .single();
-      
-    if (professionalError) {
-      console.error('[Agenda] Erro ao buscar profissional:', professionalError);
-      throw new Error('Erro ao buscar informações do profissional');
-    }
-    
-    // Depois buscamos os agendamentos
-    const { data: appointmentsData, error: appointmentsError } = await supabase
+    let query = supabase
       .from(APPOINTMENTS_TABLE)
-      .select('*')
+      .select(`
+        *,
+        professional_name:professionals(name)
+      `)
       .eq('appointment_date', today)
-      .eq('professional_id', professionalId)
-      .is('deleted_at', null)
+      .is('deleted_at', null);
+
+    if (professionalId !== "all") {
+      query = query.eq('professional_id', professionalId);
+    }
+
+    console.log('[Agenda] Executando query');
+    const { data, error } = await query
       .order('priority', { ascending: false })
       .order('appointment_time', { ascending: true });
 
-    if (appointmentsError) {
-      console.error('[Agenda] Erro ao buscar agendamentos:', appointmentsError);
+    if (error) {
+      console.error('[Agenda] Erro ao buscar agendamentos:', error);
       throw new Error('Não foi possível carregar os agendamentos. Por favor, tente novamente.');
     }
 
-    // Adicionamos o nome do profissional a cada agendamento
-    const formattedAppointments = (appointmentsData || []).map(appointment => ({
-      ...appointment,
-      professional_name: professionalData?.name || ''
-    }));
-
-    console.log('[Agenda] Agendamentos encontrados:', formattedAppointments.length);
-    return formattedAppointments;
+    console.log('[Agenda] Agendamentos encontrados:', data?.length || 0);
+    return data || [];
   } catch (error) {
     console.error('[Agenda] Erro crítico:', error);
-    throw error instanceof Error ? error : new Error('Erro ao carregar agenda. Por favor, tente novamente.');
+    throw new Error('Erro ao carregar agenda. Por favor, tente novamente.');
   }
 };
 
@@ -150,7 +139,10 @@ export const createNewAppointment = async (appointmentData: Omit<Appointment, 'i
         ticket_number: appointmentData.ticket_number || null,
         has_record: appointmentData.has_record || null
       }])
-      .select()
+      .select(`
+        *,
+        professional_name:professionals(name)
+      `)
       .single();
 
     if (error) {
@@ -163,26 +155,8 @@ export const createNewAppointment = async (appointmentData: Omit<Appointment, 'i
       throw new Error('Não foi possível criar o agendamento. Por favor, tente novamente.');
     }
 
-    // Busca o nome do profissional para adicionar ao resultado
-    const { data: professionalData, error: professionalError } = await supabase
-      .from('professionals')
-      .select('name')
-      .eq('id', appointmentData.professional_id)
-      .single();
-
-    if (professionalError) {
-      console.error('[Agenda] Erro ao buscar nome do profissional:', professionalError);
-      // Continua mesmo sem o nome do profissional, não bloqueia o fluxo
-    }
-
-    // Adiciona o nome do profissional ao agendamento
-    const appointmentWithProfessionalName = {
-      ...data,
-      professional_name: professionalData?.name || ''
-    };
-
-    console.log('[Agenda] Agendamento criado com sucesso:', appointmentWithProfessionalName);
-    return appointmentWithProfessionalName;
+    console.log('[Agenda] Agendamento criado com sucesso:', data);
+    return data;
   } catch (error) {
     console.error('[Agenda] Erro crítico na criação:', error);
     throw error instanceof Error 

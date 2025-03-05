@@ -1,15 +1,9 @@
 
 import { useState, useEffect, useCallback } from "react";
+import { format } from "date-fns";
 import { Appointment } from "@/types/appointment";
 import { useToast } from "@/components/ui/use-toast";
 import { fetchDailyAppointments } from "@/services/appointmentService";
-import { supabase } from "@/integrations/supabase/client";
-
-interface AppointmentWithProfessional extends Omit<Appointment, 'professional_name'> {
-  professionals?: {
-    name: string;
-  };
-}
 
 export const useAppointments = (professionalId: string, selectedDate: Date) => {
   const { toast } = useToast();
@@ -31,13 +25,7 @@ export const useAppointments = (professionalId: string, selectedDate: Date) => {
       const data = await fetchDailyAppointments(professionalId);
       console.log('[useAppointments] Dados recebidos:', data);
       
-      // Transformar os dados para corresponder ao tipo Appointment
-      const formattedData: Appointment[] = (data as AppointmentWithProfessional[]).map(item => ({
-        ...item,
-        professional_name: item.professionals?.name || ''
-      }));
-      
-      setAppointments(formattedData);
+      setAppointments(data);
     } catch (err) {
       console.error('[useAppointments] Erro:', err);
       setError(err instanceof Error ? err : new Error('Erro ao carregar agendamentos'));
@@ -60,12 +48,12 @@ export const useAppointments = (professionalId: string, selectedDate: Date) => {
       await fetchAppointments();
     };
 
+    // Carregar agendamentos iniciais
     loadAppointments();
 
-    // Configurar channel específico para este profissional
-    const channelName = `appointments-${professionalId}`;
+    // Configurar real-time updates
     const channel = supabase
-      .channel(channelName)
+      .channel('appointments-changes')
       .on(
         'postgres_changes',
         {
@@ -75,36 +63,26 @@ export const useAppointments = (professionalId: string, selectedDate: Date) => {
           filter: `professional_id=eq.${professionalId}`
         },
         (payload) => {
-          console.log(`[useAppointments] Mudança detectada no canal ${channelName}:`, payload);
+          console.log('[useAppointments] Mudança detectada:', payload);
           if (mounted) {
             fetchAppointments();
           }
         }
       )
       .subscribe((status) => {
-        console.log(`[useAppointments] Status da subscription no canal ${channelName}:`, status);
-        if (status === 'CHANNEL_ERROR') {
-          console.error('[useAppointments] Erro no canal de realtime');
-          toast({
-            title: "Erro de sincronização",
-            description: "Houve um problema na sincronização em tempo real. Atualizando dados...",
-            variant: "destructive",
-          });
-          fetchAppointments();
-        }
+        console.log('[useAppointments] Status da subscription:', status);
       });
 
     return () => {
-      console.log(`[useAppointments] Limpando subscription do canal ${channelName}`);
       mounted = false;
       supabase.removeChannel(channel);
     };
-  }, [professionalId, selectedDate, fetchAppointments, toast]);
+  }, [professionalId, selectedDate, fetchAppointments]);
 
   return { 
     appointments,
     isLoading,
     error,
-    fetchAppointments
+    refetch: fetchAppointments,
   };
 };

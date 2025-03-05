@@ -31,7 +31,7 @@ export const ConsultActions = ({ appointment, onUpdateRequired }: ConsultActions
         .from('last_calls')
         .insert([{
           patient_name: appointment.patient_name,
-          professional_name: appointment.professional_name || 'Profissional',
+          professional_name: appointment.professionals?.name,
           status: 'in_progress'
         }]);
 
@@ -40,7 +40,7 @@ export const ConsultActions = ({ appointment, onUpdateRequired }: ConsultActions
       setCurrentPatient({
         name: appointment.patient_name,
         status: 'in_progress',
-        professional: appointment.professional_name || 'Profissional',
+        professional: appointment.professionals?.name || '',
       });
 
       toast({

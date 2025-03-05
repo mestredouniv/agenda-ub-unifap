@@ -1,151 +1,142 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { format } from "date-fns";
 
 interface Slot {
   time: string;
   available: boolean;
-  maxAppointments: number;
   currentAppointments: number;
+  maxAppointments: number;
 }
 
 interface UnavailableDay {
   date: string;
 }
 
-export const useAppointmentSlots = (professionalId: string, selectedDate: Date | undefined) => {
+export const useAppointmentSlots = (
+  professionalId: string,
+  selectedDate?: Date
+) => {
   const [slots, setSlots] = useState<Slot[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [unavailableDays, setUnavailableDays] = useState<UnavailableDay[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const fetchAvailableSlots = useCallback(async () => {
-    if (!professionalId || !selectedDate) {
+  const fetchUnavailableDays = useCallback(async (): Promise<UnavailableDay[]> => {
+    try {
+      const { data, error } = await supabase
+        .from('professional_unavailable_days')
+        .select('date')
+        .eq('professional_id', professionalId);
+
+      if (error) {
+        console.error('[useAppointmentSlots] Erro ao buscar dias indisponíveis:', error);
+        return [];
+      }
+
+      console.log('[useAppointmentSlots] Dias indisponíveis:', data);
+      return data || [];
+    } catch (error) {
+      console.error('[useAppointmentSlots] Erro inesperado ao buscar dias indisponíveis:', error);
+      return [];
+    }
+  }, [professionalId]);
+
+  const fetchSlots = useCallback(async () => {
+    console.log('[useAppointmentSlots] Iniciando busca de slots', {
+      professionalId,
+      selectedDate
+    });
+
+    if (!selectedDate) {
       setSlots([]);
+      setIsLoading(false);
       return;
     }
-    
-    setIsLoading(true);
+
     try {
-      console.log('[useAppointmentSlots] Iniciando busca de slots', { professionalId, selectedDate });
-      
-      // Primeiro, verificamos se o dia está disponível
-      const formattedDate = selectedDate.toISOString().split('T')[0];
-      const { data: unavailableDay, error: dayError } = await supabase
+      setIsLoading(true);
+      const formattedDate = format(selectedDate, 'yyyy-MM-dd');
+
+      // Verificar se o dia está indisponível
+      const { data: unavailableDay, error: unavailableError } = await supabase
         .from('professional_unavailable_days')
-        .select('*')
+        .select('id')
         .eq('professional_id', professionalId)
         .eq('date', formattedDate)
         .maybeSingle();
-        
-      if (dayError) {
-        console.error('[useAppointmentSlots] Erro ao verificar dia:', dayError);
-        throw dayError;
+
+      if (unavailableError) {
+        console.error('[useAppointmentSlots] Erro ao verificar disponibilidade:', unavailableError);
+        throw unavailableError;
       }
-      
+
       if (unavailableDay) {
         console.log('[useAppointmentSlots] Dia indisponível:', formattedDate);
-        setSlots([]);
-        return;
-      }
-
-      // Busca os horários disponíveis
-      const { data: availableSlots, error: slotsError } = await supabase
-        .from('professional_available_slots')
-        .select('*')
-        .eq('professional_id', professionalId)
-        .order('time_slot');
-        
-      if (slotsError) {
-        console.error('[useAppointmentSlots] Erro ao buscar slots:', slotsError);
-        throw slotsError;
-      }
-
-      if (!availableSlots || availableSlots.length === 0) {
-        console.log('[useAppointmentSlots] Nenhum slot disponível para este profissional');
         setSlots([]);
         setIsLoading(false);
         return;
       }
 
-      // Busca todos os agendamentos para a data selecionada em uma única consulta
-      const { data: existingAppointments, error: appointmentsError } = await supabase
+      // Buscar slots disponíveis
+      const { data: availableSlots, error: slotsError } = await supabase
+        .from('professional_available_slots')
+        .select('time_slot, max_appointments')
+        .eq('professional_id', professionalId)
+        .order('time_slot');
+
+      if (slotsError) {
+        console.error('[useAppointmentSlots] Erro ao buscar slots:', slotsError);
+        throw slotsError;
+      }
+
+      console.log('[useAppointmentSlots] Slots disponíveis:', availableSlots);
+
+      // Buscar agendamentos existentes
+      const { data: appointments, error: appointmentsError } = await supabase
         .from('appointments')
         .select('appointment_time')
         .eq('professional_id', professionalId)
         .eq('appointment_date', formattedDate)
         .is('deleted_at', null);
-        
+
       if (appointmentsError) {
         console.error('[useAppointmentSlots] Erro ao buscar agendamentos:', appointmentsError);
         throw appointmentsError;
       }
 
-      // Contagem de agendamentos por horário
-      const appointmentCounts: Record<string, number> = {};
-      (existingAppointments || []).forEach(appointment => {
-        const time = appointment.appointment_time;
-        appointmentCounts[time] = (appointmentCounts[time] || 0) + 1;
-      });
+      console.log('[useAppointmentSlots] Agendamentos existentes:', appointments);
 
-      // Formato dos slots
-      const formattedSlots: Slot[] = availableSlots.map(slot => {
-        const count = appointmentCounts[slot.time_slot] || 0;
+      // Processar os slots
+      const processedSlots = (availableSlots || []).map(slot => {
+        const timeStr = slot.time_slot.slice(0, 5);
+        const appointmentsAtTime = appointments?.filter(
+          app => app.appointment_time.slice(0, 5) === timeStr
+        ).length || 0;
+
         return {
-          time: slot.time_slot,
-          available: count < slot.max_appointments,
-          maxAppointments: slot.max_appointments,
-          currentAppointments: count
+          time: timeStr,
+          available: appointmentsAtTime < slot.max_appointments,
+          currentAppointments: appointmentsAtTime,
+          maxAppointments: slot.max_appointments
         };
       });
-      
-      console.log('[useAppointmentSlots] Slots formatados:', formattedSlots);
-      setSlots(formattedSlots);
+
+      console.log('[useAppointmentSlots] Slots processados:', processedSlots);
+      setSlots(processedSlots);
     } catch (error) {
-      console.error('[useAppointmentSlots] Erro ao buscar slots:', error);
+      console.error('[useAppointmentSlots] Erro inesperado:', error);
       setSlots([]);
     } finally {
       setIsLoading(false);
     }
   }, [professionalId, selectedDate]);
 
-  const fetchUnavailableDays = useCallback(async () => {
-    if (!professionalId) {
-      return [];
-    }
-    
-    try {
-      const { data, error } = await supabase
-        .from('professional_unavailable_days')
-        .select('date')
-        .eq('professional_id', professionalId);
-        
-      if (error) {
-        console.error('[useAppointmentSlots] Erro ao buscar dias indisponíveis:', error);
-        return [];
-      }
-      
-      console.log('[useAppointmentSlots] Dias indisponíveis:', data);
-      setUnavailableDays(data || []);
-      return data || [];
-    } catch (error) {
-      console.error('[useAppointmentSlots] Erro ao buscar dias indisponíveis:', error);
-      return [];
-    }
-  }, [professionalId]);
-
   useEffect(() => {
-    let mounted = true;
-    
-    const loadData = async () => {
-      if (mounted) await fetchAvailableSlots();
-    };
-    
-    loadData();
-    
-    // Configura canal para updates
-    const channelName = `slots-${professionalId}-${selectedDate?.toISOString().split('T')[0] || 'no-date'}`;
+    fetchSlots();
+
+    // Configurar listeners para mudanças em tempo real
     const channel = supabase
-      .channel(channelName)
+      .channel(`slots-${professionalId}-${selectedDate?.toISOString() || 'no-date'}`)
       .on(
         'postgres_changes',
         {
@@ -154,7 +145,10 @@ export const useAppointmentSlots = (professionalId: string, selectedDate: Date |
           table: 'professional_available_slots',
           filter: `professional_id=eq.${professionalId}`
         },
-        () => { if (mounted) fetchAvailableSlots(); }
+        (payload) => {
+          console.log('[useAppointmentSlots] Mudança em slots:', payload);
+          fetchSlots();
+        }
       )
       .on(
         'postgres_changes',
@@ -164,11 +158,9 @@ export const useAppointmentSlots = (professionalId: string, selectedDate: Date |
           table: 'professional_unavailable_days',
           filter: `professional_id=eq.${professionalId}`
         },
-        () => { 
-          if (mounted) {
-            fetchUnavailableDays();
-            fetchAvailableSlots();
-          }
+        (payload) => {
+          console.log('[useAppointmentSlots] Mudança em dias indisponíveis:', payload);
+          fetchSlots();
         }
       )
       .on(
@@ -179,25 +171,20 @@ export const useAppointmentSlots = (professionalId: string, selectedDate: Date |
           table: 'appointments',
           filter: `professional_id=eq.${professionalId}`
         },
-        () => { if (mounted) fetchAvailableSlots(); }
+        (payload) => {
+          console.log('[useAppointmentSlots] Mudança em agendamentos:', payload);
+          fetchSlots();
+        }
       )
       .subscribe((status) => {
         console.log('[useAppointmentSlots] Status da subscription:', status);
       });
-      
-    console.log('[useAppointmentSlots] Subscription configurada:', channelName);
-    
+
     return () => {
       console.log('[useAppointmentSlots] Limpando subscription');
-      mounted = false;
       supabase.removeChannel(channel);
     };
-  }, [professionalId, selectedDate, fetchAvailableSlots, fetchUnavailableDays]);
+  }, [professionalId, selectedDate, fetchSlots]);
 
-  return { 
-    slots, 
-    isLoading,
-    fetchUnavailableDays,
-    unavailableDays
-  };
+  return { slots, isLoading, fetchUnavailableDays };
 };

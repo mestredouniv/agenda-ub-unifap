@@ -59,7 +59,7 @@ export const TriageActions = ({ appointment, room, block, onUpdateRequired }: Tr
           .from('last_calls')
           .insert([{
             patient_name: appointment.patient_name,
-            professional_name: appointment.professional_name || 'Profissional',
+            professional_name: appointment.professionals?.name,
             status: 'triage'
           }]);
 
@@ -70,7 +70,7 @@ export const TriageActions = ({ appointment, room, block, onUpdateRequired }: Tr
         setCurrentPatient({
           name: appointment.patient_name,
           status: 'triage',
-          professional: appointment.professional_name || 'Profissional',
+          professional: appointment.professionals?.name || '',
         });
       }
 

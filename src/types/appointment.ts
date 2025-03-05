@@ -21,6 +21,9 @@ export interface Appointment {
   block?: string | null;
   ticket_number?: string | null;
   professional_name?: string;
+  professionals?: {
+    name: string;
+  };
 }
 
 export interface PersonalDataFormProps {
