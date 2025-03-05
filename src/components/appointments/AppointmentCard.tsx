@@ -44,8 +44,13 @@ export const AppointmentCard = ({ appointment, onSuccess }: AppointmentCardProps
               Observações: {appointment.notes}
             </p>
           )}
+          {(appointment.room || appointment.block) && (
+            <p className="mt-1 text-gray-700">
+              Localização: {appointment.block && `Bloco ${appointment.block}`} {appointment.room && `Sala ${appointment.room}`}
+            </p>
+          )}
         </div>
-        <div className="flex flex-wrap gap-2 mt-2">
+        <div className="mt-3">
           <AppointmentActions appointment={appointment} onSuccess={onSuccess} />
         </div>
       </div>

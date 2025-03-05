@@ -15,58 +15,78 @@ export const ConsultActions = ({ appointment, onUpdateRequired }: ConsultActions
   const { toast } = useToast();
   const setCurrentPatient = useDisplayState((state) => state.setCurrentPatient);
 
-  const handleStartAppointment = async () => {
+  const handleConsultAction = async () => {
     try {
+      // If the appointment is in triage, start the consult
+      const isStartingConsult = appointment.display_status === 'triage';
+      
+      const updateData: Partial<Appointment> = {
+        display_status: isStartingConsult ? 'in_progress' : 'waiting',
+        actual_start_time: isStartingConsult ? new Date().toLocaleTimeString() : null
+      };
+
       const { error: updateError } = await supabase
         .from('appointments')
-        .update({ 
-          display_status: 'in_progress',
-          actual_start_time: new Date().toLocaleTimeString()
-        })
+        .update(updateData)
         .eq('id', appointment.id);
 
       if (updateError) throw updateError;
 
-      const { error: lastCallError } = await supabase
-        .from('last_calls')
-        .insert([{
-          patient_name: appointment.patient_name,
-          professional_name: appointment.professionals?.name,
-          status: 'in_progress'
-        }]);
+      if (isStartingConsult) {
+        const { error: lastCallError } = await supabase
+          .from('last_calls')
+          .insert([{
+            patient_name: appointment.patient_name,
+            professional_name: appointment.professionals?.name,
+            status: 'in_progress'
+          }]);
 
-      if (lastCallError) throw lastCallError;
+        if (lastCallError) throw lastCallError;
 
-      setCurrentPatient({
-        name: appointment.patient_name,
-        status: 'in_progress',
-        professional: appointment.professionals?.name || '',
-      });
+        setCurrentPatient({
+          name: appointment.patient_name,
+          status: 'in_progress',
+          professional: appointment.professionals?.name || '',
+        });
+      }
 
       toast({
-        title: "Consulta iniciada",
-        description: "Paciente em atendimento.",
+        title: isStartingConsult ? "Consulta iniciada" : "Status atualizado",
+        description: isStartingConsult 
+          ? "Paciente em atendimento."
+          : "O status do paciente foi atualizado.",
       });
 
       onUpdateRequired?.();
     } catch (error) {
-      console.error('Erro ao iniciar consulta:', error);
+      console.error('Erro ao gerenciar consulta:', error);
       toast({
         title: "Erro",
-        description: "Não foi possível iniciar a consulta.",
+        description: "Não foi possível atualizar o status da consulta.",
         variant: "destructive",
       });
     }
   };
 
+  // Button is only enabled when appointment is in triage status
+  const isEnabled = appointment.display_status === 'triage';
+  const buttonStyle = getConsultButtonStyle(appointment.display_status);
+  const buttonText = getConsultButtonText(appointment.display_status);
+
+  if (appointment.display_status === 'completed' || 
+      appointment.display_status === 'missed' || 
+      appointment.display_status === 'rescheduled') {
+    return null;
+  }
+
   return (
     <Button
       size="sm"
-      className={`text-white ${getConsultButtonStyle(appointment.display_status)}`}
-      onClick={handleStartAppointment}
-      disabled={appointment.display_status !== 'waiting'}
+      className={`text-white ${buttonStyle}`}
+      onClick={handleConsultAction}
+      disabled={!isEnabled}
     >
-      {getConsultButtonText(appointment.display_status)}
+      {buttonText}
     </Button>
   );
 };

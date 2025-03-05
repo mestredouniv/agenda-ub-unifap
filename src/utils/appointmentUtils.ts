@@ -50,7 +50,7 @@ export const getTriageButtonText = (status: string) => {
 export const getConsultButtonStyle = (status: string) => {
   switch (status) {
     case 'in_progress':
-      return 'bg-green-500 hover:bg-green-600'; // Consulta em andamento
+      return 'bg-green-600 hover:bg-green-700'; // Consulta em andamento
     case 'waiting':
       return 'bg-gray-400 hover:bg-gray-500 cursor-not-allowed'; // Aguardando triagem
     case 'triage':
@@ -65,8 +65,10 @@ export const getConsultButtonText = (status: string) => {
     case 'in_progress':
       return 'Em consulta';
     case 'triage':
-      return 'Iniciar consulta';
-    default:
+      return 'Chamar paciente';
+    case 'waiting':
       return 'Aguardando triagem';
+    default:
+      return 'Aguardando';
   }
 };
