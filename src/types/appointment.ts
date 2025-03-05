@@ -4,9 +4,9 @@ export interface Appointment {
   patient_name: string;
   birth_date: string;
   professional_id: string;
-  professionals?: {
+  professionals: {
     name: string;
-  } | null;
+  };
   appointment_date: string;
   appointment_time: string;
   display_status: 'waiting' | 'triage' | 'in_progress' | 'completed' | 'missed' | 'rescheduled';

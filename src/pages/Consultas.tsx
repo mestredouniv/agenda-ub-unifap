@@ -47,9 +47,7 @@ const Consultas = () => {
         .from('appointments')
         .select(`
           *,
-          professionals (
-            name
-          )
+          professionals:professional_id(name)
         `)
         .eq('appointment_date', formattedDate)
         .is('deleted_at', null);

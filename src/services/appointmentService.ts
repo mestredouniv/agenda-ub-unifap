@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Appointment } from "@/types/appointment";
 import { Database } from "@/integrations/supabase/types";
@@ -16,9 +15,7 @@ export const fetchDailyAppointments = async (professionalId: string) => {
       .from(APPOINTMENTS_TABLE)
       .select(`
         *,
-        professionals!fk_professional (
-          name
-        )
+        professionals:professional_id(name)
       `)
       .eq('appointment_date', today)
       .is('deleted_at', null);

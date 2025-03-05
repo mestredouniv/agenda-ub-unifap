@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from "react";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
@@ -76,9 +75,7 @@ export const useAppointments = (professionalId: string, selectedDate: Date) => {
           room,
           block,
           ticket_number,
-          professionals (
-            name
-          )
+          professionals:professional_id(name)
         `)
         .eq('professional_id', professionalId)
         .eq('appointment_date', formattedDate)
