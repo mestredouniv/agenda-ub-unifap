@@ -41,20 +41,27 @@ export type Database = {
           appointment_time: string
           birth_date: string
           block: string | null
+          created_at: string | null
           deleted_at: string | null
-          display_status: Database["public"]["Enums"]["appointment_status"]
+          display_status: string | null
           has_record: string | null
           id: string
-          is_minor: boolean
+          is_minor: boolean | null
+          medical_record_type: string | null
           notes: string | null
+          notification_status: string | null
           patient_name: string
+          patient_status: string | null
           phone: string
-          priority: Database["public"]["Enums"]["appointment_priority"]
+          priority: string | null
           professional_id: string
+          rescheduled_from: string | null
+          rescheduled_to: string | null
           responsible_name: string | null
           room: string | null
+          status: string | null
           ticket_number: string | null
-          updated_at: string
+          updated_at: string | null
         }
         Insert: {
           actual_end_time?: string | null
@@ -63,20 +70,27 @@ export type Database = {
           appointment_time: string
           birth_date: string
           block?: string | null
+          created_at?: string | null
           deleted_at?: string | null
-          display_status?: Database["public"]["Enums"]["appointment_status"]
+          display_status?: string | null
           has_record?: string | null
           id?: string
-          is_minor?: boolean
+          is_minor?: boolean | null
+          medical_record_type?: string | null
           notes?: string | null
+          notification_status?: string | null
           patient_name: string
-          phone: string
-          priority?: Database["public"]["Enums"]["appointment_priority"]
+          patient_status?: string | null
+          phone?: string
+          priority?: string | null
           professional_id: string
+          rescheduled_from?: string | null
+          rescheduled_to?: string | null
           responsible_name?: string | null
           room?: string | null
+          status?: string | null
           ticket_number?: string | null
-          updated_at?: string
+          updated_at?: string | null
         }
         Update: {
           actual_end_time?: string | null
@@ -85,24 +99,66 @@ export type Database = {
           appointment_time?: string
           birth_date?: string
           block?: string | null
+          created_at?: string | null
           deleted_at?: string | null
-          display_status?: Database["public"]["Enums"]["appointment_status"]
+          display_status?: string | null
           has_record?: string | null
           id?: string
-          is_minor?: boolean
+          is_minor?: boolean | null
+          medical_record_type?: string | null
           notes?: string | null
+          notification_status?: string | null
           patient_name?: string
+          patient_status?: string | null
           phone?: string
-          priority?: Database["public"]["Enums"]["appointment_priority"]
+          priority?: string | null
           professional_id?: string
+          rescheduled_from?: string | null
+          rescheduled_to?: string | null
           responsible_name?: string | null
           room?: string | null
+          status?: string | null
           ticket_number?: string | null
-          updated_at?: string
+          updated_at?: string | null
         }
         Relationships: [
           {
             foreignKeyName: "appointments_professional_id_fkey"
+            columns: ["professional_id"]
+            isOneToOne: false
+            referencedRelation: "professionals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_rescheduled_from_fkey"
+            columns: ["rescheduled_from"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_rescheduled_from_fkey"
+            columns: ["rescheduled_from"]
+            isOneToOne: false
+            referencedRelation: "daily_appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_rescheduled_to_fkey"
+            columns: ["rescheduled_to"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_rescheduled_to_fkey"
+            columns: ["rescheduled_to"]
+            isOneToOne: false
+            referencedRelation: "daily_appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_professional"
             columns: ["professional_id"]
             isOneToOne: false
             referencedRelation: "professionals"
@@ -665,28 +721,28 @@ export type Database = {
       }
       professional_available_slots: {
         Row: {
-          created_at: string
+          created_at: string | null
           id: string
           max_appointments: number
           professional_id: string
           time_slot: string
-          updated_at: string
+          updated_at: string | null
         }
         Insert: {
-          created_at?: string
+          created_at?: string | null
           id?: string
           max_appointments?: number
           professional_id: string
           time_slot: string
-          updated_at?: string
+          updated_at?: string | null
         }
         Update: {
-          created_at?: string
+          created_at?: string | null
           id?: string
           max_appointments?: number
           professional_id?: string
           time_slot?: string
-          updated_at?: string
+          updated_at?: string | null
         }
         Relationships: [
           {
@@ -700,25 +756,25 @@ export type Database = {
       }
       professional_unavailable_days: {
         Row: {
-          created_at: string
+          created_at: string | null
           date: string
           id: string
           professional_id: string
-          updated_at: string
+          updated_at: string | null
         }
         Insert: {
-          created_at?: string
+          created_at?: string | null
           date: string
           id?: string
           professional_id: string
-          updated_at?: string
+          updated_at?: string | null
         }
         Update: {
-          created_at?: string
+          created_at?: string | null
           date?: string
           id?: string
           professional_id?: string
-          updated_at?: string
+          updated_at?: string | null
         }
         Relationships: [
           {
@@ -880,20 +936,85 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      daily_appointments: {
+        Row: {
+          actual_end_time: string | null
+          actual_start_time: string | null
+          appointment_date: string | null
+          appointment_time: string | null
+          birth_date: string | null
+          created_at: string | null
+          deleted_at: string | null
+          display_status: string | null
+          has_record: string | null
+          id: string | null
+          is_minor: boolean | null
+          medical_record_type: string | null
+          notes: string | null
+          notification_status: string | null
+          patient_name: string | null
+          patient_status: string | null
+          phone: string | null
+          priority: string | null
+          professional_id: string | null
+          professional_name: string | null
+          rescheduled_from: string | null
+          rescheduled_to: string | null
+          responsible_name: string | null
+          status: string | null
+          updated_at: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "appointments_professional_id_fkey"
+            columns: ["professional_id"]
+            isOneToOne: false
+            referencedRelation: "professionals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_rescheduled_from_fkey"
+            columns: ["rescheduled_from"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_rescheduled_from_fkey"
+            columns: ["rescheduled_from"]
+            isOneToOne: false
+            referencedRelation: "daily_appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_rescheduled_to_fkey"
+            columns: ["rescheduled_to"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_rescheduled_to_fkey"
+            columns: ["rescheduled_to"]
+            isOneToOne: false
+            referencedRelation: "daily_appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_professional"
+            columns: ["professional_id"]
+            isOneToOne: false
+            referencedRelation: "professionals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       [_ in never]: never
     }
     Enums: {
-      appointment_priority: "normal" | "priority"
-      appointment_status:
-        | "waiting"
-        | "triage"
-        | "in_progress"
-        | "completed"
-        | "missed"
-        | "rescheduled"
+      [_ in never]: never
     }
     CompositeTypes: {
       [_ in never]: never

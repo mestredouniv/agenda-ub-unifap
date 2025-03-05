@@ -39,12 +39,6 @@ const Hanseniase = () => {
     handleRegisterPatient,
   } = usePatientRegistration();
 
-  // Convertemos birthDate para birth_date no objeto personalData
-  const formattedPersonalData = {
-    ...personalData,
-    birth_date: personalData.birthDate,
-  };
-
   return (
     <div className="container mx-auto p-6 space-y-6">
       <BackToHomeButton />
@@ -72,7 +66,7 @@ const Hanseniase = () => {
           />
         </div>
         <PatientRegistrationDialog
-          personalData={formattedPersonalData}
+          personalData={personalData}
           treatmentData={registrationTreatmentData}
           onPersonalDataChange={handlePersonalDataChange}
           onTreatmentDataChange={handleRegistrationTreatmentDataChange}

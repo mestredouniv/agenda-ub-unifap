@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
@@ -92,7 +91,8 @@ export const NovoAgendamento = ({ professionalId, onSuccess }: NovoAgendamentoPr
         is_minor: formData.isMinor,
         responsible_name: formData.responsibleName.trim() || null,
         has_record: formData.hasRecord || null,
-        phone: formData.phone.trim()
+        phone: formData.phone.trim(),
+        professionals: { name: '' } // This will be populated by the backend
       });
 
       console.log('[NovoAgendamento] Agendamento criado com sucesso:', appointment);

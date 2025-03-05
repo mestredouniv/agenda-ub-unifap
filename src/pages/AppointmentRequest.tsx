@@ -19,9 +19,8 @@ import {
 import { AppointmentTicket } from "@/components/AppointmentTicket";
 import { PersonalDataForm } from "@/components/PersonalDataForm";
 import { AppointmentSelection } from "@/components/AppointmentSelection";
-import { professionals } from "@/data/professionals";
 
-interface AppointmentFormData {
+interface AppointmentRequest {
   professionalId: string;
   patientName: string;
   cpf: string;
@@ -30,35 +29,46 @@ interface AppointmentFormData {
   phone: string;
   preferredDate: Date | undefined;
   preferredTime: string;
-  birth_date: string;
   responsible?: string;
 }
 
-interface AppointmentRequest extends AppointmentFormData {
-  id: string;
-  status: "pending" | "approved" | "rejected" | "rescheduled" | "direct_visit";
-  message?: string;
-}
+const professionals = [
+  { id: "1", name: "Luciana", profession: "Psicóloga" },
+  { id: "2", name: "Janaína", profession: "Psicóloga" },
+  { id: "3", name: "Anna", profession: "Fisioterapeuta" },
+  { id: "4", name: "Anderson", profession: "Médico" },
+  { id: "5", name: "Anna", profession: "Auriculoterapeuta" },
+  { id: "6", name: "Wandervan", profession: "Enfermeiro" },
+  { id: "7", name: "Patrícia", profession: "Enfermeira" },
+  { id: "8", name: "Liliany", profession: "Médica" },
+  { id: "9", name: "Janaína", profession: "Enfermeira" },
+  { id: "10", name: "Equipe", profession: "Curativo" },
+  { id: "11", name: "André", profession: "Médico" },
+  { id: "12", name: "Ananda", profession: "Enfermeira" },
+  { id: "13", name: "Nely", profession: "Enfermeira" },
+  { id: "14", name: "Luciana", profession: "Psicóloga" },
+  { id: "15", name: "Janaína", profession: "Psicóloga" },
+  { id: "16", name: "Equipe", profession: "Laboratório" },
+  { id: "17", name: "Equipe", profession: "Gestante" },
+];
 
-const generateId = () => {
-  return Math.random().toString(36).substring(2, 15);
+const generateTicketNumber = () => {
+  return Math.random().toString().substring(2, 8);
 };
 
 const AppointmentRequest = () => {
   const { toast } = useToast();
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [ticketNumber, setTicketNumber] = useState<string>("");
-  const [formData, setFormData] = useState<AppointmentFormData>({
+  const [formData, setFormData] = useState({
     professionalId: "",
     patientName: "",
     cpf: "",
     sus: "",
     age: "",
     phone: "",
-    preferredDate: undefined,
+    preferredDate: undefined as Date | undefined,
     preferredTime: "",
-    birth_date: "",
-    responsible: "",
   });
 
   const handleFormChange = (field: string, value: any) => {
@@ -67,7 +77,7 @@ const AppointmentRequest = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const newTicketNumber = generateId();
+    const newTicketNumber = generateTicketNumber();
     setTicketNumber(newTicketNumber);
     setShowConfirmation(true);
     
@@ -122,9 +132,7 @@ const AppointmentRequest = () => {
                   cpf: formData.cpf,
                   sus: formData.sus,
                   age: formData.age,
-                  phone: formData.phone,
-                  birth_date: formData.birth_date || "",
-                  responsible: formData.responsible,
+                  phone: formData.phone
                 }}
                 onChange={handleFormChange}
               />

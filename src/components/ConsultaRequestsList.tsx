@@ -1,98 +1,133 @@
 
-import { useState } from "react";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
+import { useState, useEffect } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Appointment } from "@/types/appointment";
+import { supabase } from "@/integrations/supabase/client";
 
-interface ConsultaRequestsListProps {
-  requests: Appointment[];
-  onApprove: (id: string) => void;
-  onReject: (id: string) => void;
+interface AppointmentRequest {
+  id: string;
+  professionalId: string;
+  patientName: string;
+  preferredDate: string;
+  preferredTime: string;
+  status: "pending" | "approved" | "rejected" | "rescheduled" | "direct_visit";
+  message?: string;
 }
 
-export const ConsultaRequestsList = ({
-  requests,
-  onApprove,
-  onReject,
-}: ConsultaRequestsListProps) => {
-  const [expandedRow, setExpandedRow] = useState<string | null>(null);
+export const ConsultaRequestsList = () => {
+  const [requests, setRequests] = useState<AppointmentRequest[]>([]);
 
-  const getStatusBadge = (status: string) => {
+  useEffect(() => {
+    // Initial fetch of appointment requests
+    const fetchRequests = async () => {
+      const { data, error } = await supabase
+        .from('appointments')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (error) {
+        console.error('Error fetching requests:', error);
+        return;
+      }
+
+      setRequests(data.map(appointment => ({
+        id: appointment.id,
+        professionalId: appointment.professional_id || '',
+        patientName: appointment.patient_name,
+        preferredDate: appointment.appointment_date,
+        preferredTime: appointment.appointment_time,
+        status: appointment.status as AppointmentRequest['status'],
+        message: appointment.medical_record_type
+      })));
+    };
+
+    fetchRequests();
+
+    // Subscribe to realtime updates
+    const channel = supabase
+      .channel('appointment-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'appointments'
+        },
+        () => {
+          fetchRequests(); // Refetch data when changes occur
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  const getStatusBadge = (status: AppointmentRequest["status"]) => {
     switch (status) {
-      case "waiting":
-        return <Badge variant="secondary">Aguardando</Badge>;
-      case "completed":
-        return <Badge variant="default">Aprovado</Badge>;
-      case "missed":
-        return <Badge variant="destructive">Rejeitado</Badge>;
+      case "pending":
+        return <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">Aguardando</Badge>;
+      case "approved":
+        return <Badge variant="secondary" className="bg-green-100 text-green-800">Aprovada</Badge>;
+      case "rejected":
+        return <Badge variant="secondary" className="bg-red-100 text-red-800">Rejeitada</Badge>;
+      case "rescheduled":
+        return <Badge variant="secondary" className="bg-blue-100 text-blue-800">Remarcada</Badge>;
+      case "direct_visit":
+        return <Badge variant="secondary" className="bg-purple-100 text-purple-800">Visita Direta</Badge>;
       default:
-        return <Badge variant="outline">Pendente</Badge>;
+        return null;
     }
   };
 
+  if (requests.length === 0) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Lista de Solicitações</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-center text-muted-foreground">
+            Não há solicitações de consulta no momento
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
-    <div className="rounded-md border">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Data</TableHead>
-            <TableHead>Paciente</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Ações</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {requests.map((request) => (
-            <TableRow key={request.id}>
-              <TableCell>
-                {format(new Date(request.appointment_date), "dd 'de' MMMM", {
+    <Card>
+      <CardHeader>
+        <CardTitle>Lista de Solicitações</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {requests.map((request) => (
+          <div
+            key={request.id}
+            className="flex justify-between items-center p-4 border rounded-lg hover:bg-gray-50"
+          >
+            <div>
+              <p className="font-medium">{request.patientName}</p>
+              <p className="text-sm text-muted-foreground">
+                {format(new Date(request.preferredDate), "dd 'de' MMMM 'de' yyyy", {
                   locale: ptBR,
                 })}
-                <br />
-                <span className="text-sm text-muted-foreground">
-                  {request.appointment_time}
-                </span>
-              </TableCell>
-              <TableCell>
-                {request.patient_name}
-                <br />
-                <span className="text-sm text-muted-foreground">
-                  {request.has_record ? "Possui prontuário" : "Sem prontuário"}
-                </span>
-              </TableCell>
-              <TableCell>{getStatusBadge(request.display_status)}</TableCell>
-              <TableCell>
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => onApprove(request.id)}
-                  >
-                    Aprovar
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => onReject(request.id)}
-                  >
-                    Rejeitar
-                  </Button>
-                </div>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </div>
+                {" - "}
+                {request.preferredTime}
+              </p>
+              {request.message && (
+                <p className="text-sm text-muted-foreground mt-1">
+                  {request.message}
+                </p>
+              )}
+            </div>
+            <div>{getStatusBadge(request.status)}</div>
+          </div>
+        ))}
+      </CardContent>
+    </Card>
   );
 };

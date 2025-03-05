@@ -30,19 +30,11 @@ export const TriageActions = ({ appointment, room, block, onUpdateRequired }: Tr
         return;
       }
 
-      console.log('[Triagem] Iniciando atualização:', {
-        id: appointment.id,
-        isStartingTriage,
-        room,
-        block
-      });
-
       const updateData: Partial<Appointment> = {
         display_status: isStartingTriage ? 'triage' : 'waiting',
         room: isStartingTriage ? room : null,
         block: isStartingTriage ? block : null,
-        actual_start_time: isStartingTriage ? new Date().toLocaleTimeString() : null,
-        updated_at: new Date().toISOString()
+        actual_start_time: isStartingTriage ? new Date().toLocaleTimeString() : null
       };
 
       const { error: updateError } = await supabase
@@ -51,8 +43,6 @@ export const TriageActions = ({ appointment, room, block, onUpdateRequired }: Tr
         .eq('id', appointment.id);
 
       if (updateError) throw updateError;
-
-      console.log('[Triagem] Appointment atualizado com sucesso');
 
       if (isStartingTriage) {
         const { error: lastCallError } = await supabase
@@ -64,8 +54,6 @@ export const TriageActions = ({ appointment, room, block, onUpdateRequired }: Tr
           }]);
 
         if (lastCallError) throw lastCallError;
-
-        console.log('[Triagem] Last call registrado com sucesso');
 
         setCurrentPatient({
           name: appointment.patient_name,
@@ -81,12 +69,9 @@ export const TriageActions = ({ appointment, room, block, onUpdateRequired }: Tr
           : "O paciente está pronto para consulta.",
       });
 
-      if (onUpdateRequired) {
-        console.log('[Triagem] Solicitando atualização da lista');
-        onUpdateRequired();
-      }
+      onUpdateRequired?.();
     } catch (error) {
-      console.error('[Triagem] Erro ao gerenciar triagem:', error);
+      console.error('Erro ao gerenciar triagem:', error);
       toast({
         title: "Erro",
         description: "Não foi possível atualizar o status da triagem.",
