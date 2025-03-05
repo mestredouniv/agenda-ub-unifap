@@ -5,6 +5,7 @@ import { AppointmentDateForm } from "@/components/appointments/AppointmentDateFo
 import { AdditionalInfoForm } from "@/components/appointments/AdditionalInfoForm";
 import { AppointmentSubmitButton } from "@/components/appointments/AppointmentSubmitButton";
 import { useEffect } from "react";
+import { useToast } from "@/components/ui/use-toast";
 
 interface NovoAgendamentoProps {
   professionalId: string;
@@ -12,6 +13,19 @@ interface NovoAgendamentoProps {
 }
 
 export const NovoAgendamento = ({ professionalId, onSuccess }: NovoAgendamentoProps) => {
+  const { toast } = useToast();
+  
+  // Validar ID do profissional
+  useEffect(() => {
+    if (!professionalId || professionalId === ':professionalId') {
+      toast({
+        title: "Erro",
+        description: "ID do profissional inválido. Navegue para a página correta.",
+        variant: "destructive",
+      });
+    }
+  }, [professionalId, toast]);
+  
   const { 
     formData, 
     isLoading, 
@@ -45,8 +59,17 @@ export const NovoAgendamento = ({ professionalId, onSuccess }: NovoAgendamentoPr
     updateFormData('isMinor', age < 18);
   };
 
+  // Verificar se o ID do profissional é válido
+  const isValidId = professionalId && professionalId !== ':professionalId';
+
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      {!isValidId && (
+        <div className="p-4 mb-4 text-sm text-red-700 bg-red-100 rounded-lg">
+          ID do profissional inválido. Por favor, selecione um profissional válido.
+        </div>
+      )}
+      
       <PatientInfoForm
         patientName={formData.patientName}
         birthDate={formData.birth_date}
@@ -88,7 +111,7 @@ export const NovoAgendamento = ({ professionalId, onSuccess }: NovoAgendamentoPr
         }}
       />
 
-      <AppointmentSubmitButton isLoading={isLoading} />
+      <AppointmentSubmitButton isLoading={isLoading} disabled={!isValidId} />
     </form>
   );
 };

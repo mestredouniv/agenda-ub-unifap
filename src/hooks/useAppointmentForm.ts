@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { useToast } from "@/components/ui/use-toast";
 import { criarAgendamento } from "@/services/agendamentoSimples";
@@ -34,6 +34,13 @@ export const useAppointmentForm = ({ professionalId, onSuccess }: UseAppointment
     hasRecord: "",
   });
 
+  // Verificar se o ID do profissional é válido
+  useEffect(() => {
+    if (professionalId === ':professionalId' || !professionalId) {
+      console.error('[useAppointmentForm] ID do profissional inválido:', professionalId);
+    }
+  }, [professionalId]);
+
   const resetForm = () => {
     console.log('[useAppointmentForm] Resetting form');
     setFormData({
@@ -52,6 +59,11 @@ export const useAppointmentForm = ({ professionalId, onSuccess }: UseAppointment
     console.log('[useAppointmentForm] Validando formulário:', formData);
 
     const errors: string[] = [];
+
+    // Validar ID do profissional
+    if (!professionalId || professionalId === ':professionalId') {
+      errors.push("ID do profissional inválido");
+    }
 
     if (!formData.patientName?.trim()) {
       errors.push("Nome do paciente é obrigatório");
@@ -97,7 +109,7 @@ export const useAppointmentForm = ({ professionalId, onSuccess }: UseAppointment
     if (!professionalId || professionalId === ':professionalId') {
       toast({
         title: "Erro no agendamento",
-        description: "ID do profissional inválido",
+        description: "ID do profissional inválido. Por favor, navegue para a página do profissional correto.",
         variant: "destructive",
       });
       return;
