@@ -20,11 +20,16 @@ export const AgendaProfissional = () => {
   const [availableMonths, setAvailableMonths] = useState<AgendaState['availableMonths']>([]);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
 
+  // Log para debug
+  useEffect(() => {
+    console.log('[AgendaProfissional] Carregando agenda do profissional com ID:', professionalId);
+  }, [professionalId]);
+
   const { appointments, isLoading, fetchAppointments } = useAppointments(professionalId || "", selectedDate);
 
   useEffect(() => {
     const fetchProfessionalName = async () => {
-      if (professionalId) {
+      if (professionalId && professionalId !== ':professionalId') {
         const { data, error } = await supabase
           .from('professionals')
           .select('name')
@@ -41,6 +46,8 @@ export const AgendaProfissional = () => {
             variant: "destructive",
           });
         }
+      } else {
+        console.error("ID do profissional inválido:", professionalId);
       }
     };
 
@@ -49,7 +56,7 @@ export const AgendaProfissional = () => {
 
   useEffect(() => {
     const fetchAvailableMonths = async () => {
-      if (professionalId) {
+      if (professionalId && professionalId !== ':professionalId') {
         const { data, error } = await supabase
           .from('professional_available_months')
           .select('month, year')
@@ -75,7 +82,8 @@ export const AgendaProfissional = () => {
     fetchAppointments();
   };
 
-  if (!professionalId) return <div>ID do profissional não encontrado</div>;
+  if (!professionalId || professionalId === ':professionalId') 
+    return <div className="p-8 text-center">ID do profissional não encontrado ou inválido</div>;
 
   return (
     <div className="min-h-screen bg-gray-50">

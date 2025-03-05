@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { format } from "date-fns";
 import { useToast } from "@/components/ui/use-toast";
@@ -87,8 +88,18 @@ export const useAppointmentForm = ({ professionalId, onSuccess }: UseAppointment
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     console.log('[useAppointmentForm] Iniciando submissão do formulário:', formData);
+    console.log('[useAppointmentForm] Professional ID:', professionalId);
 
     if (!validateForm()) {
+      return;
+    }
+
+    if (!professionalId || professionalId === ':professionalId') {
+      toast({
+        title: "Erro no agendamento",
+        description: "ID do profissional inválido",
+        variant: "destructive",
+      });
       return;
     }
 

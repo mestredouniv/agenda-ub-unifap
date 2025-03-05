@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { Appointment } from "@/types/appointment";
 
@@ -26,6 +27,10 @@ export const criarAgendamento = async (dados: {
   if (!dados.appointment_time) throw new Error('Horário é obrigatório');
   if (dados.is_minor && !dados.responsible_name?.trim()) {
     throw new Error('Nome do responsável é obrigatório para pacientes menores de idade');
+  }
+
+  if (!dados.professional_id) {
+    throw new Error('ID do profissional é obrigatório');
   }
 
   try {
@@ -86,7 +91,7 @@ export const criarAgendamento = async (dados: {
       appointment_time: dados.appointment_time,
       phone: dados.phone.trim(),
       is_minor: dados.is_minor,
-      responsible_name: dados.responsible_name?.trim() || null,
+      responsible_name: dados.is_minor ? dados.responsible_name?.trim() || null : null,
       has_record: dados.has_record || null,
       display_status: 'waiting' as const,
       priority: 'normal' as const,
@@ -107,7 +112,7 @@ export const criarAgendamento = async (dados: {
       if (error.code === '23505') {
         throw new Error('Já existe um agendamento para este horário');
       }
-      throw new Error('Não foi possível criar o agendamento. Por favor, tente novamente.');
+      throw new Error(`Não foi possível criar o agendamento: ${error.message}`);
     }
 
     if (!data) {

@@ -4,6 +4,7 @@ import { PatientInfoForm } from "@/components/appointments/PatientInfoForm";
 import { AppointmentDateForm } from "@/components/appointments/AppointmentDateForm";
 import { AdditionalInfoForm } from "@/components/appointments/AdditionalInfoForm";
 import { AppointmentSubmitButton } from "@/components/appointments/AppointmentSubmitButton";
+import { useEffect } from "react";
 
 interface NovoAgendamentoProps {
   professionalId: string;
@@ -16,7 +17,15 @@ export const NovoAgendamento = ({ professionalId, onSuccess }: NovoAgendamentoPr
     isLoading, 
     updateFormData, 
     handleSubmit 
-  } = useAppointmentForm({ professionalId, onSuccess });
+  } = useAppointmentForm({ 
+    professionalId: professionalId, 
+    onSuccess 
+  });
+
+  useEffect(() => {
+    // Log para debug do ID do profissional
+    console.log('[NovoAgendamento] Rendering with professionalId:', professionalId);
+  }, [professionalId]);
 
   const handlePatientNameChange = (value: string) => {
     console.log('[NovoAgendamento] Atualizando nome do paciente:', value);
