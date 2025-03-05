@@ -1,5 +1,4 @@
 
-import { Supabase } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
 export const setupSlotSubscriptions = (
