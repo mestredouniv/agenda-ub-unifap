@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
+import { getDefaultMaxAppointments } from "@/utils/appointmentUtils";
 
 interface Slot {
   time: string;
@@ -106,18 +107,24 @@ export const useAppointmentSlots = (
 
       console.log('[useAppointmentSlots] Agendamentos existentes:', appointments);
 
+      // Definir o máximo padrão de agendamentos
+      const defaultMaxAppointments = getDefaultMaxAppointments();
+
       // Processar os slots
       const processedSlots = (availableSlots || []).map(slot => {
         const timeStr = slot.time_slot.slice(0, 5);
         const appointmentsAtTime = appointments?.filter(
           app => app.appointment_time.slice(0, 5) === timeStr
         ).length || 0;
+        
+        // Use o máximo definido no slot ou o padrão de 10
+        const maxAppointments = slot.max_appointments || defaultMaxAppointments;
 
         return {
           time: timeStr,
-          available: appointmentsAtTime < slot.max_appointments,
+          available: appointmentsAtTime < maxAppointments,
           currentAppointments: appointmentsAtTime,
-          maxAppointments: slot.max_appointments
+          maxAppointments: maxAppointments
         };
       });
 

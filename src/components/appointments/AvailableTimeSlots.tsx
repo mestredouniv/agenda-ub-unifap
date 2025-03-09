@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { getDefaultMaxAppointments } from "@/utils/appointmentUtils";
 
 interface AvailableTimeSlotsProps {
   professionalId: string;
@@ -94,12 +95,14 @@ export const AvailableTimeSlots = ({
     }
 
     try {
+      const defaultMaxAppointments = getDefaultMaxAppointments();
+      
       const { data, error } = await supabase
         .from('professional_available_slots')
         .insert({
           professional_id: professionalId,
           time_slot: `${newTimeSlot}:00`,
-          max_appointments: 1
+          max_appointments: defaultMaxAppointments
         })
         .select()
         .single();

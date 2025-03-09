@@ -72,3 +72,8 @@ export const getConsultButtonText = (status: string) => {
       return 'Aguardando';
   }
 };
+
+// New function to get default max appointments
+export const getDefaultMaxAppointments = () => {
+  return 10; // Allow up to 10 appointments per time slot
+};

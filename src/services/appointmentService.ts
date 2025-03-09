@@ -73,6 +73,59 @@ export const createNewAppointment = async (appointmentData: Omit<Appointment, 'i
       throw new Error('Formato de horário inválido');
     }
 
+    // Verificar se o profissional está disponível naquele dia
+    const { data: unavailableDay, error: unavailableError } = await supabase
+      .from('professional_unavailable_days')
+      .select('id')
+      .eq('professional_id', appointmentData.professional_id)
+      .eq('date', appointmentData.appointment_date)
+      .single();
+
+    if (unavailableError && unavailableError.code !== 'PGRST116') { // PGRST116 é "No rows returned"
+      console.error('[Agenda] Erro ao verificar disponibilidade do dia:', unavailableError);
+      throw new Error('Erro ao verificar disponibilidade');
+    }
+    
+    if (unavailableDay) {
+      throw new Error('Profissional não disponível nesta data');
+    }
+
+    // Verificar se existe o slot disponível
+    const { data: availableSlot, error: slotError } = await supabase
+      .from('professional_available_slots')
+      .select('max_appointments')
+      .eq('professional_id', appointmentData.professional_id)
+      .eq('time_slot', appointmentData.appointment_time)
+      .single();
+
+    if (slotError) {
+      console.error('[Agenda] Erro ao verificar slot disponível:', slotError);
+      if (slotError.code === 'PGRST116') { // No rows returned
+        throw new Error('Horário não disponível para este profissional');
+      }
+      throw new Error('Erro ao verificar disponibilidade de horário');
+    }
+
+    // Verificar se o número de agendamentos não excede o máximo permitido
+    const { count, error: countError } = await supabase
+      .from('appointments')
+      .select('id', { count: 'exact', head: true })
+      .eq('professional_id', appointmentData.professional_id)
+      .eq('appointment_date', appointmentData.appointment_date)
+      .eq('appointment_time', appointmentData.appointment_time)
+      .is('deleted_at', null);
+
+    if (countError) {
+      console.error('[Agenda] Erro ao contar agendamentos:', countError);
+      throw new Error('Erro ao verificar disponibilidade');
+    }
+
+    const maxAppointments = availableSlot.max_appointments || 10;
+
+    if (count != null && count >= maxAppointments) {
+      throw new Error('Limite de agendamentos excedido para este horário');
+    }
+
     // Preparar dados
     const appointment: AppointmentInsert = {
       patient_name: appointmentData.patient_name.trim(),
@@ -108,6 +161,12 @@ export const createNewAppointment = async (appointmentData: Omit<Appointment, 'i
         throw new Error('Nome do paciente é obrigatório');
       } else if (error.message.includes('Telefone é obrigatório')) {
         throw new Error('Telefone é obrigatório');
+      } else if (error.message.includes('Profissional não disponível nesta data')) {
+        throw new Error('Profissional não disponível nesta data');
+      } else if (error.message.includes('Horário não disponível')) {
+        throw new Error('Horário não disponível para este profissional');
+      } else if (error.message.includes('Limite de agendamentos excedido')) {
+        throw new Error('Limite de agendamentos excedido para este horário');
       } else {
         throw new Error('Não foi possível realizar o agendamento. Tente novamente.');
       }
