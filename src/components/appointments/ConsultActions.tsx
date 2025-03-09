@@ -22,7 +22,8 @@ export const ConsultActions = ({ appointment, onUpdateRequired }: ConsultActions
       const isStartingConsult = appointment.display_status === 'triage';
       const isFinishingConsult = appointment.display_status === 'in_progress';
       
-      let newStatus = 'waiting';
+      // Fixed: Use a valid display_status type instead of string
+      let newStatus: 'waiting' | 'in_progress' | 'completed' = 'waiting'; 
       if (isStartingConsult) {
         newStatus = 'in_progress';
       } else if (isFinishingConsult) {
