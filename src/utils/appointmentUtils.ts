@@ -12,8 +12,10 @@ export const formatAppointmentData = (appointments: any[]): Appointment[] => {
 
 export const generateTicketNumber = () => {
   const date = new Date();
-  const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
-  return `${date.getHours()}${date.getMinutes()}${random}`;
+  const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  const randomLetter = letters.charAt(Math.floor(Math.random() * letters.length));
+  const randomNumber = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+  return `${randomLetter}${randomNumber}`;
 };
 
 export const getTriageButtonStyle = (status: string) => {
@@ -50,7 +52,7 @@ export const getTriageButtonText = (status: string) => {
 export const getConsultButtonStyle = (status: string) => {
   switch (status) {
     case 'in_progress':
-      return 'bg-green-600 hover:bg-green-700'; // Consulta em andamento
+      return 'bg-red-600 hover:bg-red-700'; // Changed to red when in progress
     case 'waiting':
       return 'bg-gray-400 hover:bg-gray-500 cursor-not-allowed'; // Aguardando triagem
     case 'triage':
@@ -63,7 +65,7 @@ export const getConsultButtonStyle = (status: string) => {
 export const getConsultButtonText = (status: string) => {
   switch (status) {
     case 'in_progress':
-      return 'Em consulta';
+      return 'Finalizar consulta'; // Changed text to "Finalizar consulta"
     case 'triage':
       return 'Chamar paciente';
     case 'waiting':

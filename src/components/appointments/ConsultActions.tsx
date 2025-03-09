@@ -18,11 +18,21 @@ export const ConsultActions = ({ appointment, onUpdateRequired }: ConsultActions
   const handleConsultAction = async () => {
     try {
       // If the appointment is in triage, start the consult
+      // If the appointment is in_progress, finish the consult
       const isStartingConsult = appointment.display_status === 'triage';
+      const isFinishingConsult = appointment.display_status === 'in_progress';
+      
+      let newStatus = 'waiting';
+      if (isStartingConsult) {
+        newStatus = 'in_progress';
+      } else if (isFinishingConsult) {
+        newStatus = 'completed';
+      }
       
       const updateData: Partial<Appointment> = {
-        display_status: isStartingConsult ? 'in_progress' : 'waiting',
-        actual_start_time: isStartingConsult ? new Date().toLocaleTimeString() : null
+        display_status: newStatus,
+        actual_start_time: isStartingConsult ? new Date().toLocaleTimeString() : appointment.actual_start_time,
+        actual_end_time: isFinishingConsult ? new Date().toLocaleTimeString() : null
       };
 
       const { error: updateError } = await supabase
@@ -50,11 +60,20 @@ export const ConsultActions = ({ appointment, onUpdateRequired }: ConsultActions
         });
       }
 
+      let message = "Status atualizado";
+      let description = "O status do paciente foi atualizado.";
+      
+      if (isStartingConsult) {
+        message = "Consulta iniciada";
+        description = "Paciente em atendimento.";
+      } else if (isFinishingConsult) {
+        message = "Consulta finalizada";
+        description = "Atendimento concluído com sucesso.";
+      }
+
       toast({
-        title: isStartingConsult ? "Consulta iniciada" : "Status atualizado",
-        description: isStartingConsult 
-          ? "Paciente em atendimento."
-          : "O status do paciente foi atualizado.",
+        title: message,
+        description: description,
       });
 
       onUpdateRequired?.();
@@ -68,8 +87,8 @@ export const ConsultActions = ({ appointment, onUpdateRequired }: ConsultActions
     }
   };
 
-  // Button is only enabled when appointment is in triage status
-  const isEnabled = appointment.display_status === 'triage';
+  // Button is only enabled when appointment is in triage or in_progress status
+  const isEnabled = appointment.display_status === 'triage' || appointment.display_status === 'in_progress';
   const buttonStyle = getConsultButtonStyle(appointment.display_status);
   const buttonText = getConsultButtonText(appointment.display_status);
 

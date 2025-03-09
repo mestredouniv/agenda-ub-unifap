@@ -4,7 +4,7 @@ import { Appointment } from "@/types/appointment";
 import { useToast } from "@/components/ui/use-toast";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Calendar, Clock, UserX } from "lucide-react";
+import { Calendar, UserX } from "lucide-react";
 
 interface FinishActionsProps {
   appointment: Appointment;
@@ -15,7 +15,7 @@ export const FinishActions = ({ appointment, onUpdateRequired }: FinishActionsPr
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  const handleCompleteAppointment = async (status: 'completed' | 'missed' | 'rescheduled') => {
+  const handleCompleteAppointment = async (status: 'missed' | 'rescheduled') => {
     try {
       const { error } = await supabase
         .from('appointments')
@@ -28,7 +28,6 @@ export const FinishActions = ({ appointment, onUpdateRequired }: FinishActionsPr
       if (error) throw error;
 
       const messages = {
-        completed: "Consulta finalizada com sucesso.",
         missed: "Paciente marcado como falta.",
         rescheduled: "Consulta marcada para reagendamento."
       };
@@ -53,21 +52,15 @@ export const FinishActions = ({ appointment, onUpdateRequired }: FinishActionsPr
     }
   };
 
-  if (appointment.display_status !== 'in_progress') {
+  // Only show these actions if we're in certain statuses
+  if (appointment.display_status !== 'triage' && 
+      appointment.display_status !== 'in_progress' &&
+      appointment.display_status !== 'waiting') {
     return null;
   }
 
   return (
     <div className="flex gap-2">
-      <Button 
-        size="sm" 
-        className="bg-[#ea384c] hover:bg-red-700 text-white"
-        onClick={() => handleCompleteAppointment('completed')}
-      >
-        <Clock className="mr-2 h-4 w-4" />
-        Finalizar Consulta
-      </Button>
-      
       <Button 
         size="sm" 
         variant="outline"
