@@ -1,8 +1,8 @@
-
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
+import { fetchDailyAppointments } from "@/services/appointment";
 
 export const useConsultas = (selectedProfessional: string, selectedDate: Date) => {
   const { toast } = useToast();

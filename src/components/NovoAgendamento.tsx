@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
@@ -6,7 +5,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { PatientInfoForm } from "@/components/appointments/PatientInfoForm";
 import { AppointmentDateForm } from "@/components/appointments/AppointmentDateForm";
 import { AdditionalInfoForm } from "@/components/appointments/AdditionalInfoForm";
-import { createNewAppointment } from "@/services/appointmentService";
+import { createNewAppointment } from "@/services/appointment";
 
 interface NovoAgendamentoProps {
   professionalId: string;
