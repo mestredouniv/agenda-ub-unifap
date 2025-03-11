@@ -46,13 +46,6 @@ export const NavigationBar = ({ onAddProfessional }: NavigationBarProps) => {
           <NavigationMenuContent>
             <div className="w-48 p-2 space-y-2">
               <Link
-                to="/relatorios"
-                className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-accent"
-              >
-                <FileText className="h-4 w-4" />
-                Relatórios
-              </Link>
-              <Link
                 to="/solicitar"
                 className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-accent"
               >
@@ -120,6 +113,16 @@ export const NavigationBar = ({ onAddProfessional }: NavigationBarProps) => {
           >
             <Stethoscope className="h-4 w-4" />
             Consultas
+          </Link>
+        </NavigationMenuItem>
+        
+        <NavigationMenuItem>
+          <Link
+            to="/reports"
+            className="flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-accent"
+          >
+            <FileText className="h-4 w-4" />
+            Relatórios
           </Link>
         </NavigationMenuItem>
       </NavigationMenuList>
