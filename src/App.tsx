@@ -14,6 +14,8 @@ import Tuberculose from "@/pages/Tuberculose";
 import Prep from "@/pages/Prep";
 import Reports from "@/pages/Reports";
 import { AgendaProfissional } from "@/pages/AgendaProfissional";
+import AppointmentRequest from "@/pages/AppointmentRequest";
+import RequestsManager from "@/pages/RequestsManager";
 
 function App() {
   return (
@@ -30,6 +32,8 @@ function App() {
         <Route path="/tuberculose" element={<Tuberculose />} />
         <Route path="/prep" element={<Prep />} />
         <Route path="/reports" element={<Reports />} />
+        <Route path="/solicitar-agendamento" element={<AppointmentRequest />} />
+        <Route path="/solicitar" element={<RequestsManager />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
       <Toaster />
