@@ -35,7 +35,7 @@ import {
   createAppointmentRequest, 
   fetchPublicAppointmentRequests 
 } from '@/services/appointment/appointmentRequest';
-import type { AppointmentRequest as AppointmentRequestType } from '@/types/appointmentRequest';
+import type { AppointmentRequest, AppointmentRequestFormData } from '@/types/appointmentRequest';
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle2, Clock, XCircle } from 'lucide-react';
 
@@ -68,7 +68,7 @@ type FormValues = z.infer<typeof formSchema>;
 const AppointmentRequest = () => {
   const { toast } = useToast();
   const [submitting, setSubmitting] = useState(false);
-  const [publicRequests, setPublicRequests] = useState<AppointmentRequestType[]>([]);
+  const [publicRequests, setPublicRequests] = useState<AppointmentRequest[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Configuração do formulário

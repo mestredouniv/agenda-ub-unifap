@@ -145,6 +145,7 @@ export const fetchPublicAppointmentRequests = async (): Promise<AppointmentReque
       created_at: item.created_at,
       appointment_date: item.appointment_date,
       appointment_time: item.appointment_time,
+      professional_id: undefined,
       professional_name: item.professionals?.name
     }));
   } catch (error) {
