@@ -17,23 +17,11 @@ export const ConsultActions = ({ appointment, onUpdateRequired }: ConsultActions
 
   const handleConsultAction = async () => {
     try {
-      // If the appointment is in triage, start the consult
-      // If the appointment is in_progress, finish the consult
       const isStartingConsult = appointment.display_status === 'triage';
-      const isFinishingConsult = appointment.display_status === 'in_progress';
-      
-      // Fixed: Use a valid display_status type instead of string
-      let newStatus: 'waiting' | 'in_progress' | 'completed' = 'waiting'; 
-      if (isStartingConsult) {
-        newStatus = 'in_progress';
-      } else if (isFinishingConsult) {
-        newStatus = 'completed';
-      }
       
       const updateData: Partial<Appointment> = {
-        display_status: newStatus,
-        actual_start_time: isStartingConsult ? new Date().toLocaleTimeString() : appointment.actual_start_time,
-        actual_end_time: isFinishingConsult ? new Date().toLocaleTimeString() : null
+        display_status: isStartingConsult ? 'in_progress' : 'completed',
+        actual_end_time: !isStartingConsult ? new Date().toLocaleTimeString() : null
       };
 
       const { error: updateError } = await supabase
@@ -61,20 +49,11 @@ export const ConsultActions = ({ appointment, onUpdateRequired }: ConsultActions
         });
       }
 
-      let message = "Status atualizado";
-      let description = "O status do paciente foi atualizado.";
-      
-      if (isStartingConsult) {
-        message = "Consulta iniciada";
-        description = "Paciente em atendimento.";
-      } else if (isFinishingConsult) {
-        message = "Consulta finalizada";
-        description = "Atendimento concluído com sucesso.";
-      }
-
       toast({
-        title: message,
-        description: description,
+        title: isStartingConsult ? "Paciente chamado" : "Consulta finalizada",
+        description: isStartingConsult 
+          ? "O paciente foi chamado para consulta."
+          : "A consulta foi finalizada com sucesso.",
       });
 
       onUpdateRequired?.();
@@ -88,23 +67,22 @@ export const ConsultActions = ({ appointment, onUpdateRequired }: ConsultActions
     }
   };
 
-  // Button is only enabled when appointment is in triage or in_progress status
-  const isEnabled = appointment.display_status === 'triage' || appointment.display_status === 'in_progress';
+  // Determine if the button should be disabled
+  const isButtonDisabled = 
+    appointment.display_status === 'waiting' || // Waiting for triage
+    appointment.display_status === 'completed' || // Already completed
+    appointment.display_status === 'missed' || // Patient missed appointment
+    appointment.display_status === 'rescheduled'; // Appointment rescheduled
+
   const buttonStyle = getConsultButtonStyle(appointment.display_status);
   const buttonText = getConsultButtonText(appointment.display_status);
-
-  if (appointment.display_status === 'completed' || 
-      appointment.display_status === 'missed' || 
-      appointment.display_status === 'rescheduled') {
-    return null;
-  }
 
   return (
     <Button
       size="sm"
       className={`text-white ${buttonStyle}`}
       onClick={handleConsultAction}
-      disabled={!isEnabled}
+      disabled={isButtonDisabled}
     >
       {buttonText}
     </Button>

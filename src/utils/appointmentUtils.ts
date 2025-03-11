@@ -21,14 +21,14 @@ export const generateTicketNumber = () => {
 export const getTriageButtonStyle = (status: string) => {
   switch (status) {
     case 'triage':
-      return 'bg-orange-500 hover:bg-orange-600'; // Triagem em andamento
+      return 'bg-orange-500 hover:bg-orange-600'; // Triagem em andamento (laranja)
     case 'in_progress':
     case 'completed':
     case 'missed':
     case 'rescheduled':
       return 'bg-gray-400 hover:bg-gray-500 cursor-not-allowed'; // Desabilitado
     default:
-      return 'bg-blue-500 hover:bg-blue-600'; // Pronto para iniciar
+      return 'bg-blue-500 hover:bg-blue-600'; // Pronto para iniciar (azul)
   }
 };
 
@@ -52,20 +52,24 @@ export const getTriageButtonText = (status: string) => {
 export const getConsultButtonStyle = (status: string) => {
   switch (status) {
     case 'in_progress':
-      return 'bg-red-600 hover:bg-red-700'; // Changed to red when in progress
+      return 'bg-red-600 hover:bg-red-700'; // Em consulta (vermelho)
     case 'waiting':
-      return 'bg-gray-400 hover:bg-gray-500 cursor-not-allowed'; // Aguardando triagem
+      return 'bg-gray-400 hover:bg-gray-500 cursor-not-allowed'; // Desabilitado (aguardando triagem)
     case 'triage':
-      return 'bg-blue-500 hover:bg-blue-600'; // Pronto para consulta
+      return 'bg-blue-500 hover:bg-blue-600'; // Pronto para chamar paciente (azul)
+    case 'completed':
+    case 'missed':
+    case 'rescheduled':
+      return 'bg-gray-400 hover:bg-gray-500 cursor-not-allowed'; // Desabilitado (finalizado/faltou/reagendado)
     default:
-      return 'bg-gray-400 hover:bg-gray-500 cursor-not-allowed'; // Outros estados
+      return 'bg-gray-400 hover:bg-gray-500 cursor-not-allowed'; // Desabilitado (outros estados)
   }
 };
 
 export const getConsultButtonText = (status: string) => {
   switch (status) {
     case 'in_progress':
-      return 'Finalizar consulta'; // Changed text to "Finalizar consulta"
+      return 'Finalizar consulta';
     case 'triage':
       return 'Chamar paciente';
     case 'waiting':
