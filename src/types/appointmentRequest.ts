@@ -8,7 +8,7 @@ export interface AppointmentRequest {
   address: string;
   birth_date: string;
   age: number;
-  status: string; // Changed from enum to string to match database
+  status: 'pending' | 'approved' | 'rejected';
   created_at: string;
   approved_at?: string;
   appointment_date?: string;

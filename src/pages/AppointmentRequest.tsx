@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
@@ -35,7 +34,7 @@ import {
   createAppointmentRequest, 
   fetchPublicAppointmentRequests 
 } from '@/services/appointment/appointmentRequest';
-import type { AppointmentRequest, AppointmentRequestFormData } from '@/types/appointmentRequest';
+import type { AppointmentRequest as AppointmentRequestType, AppointmentRequestFormData } from '@/types/appointmentRequest';
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle2, Clock, XCircle } from 'lucide-react';
 
@@ -65,10 +64,10 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 // Componente principal
-const AppointmentRequest = () => {
+const AppointmentRequestPage = () => {
   const { toast } = useToast();
   const [submitting, setSubmitting] = useState(false);
-  const [publicRequests, setPublicRequests] = useState<AppointmentRequest[]>([]);
+  const [publicRequests, setPublicRequests] = useState<AppointmentRequestType[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Configuração do formulário
@@ -118,7 +117,7 @@ const AppointmentRequest = () => {
       // Calcular idade
       const age = calculateAge(values.birth_date);
 
-      const result = await createAppointmentRequest({
+      const requestData: AppointmentRequestFormData = {
         beneficiary_name: values.beneficiary_name,
         cpf: values.cpf,
         sus_number: values.sus_number,
@@ -126,7 +125,9 @@ const AppointmentRequest = () => {
         address: values.address,
         birth_date: isoDate,
         age
-      });
+      };
+
+      const result = await createAppointmentRequest(requestData);
 
       if (result.success) {
         toast({
@@ -397,4 +398,4 @@ const AppointmentRequest = () => {
   );
 };
 
-export default AppointmentRequest;
+export default AppointmentRequestPage;

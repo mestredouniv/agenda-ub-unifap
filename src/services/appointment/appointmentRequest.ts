@@ -41,7 +41,7 @@ export const fetchAppointmentRequests = async (): Promise<AppointmentRequest[]> 
 
     if (error) throw error;
     
-    // Map the response to our AppointmentRequest type
+    // Map the response to our AppointmentRequest type with the correct status type
     return (data || []).map(item => ({
       id: item.id,
       beneficiary_name: item.beneficiary_name,
@@ -51,7 +51,7 @@ export const fetchAppointmentRequests = async (): Promise<AppointmentRequest[]> 
       address: item.address,
       birth_date: item.birth_date,
       age: item.age,
-      status: item.status,
+      status: item.status as 'pending' | 'approved' | 'rejected',
       created_at: item.created_at,
       approved_at: item.approved_at,
       appointment_date: item.appointment_date,
@@ -131,7 +131,7 @@ export const fetchPublicAppointmentRequests = async (): Promise<AppointmentReque
 
     if (error) throw error;
     
-    // Map the response to our AppointmentRequest type
+    // Map the response to our AppointmentRequest type with the correct status
     return (data || []).map(item => ({
       id: item.id,
       beneficiary_name: item.beneficiary_name,
@@ -141,7 +141,7 @@ export const fetchPublicAppointmentRequests = async (): Promise<AppointmentReque
       address: item.address || '',
       birth_date: item.birth_date || '',
       age: item.age || 0,
-      status: item.status,
+      status: item.status as 'pending' | 'approved' | 'rejected',
       created_at: item.created_at,
       appointment_date: item.appointment_date,
       appointment_time: item.appointment_time,
