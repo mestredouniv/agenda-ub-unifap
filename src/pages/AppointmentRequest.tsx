@@ -35,7 +35,7 @@ import {
   createAppointmentRequest, 
   fetchPublicAppointmentRequests 
 } from '@/services/appointment/appointmentRequest';
-import { AppointmentRequest } from '@/types/appointmentRequest';
+import type { AppointmentRequest as AppointmentRequestType } from '@/types/appointmentRequest';
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle2, Clock, XCircle } from 'lucide-react';
 
@@ -61,15 +61,18 @@ const formSchema = z.object({
   ),
 });
 
+// Define the form values type
+type FormValues = z.infer<typeof formSchema>;
+
 // Componente principal
 const AppointmentRequest = () => {
   const { toast } = useToast();
   const [submitting, setSubmitting] = useState(false);
-  const [publicRequests, setPublicRequests] = useState<AppointmentRequest[]>([]);
+  const [publicRequests, setPublicRequests] = useState<AppointmentRequestType[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Configuração do formulário
-  const form = useForm<z.infer<typeof formSchema>>({
+  const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       beneficiary_name: '',
@@ -104,19 +107,23 @@ const AppointmentRequest = () => {
   };
 
   // Submissão do formulário
-  const onSubmit = async (data: z.infer<typeof formSchema>) => {
+  const onSubmit = async (values: FormValues) => {
     setSubmitting(true);
 
     try {
       // Converter data de nascimento para formato ISO
-      const birthDateParts = data.birth_date.split('/');
+      const birthDateParts = values.birth_date.split('/');
       const isoDate = `${birthDateParts[2]}-${birthDateParts[1]}-${birthDateParts[0]}`;
       
       // Calcular idade
-      const age = calculateAge(data.birth_date);
+      const age = calculateAge(values.birth_date);
 
       const result = await createAppointmentRequest({
-        ...data,
+        beneficiary_name: values.beneficiary_name,
+        cpf: values.cpf,
+        sus_number: values.sus_number,
+        phone: values.phone,
+        address: values.address,
         birth_date: isoDate,
         age
       });

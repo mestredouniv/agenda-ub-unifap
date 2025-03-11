@@ -40,7 +40,25 @@ export const fetchAppointmentRequests = async (): Promise<AppointmentRequest[]> 
       .order('created_at', { ascending: false });
 
     if (error) throw error;
-    return data || [];
+    
+    // Map the response to our AppointmentRequest type
+    return (data || []).map(item => ({
+      id: item.id,
+      beneficiary_name: item.beneficiary_name,
+      cpf: item.cpf,
+      sus_number: item.sus_number,
+      phone: item.phone,
+      address: item.address,
+      birth_date: item.birth_date,
+      age: item.age,
+      status: item.status,
+      created_at: item.created_at,
+      approved_at: item.approved_at,
+      appointment_date: item.appointment_date,
+      appointment_time: item.appointment_time,
+      professional_id: item.professional_id,
+      professional_name: item.professionals?.name
+    }));
   } catch (error) {
     console.error('Erro ao buscar solicitações:', error);
     return [];
@@ -100,6 +118,11 @@ export const fetchPublicAppointmentRequests = async (): Promise<AppointmentReque
         cpf,
         sus_number,
         status,
+        phone,
+        address,
+        birth_date,
+        age,
+        created_at,
         appointment_date,
         appointment_time,
         professionals:professional_id (name)
@@ -107,7 +130,23 @@ export const fetchPublicAppointmentRequests = async (): Promise<AppointmentReque
       .order('created_at', { ascending: false });
 
     if (error) throw error;
-    return data || [];
+    
+    // Map the response to our AppointmentRequest type
+    return (data || []).map(item => ({
+      id: item.id,
+      beneficiary_name: item.beneficiary_name,
+      cpf: item.cpf,
+      sus_number: item.sus_number,
+      phone: item.phone || '',
+      address: item.address || '',
+      birth_date: item.birth_date || '',
+      age: item.age || 0,
+      status: item.status,
+      created_at: item.created_at,
+      appointment_date: item.appointment_date,
+      appointment_time: item.appointment_time,
+      professional_name: item.professionals?.name
+    }));
   } catch (error) {
     console.error('Erro ao buscar solicitações públicas:', error);
     return [];
