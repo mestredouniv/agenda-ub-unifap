@@ -33,6 +33,65 @@ export type Database = {
         }
         Relationships: []
       }
+      appointment_requests: {
+        Row: {
+          address: string
+          age: number
+          appointment_date: string | null
+          appointment_time: string | null
+          approved_at: string | null
+          beneficiary_name: string
+          birth_date: string
+          cpf: string
+          created_at: string
+          id: string
+          phone: string
+          professional_id: string | null
+          status: string
+          sus_number: string
+        }
+        Insert: {
+          address: string
+          age: number
+          appointment_date?: string | null
+          appointment_time?: string | null
+          approved_at?: string | null
+          beneficiary_name: string
+          birth_date: string
+          cpf: string
+          created_at?: string
+          id?: string
+          phone: string
+          professional_id?: string | null
+          status?: string
+          sus_number: string
+        }
+        Update: {
+          address?: string
+          age?: number
+          appointment_date?: string | null
+          appointment_time?: string | null
+          approved_at?: string | null
+          beneficiary_name?: string
+          birth_date?: string
+          cpf?: string
+          created_at?: string
+          id?: string
+          phone?: string
+          professional_id?: string | null
+          status?: string
+          sus_number?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "appointment_requests_professional_id_fkey"
+            columns: ["professional_id"]
+            isOneToOne: false
+            referencedRelation: "professionals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       appointments: {
         Row: {
           actual_end_time: string | null
