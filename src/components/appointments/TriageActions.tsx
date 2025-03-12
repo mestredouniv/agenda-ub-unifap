@@ -20,7 +20,9 @@ export const TriageActions = ({ appointment, room, block, onUpdateRequired }: Tr
 
   const handleTriageAction = async () => {
     try {
+      // Different states: waiting -> triage (in progress) -> triage_completed
       const isStartingTriage = appointment.display_status === 'waiting';
+      const isFinishingTriage = appointment.display_status === 'triage';
       
       if (isStartingTriage && (!room || !block)) {
         toast({
@@ -56,10 +58,10 @@ export const TriageActions = ({ appointment, room, block, onUpdateRequired }: Tr
       }
 
       const updateData: Partial<Appointment> = {
-        display_status: isStartingTriage ? 'triage' : 'waiting',
-        room: isStartingTriage ? roomToUse : null,
-        block: isStartingTriage ? blockToUse : null,
-        actual_start_time: isStartingTriage ? new Date().toLocaleTimeString() : null
+        display_status: isStartingTriage ? 'triage' : 'triage_completed',
+        room: isStartingTriage ? roomToUse : appointment.room,
+        block: isStartingTriage ? blockToUse : appointment.block,
+        actual_start_time: isStartingTriage ? new Date().toLocaleTimeString() : appointment.actual_start_time
       };
 
       // Generate ticket number when starting triage
@@ -99,17 +101,6 @@ export const TriageActions = ({ appointment, room, block, onUpdateRequired }: Tr
           : "O paciente está pronto para consulta.",
       });
 
-      // Critical change: When finishing triage, set to triage completed state
-      if (!isStartingTriage) {
-        // Update status to indicate triage is complete but consultation hasn't started
-        const { error } = await supabase
-          .from('appointments')
-          .update({ display_status: 'triage' })
-          .eq('id', appointment.id);
-          
-        if (error) throw error;
-      }
-
       onUpdateRequired?.();
     } catch (error) {
       console.error('Erro ao gerenciar triagem:', error);
@@ -121,13 +112,26 @@ export const TriageActions = ({ appointment, room, block, onUpdateRequired }: Tr
     }
   };
 
-  const isDisabled = appointment.display_status === 'in_progress' || 
+  const isDisabled = 
+      appointment.display_status === 'triage_completed' ||
+      appointment.display_status === 'in_progress' || 
+      appointment.display_status === 'completed' ||
+      appointment.display_status === 'missed' ||
+      appointment.display_status === 'rescheduled';
+
+  // Completely hide the button if triage is completed
+  const hideButton = appointment.display_status === 'triage_completed' ||
+                     appointment.display_status === 'in_progress' ||
                      appointment.display_status === 'completed' ||
                      appointment.display_status === 'missed' ||
                      appointment.display_status === 'rescheduled';
 
   const buttonStyle = getTriageButtonStyle(appointment.display_status);
   const buttonText = getTriageButtonText(appointment.display_status);
+
+  if (hideButton) {
+    return null;
+  }
 
   return (
     <Button
