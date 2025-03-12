@@ -110,13 +110,13 @@ export const TriageActions = ({ appointment, room, block, onUpdateRequired }: Tr
     }
   };
 
-  const isDisabled = appointment.display_status === 'in_progress' || 
-                     appointment.display_status === 'completed' ||
-                     appointment.display_status === 'missed' ||
-                     appointment.display_status === 'rescheduled';
+  const isDisabled = currentStatus === 'in_progress' || 
+                     currentStatus === 'completed' ||
+                     currentStatus === 'missed' ||
+                     currentStatus === 'rescheduled';
 
-  const buttonStyle = getTriageButtonStyle(appointment.display_status);
-  const buttonText = getTriageButtonText(appointment.display_status);
+  const buttonStyle = getTriageButtonStyle(currentStatus);
+  const buttonText = getTriageButtonText(currentStatus);
 
   return (
     <Button
