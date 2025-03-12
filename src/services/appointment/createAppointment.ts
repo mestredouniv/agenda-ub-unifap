@@ -115,6 +115,15 @@ export const createNewAppointment = async (appointmentData: Omit<Appointment, 'i
     }
 
     console.log('[Agenda] Criado com sucesso:', data);
+    
+    // Emitir um evento para o canal de consultas
+    const channel = supabase.channel('appointments-changes');
+    channel.send({
+      type: 'broadcast',
+      event: 'appointment_created',
+      payload: data
+    });
+    
     return data;
   } catch (error) {
     console.error('[Agenda] Erro crítico na criação:', error);
