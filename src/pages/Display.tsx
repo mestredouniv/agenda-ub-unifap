@@ -9,6 +9,9 @@ import { DisplayEditPanel } from "@/components/DisplayEditPanel";
 import { supabase } from "@/integrations/supabase/client";
 
 const Display = () => {
+  // Use the subscription hook to automatically update the display state
+  useDisplayStateSubscription();
+  
   const currentPatient = useDisplayState((state) => state.currentPatient);
   const { contents, settings, loading, updateSettings } = useDisplayContent();
   const [currentContentIndex, setCurrentContentIndex] = useState(0);
@@ -78,6 +81,7 @@ const Display = () => {
   }, [currentContentIndex, contents, settings?.rotation_mode]);
 
   useEffect(() => {
+    console.log('[Display] Current patient changed:', currentPatient);
     setDisplayClass("animate-fade-in");
     const timer = setTimeout(() => setDisplayClass(""), 500);
     return () => clearTimeout(timer);
