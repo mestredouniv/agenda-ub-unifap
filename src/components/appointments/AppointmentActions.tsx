@@ -94,6 +94,7 @@ export const AppointmentActions = ({ appointment, onSuccess }: AppointmentAction
           size="sm"
           variant="destructive"
           onClick={() => setShowDeleteDialog(true)}
+          type="button"
         >
           <Trash2 className="h-4 w-4" />
         </Button>

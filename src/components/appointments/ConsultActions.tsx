@@ -126,6 +126,7 @@ export const ConsultActions = ({ appointment, onUpdateRequired }: ConsultActions
         className={`text-white ${buttonStyle}`}
         onClick={handleConsultAction}
         disabled={isButtonDisabled}
+        type="button"
       >
         {buttonText}
       </Button>
@@ -137,6 +138,7 @@ export const ConsultActions = ({ appointment, onUpdateRequired }: ConsultActions
           className="text-amber-500 border-amber-500 hover:bg-amber-50"
           onClick={handleRecallPatient}
           title="Chamar paciente novamente"
+          type="button"
         >
           <Bell className="h-4 w-4" />
         </Button>

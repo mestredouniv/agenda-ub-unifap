@@ -34,6 +34,7 @@ export const TimeSlotList = ({
             variant="default"
             onClick={() => onRemoveTimeSlot(slot)}
             className="w-full"
+            type="button"
           >
             {slot.time_slot.slice(0, -3)}
           </Button>
