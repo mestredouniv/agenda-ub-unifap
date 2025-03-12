@@ -74,20 +74,20 @@ export const AppointmentActions = ({ appointment, onSuccess }: AppointmentAction
 
       <div className="flex flex-wrap gap-2">
         <TriageActions 
-          appointment={appointment}
+          appointment={currentAppointment}
           room={room}
           block={block}
-          onUpdateRequired={onSuccess}
+          onUpdateRequired={handleAppointmentUpdate}
         />
 
         <ConsultActions 
-          appointment={appointment}
-          onUpdateRequired={onSuccess}
+          appointment={currentAppointment}
+          onUpdateRequired={handleAppointmentUpdate}
         />
 
         <FinishActions 
-          appointment={appointment}
-          onUpdateRequired={onSuccess}
+          appointment={currentAppointment}
+          onUpdateRequired={handleAppointmentUpdate}
         />
 
         <Button
