@@ -21,9 +21,15 @@ export const useAppointmentSlots = (
 ) => {
   const [slots, setSlots] = useState<Slot[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [lastError, setLastError] = useState<Error | null>(null);
 
   const fetchUnavailableDays = useCallback(async (): Promise<UnavailableDay[]> => {
     try {
+      if (!professionalId) {
+        console.warn('[useAppointmentSlots] ID do profissional não fornecido');
+        return [];
+      }
+
       const { data, error } = await supabase
         .from('professional_unavailable_days')
         .select('date')
@@ -31,13 +37,16 @@ export const useAppointmentSlots = (
 
       if (error) {
         console.error('[useAppointmentSlots] Erro ao buscar dias indisponíveis:', error);
+        setLastError(new Error(`Erro ao buscar dias indisponíveis: ${error.message}`));
         return [];
       }
 
       console.log('[useAppointmentSlots] Dias indisponíveis:', data);
       return data || [];
     } catch (error) {
-      console.error('[useAppointmentSlots] Erro inesperado ao buscar dias indisponíveis:', error);
+      const err = error instanceof Error ? error : new Error(String(error));
+      console.error('[useAppointmentSlots] Erro inesperado ao buscar dias indisponíveis:', err);
+      setLastError(err);
       return [];
     }
   }, [professionalId]);
@@ -54,8 +63,16 @@ export const useAppointmentSlots = (
       return;
     }
 
+    if (!professionalId) {
+      console.warn('[useAppointmentSlots] ID do profissional não fornecido');
+      setSlots([]);
+      setIsLoading(false);
+      return;
+    }
+
     try {
       setIsLoading(true);
+      setLastError(null);
       const formattedDate = format(selectedDate, 'yyyy-MM-dd');
 
       // Verificar se o dia está indisponível
@@ -68,7 +85,10 @@ export const useAppointmentSlots = (
 
       if (unavailableError) {
         console.error('[useAppointmentSlots] Erro ao verificar disponibilidade:', unavailableError);
-        throw unavailableError;
+        setLastError(new Error(`Erro ao verificar disponibilidade: ${unavailableError.message}`));
+        setSlots([]);
+        setIsLoading(false);
+        return;
       }
 
       if (unavailableDay) {
@@ -87,10 +107,30 @@ export const useAppointmentSlots = (
 
       if (slotsError) {
         console.error('[useAppointmentSlots] Erro ao buscar slots:', slotsError);
-        throw slotsError;
+        setLastError(new Error(`Erro ao buscar slots: ${slotsError.message}`));
+        setSlots([]);
+        setIsLoading(false);
+        return;
       }
 
-      console.log('[useAppointmentSlots] Slots disponíveis:', availableSlots);
+      // Se não houver slots configurados, usar slots padrão
+      let slotsToProcess = availableSlots;
+      if (!slotsToProcess || slotsToProcess.length === 0) {
+        console.log('[useAppointmentSlots] Nenhum slot configurado, usando padrões');
+        const defaultSlots = [
+          { time_slot: '08:00:00', max_appointments: getDefaultMaxAppointments() },
+          { time_slot: '09:00:00', max_appointments: getDefaultMaxAppointments() },
+          { time_slot: '10:00:00', max_appointments: getDefaultMaxAppointments() },
+          { time_slot: '11:00:00', max_appointments: getDefaultMaxAppointments() },
+          { time_slot: '14:00:00', max_appointments: getDefaultMaxAppointments() },
+          { time_slot: '15:00:00', max_appointments: getDefaultMaxAppointments() },
+          { time_slot: '16:00:00', max_appointments: getDefaultMaxAppointments() },
+          { time_slot: '17:00:00', max_appointments: getDefaultMaxAppointments() },
+        ];
+        slotsToProcess = defaultSlots;
+      }
+
+      console.log('[useAppointmentSlots] Slots disponíveis:', slotsToProcess);
 
       // Buscar agendamentos existentes
       const { data: appointments, error: appointmentsError } = await supabase
@@ -102,7 +142,8 @@ export const useAppointmentSlots = (
 
       if (appointmentsError) {
         console.error('[useAppointmentSlots] Erro ao buscar agendamentos:', appointmentsError);
-        throw appointmentsError;
+        setLastError(new Error(`Erro ao buscar agendamentos: ${appointmentsError.message}`));
+        // Continuar mesmo com erro, apenas sem considerar agendamentos existentes
       }
 
       console.log('[useAppointmentSlots] Agendamentos existentes:', appointments);
@@ -111,13 +152,13 @@ export const useAppointmentSlots = (
       const defaultMaxAppointments = getDefaultMaxAppointments();
 
       // Processar os slots
-      const processedSlots = (availableSlots || []).map(slot => {
+      const processedSlots = slotsToProcess.map(slot => {
         const timeStr = slot.time_slot.slice(0, 5);
         const appointmentsAtTime = appointments?.filter(
           app => app.appointment_time.slice(0, 5) === timeStr
         ).length || 0;
         
-        // Use o máximo definido no slot ou o padrão de 10
+        // Use o máximo definido no slot ou o padrão
         const maxAppointments = slot.max_appointments || defaultMaxAppointments;
 
         return {
@@ -131,7 +172,9 @@ export const useAppointmentSlots = (
       console.log('[useAppointmentSlots] Slots processados:', processedSlots);
       setSlots(processedSlots);
     } catch (error) {
-      console.error('[useAppointmentSlots] Erro inesperado:', error);
+      const err = error instanceof Error ? error : new Error(String(error));
+      console.error('[useAppointmentSlots] Erro inesperado:', err);
+      setLastError(err);
       setSlots([]);
     } finally {
       setIsLoading(false);
@@ -139,11 +182,20 @@ export const useAppointmentSlots = (
   }, [professionalId, selectedDate]);
 
   useEffect(() => {
-    fetchSlots();
+    let isMounted = true;
+    
+    const loadData = async () => {
+      if (isMounted) {
+        await fetchSlots();
+      }
+    };
+    
+    loadData();
 
     // Configurar listeners para mudanças em tempo real
+    const channelKey = `slots-${professionalId}-${selectedDate?.toISOString() || 'no-date'}`;
     const channel = supabase
-      .channel(`slots-${professionalId}-${selectedDate?.toISOString() || 'no-date'}`)
+      .channel(channelKey)
       .on(
         'postgres_changes',
         {
@@ -154,7 +206,9 @@ export const useAppointmentSlots = (
         },
         (payload) => {
           console.log('[useAppointmentSlots] Mudança em slots:', payload);
-          fetchSlots();
+          if (isMounted) {
+            fetchSlots();
+          }
         }
       )
       .on(
@@ -167,7 +221,9 @@ export const useAppointmentSlots = (
         },
         (payload) => {
           console.log('[useAppointmentSlots] Mudança em dias indisponíveis:', payload);
-          fetchSlots();
+          if (isMounted) {
+            fetchSlots();
+          }
         }
       )
       .on(
@@ -180,7 +236,9 @@ export const useAppointmentSlots = (
         },
         (payload) => {
           console.log('[useAppointmentSlots] Mudança em agendamentos:', payload);
-          fetchSlots();
+          if (isMounted) {
+            fetchSlots();
+          }
         }
       )
       .subscribe((status) => {
@@ -188,10 +246,16 @@ export const useAppointmentSlots = (
       });
 
     return () => {
+      isMounted = false;
       console.log('[useAppointmentSlots] Limpando subscription');
       supabase.removeChannel(channel);
     };
   }, [professionalId, selectedDate, fetchSlots]);
 
-  return { slots, isLoading, fetchUnavailableDays };
+  return { 
+    slots, 
+    isLoading, 
+    fetchUnavailableDays,
+    error: lastError
+  };
 };
