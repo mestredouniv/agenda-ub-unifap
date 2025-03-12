@@ -143,7 +143,7 @@ export const AppointmentDateForm = ({
         <Select
           value={appointmentTime}
           onValueChange={onAppointmentTimeChange}
-          disabled={!appointmentDate || isLoading || slots.length === 0}
+          disabled={!appointmentDate || isLoading}
         >
           <SelectTrigger>
             <SelectValue placeholder={
@@ -157,15 +157,21 @@ export const AppointmentDateForm = ({
             } />
           </SelectTrigger>
           <SelectContent>
-            {slots.map((slot) => (
-              <SelectItem 
-                key={slot.time} 
-                value={slot.time}
-                disabled={!slot.available}
-              >
-                {slot.time} ({slot.currentAppointments}/{slot.maxAppointments} agendamentos)
+            {slots.length === 0 && !isLoading && appointmentDate ? (
+              <SelectItem value="no-slots" disabled>
+                Nenhum horário disponível para esta data
               </SelectItem>
-            ))}
+            ) : (
+              slots.map((slot) => (
+                <SelectItem 
+                  key={slot.time} 
+                  value={slot.time}
+                  disabled={!slot.available}
+                >
+                  {slot.time} ({slot.currentAppointments}/{slot.maxAppointments} agendamentos)
+                </SelectItem>
+              ))
+            )}
           </SelectContent>
         </Select>
       </div>
