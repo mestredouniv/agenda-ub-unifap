@@ -101,6 +101,7 @@ export const AppointmentDateForm = ({
                 "w-full justify-start text-left font-normal",
                 !appointmentDate && "text-muted-foreground"
               )}
+              type="button"
             >
               <CalendarIcon className="mr-2 h-4 w-4" />
               {appointmentDate ? (
