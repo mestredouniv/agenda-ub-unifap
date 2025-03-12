@@ -90,6 +90,14 @@ export const useAppointmentSlots = (
         throw slotsError;
       }
 
+      // Se não houver slots configurados, retornar lista vazia
+      if (!availableSlots || availableSlots.length === 0) {
+        console.log('[useAppointmentSlots] Nenhum slot configurado para o profissional');
+        setSlots([]);
+        setIsLoading(false);
+        return;
+      }
+
       console.log('[useAppointmentSlots] Slots disponíveis:', availableSlots);
 
       // Buscar agendamentos existentes
@@ -111,7 +119,7 @@ export const useAppointmentSlots = (
       const defaultMaxAppointments = getDefaultMaxAppointments();
 
       // Processar os slots
-      const processedSlots = (availableSlots || []).map(slot => {
+      const processedSlots = availableSlots.map(slot => {
         const timeStr = slot.time_slot.slice(0, 5);
         const appointmentsAtTime = appointments?.filter(
           app => app.appointment_time.slice(0, 5) === timeStr
@@ -122,6 +130,7 @@ export const useAppointmentSlots = (
 
         return {
           time: timeStr,
+          // Garantir que o slot esteja disponível se houver menos agendamentos que o máximo
           available: appointmentsAtTime < maxAppointments,
           currentAppointments: appointmentsAtTime,
           maxAppointments: maxAppointments
