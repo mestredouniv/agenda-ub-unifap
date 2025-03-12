@@ -56,7 +56,7 @@ export const getConsultButtonStyle = (status: string) => {
     case 'waiting':
       return 'bg-gray-400 hover:bg-gray-500 cursor-not-allowed'; // Desabilitado (aguardando triagem)
     case 'triage':
-      return 'bg-blue-500 hover:bg-blue-600'; // Pronto para chamar paciente (azul)
+      return 'bg-green-500 hover:bg-green-600'; // Pronto para chamar paciente (verde - updated)
     case 'completed':
     case 'missed':
     case 'rescheduled':

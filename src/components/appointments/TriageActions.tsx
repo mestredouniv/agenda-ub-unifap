@@ -99,6 +99,17 @@ export const TriageActions = ({ appointment, room, block, onUpdateRequired }: Tr
           : "O paciente está pronto para consulta.",
       });
 
+      // Critical change: When finishing triage, set to triage completed state
+      if (!isStartingTriage) {
+        // Update status to indicate triage is complete but consultation hasn't started
+        const { error } = await supabase
+          .from('appointments')
+          .update({ display_status: 'triage' })
+          .eq('id', appointment.id);
+          
+        if (error) throw error;
+      }
+
       onUpdateRequired?.();
     } catch (error) {
       console.error('Erro ao gerenciar triagem:', error);

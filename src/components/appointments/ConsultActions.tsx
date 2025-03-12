@@ -17,6 +17,7 @@ export const ConsultActions = ({ appointment, onUpdateRequired }: ConsultActions
 
   const handleConsultAction = async () => {
     try {
+      // Check if we're starting or finishing a consultation
       const isStartingConsult = appointment.display_status === 'triage';
       
       const updateData: Partial<Appointment> = {

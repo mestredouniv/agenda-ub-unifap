@@ -4,6 +4,7 @@ import { AppointmentRequest, AppointmentRequestFormData } from "@/types/appointm
 
 export const createAppointmentRequest = async (data: AppointmentRequestFormData): Promise<{ success: boolean; error?: string; id?: string }> => {
   try {
+    console.log("Creating appointment request with data:", data);
     const { data: result, error } = await supabase
       .from('appointment_requests')
       .insert([
@@ -31,6 +32,7 @@ export const createAppointmentRequest = async (data: AppointmentRequestFormData)
 
 export const fetchAppointmentRequests = async (): Promise<AppointmentRequest[]> => {
   try {
+    console.log("Fetching all appointment requests");
     const { data, error } = await supabase
       .from('appointment_requests')
       .select(`
@@ -72,6 +74,7 @@ export const approveAppointmentRequest = async (
   professionalId: string
 ): Promise<boolean> => {
   try {
+    console.log("Approving request:", requestId, appointmentDate, appointmentTime, professionalId);
     const { error } = await supabase
       .from('appointment_requests')
       .update({
@@ -93,6 +96,7 @@ export const approveAppointmentRequest = async (
 
 export const rejectAppointmentRequest = async (requestId: string): Promise<boolean> => {
   try {
+    console.log("Rejecting request:", requestId);
     const { error } = await supabase
       .from('appointment_requests')
       .update({
@@ -110,6 +114,7 @@ export const rejectAppointmentRequest = async (requestId: string): Promise<boole
 
 export const fetchPublicAppointmentRequests = async (): Promise<AppointmentRequest[]> => {
   try {
+    console.log("Fetching public appointment requests");
     const { data, error } = await supabase
       .from('appointment_requests')
       .select(`
