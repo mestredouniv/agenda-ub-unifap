@@ -1,42 +1,16 @@
-import { useState, useEffect } from "react";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
-import { Calendar as CalendarIcon } from "lucide-react";
-import { Calendar } from "@/components/ui/calendar";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+
+import { useState } from "react";
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { supabase } from "@/integrations/supabase/client";
 import { BackToHomeButton } from "@/components/BackToHomeButton";
-import { AppointmentCard } from "@/components/appointments/AppointmentCard";
-import { AppointmentActions } from "@/components/appointments/AppointmentActions";
-import { useToast } from "@/components/ui/use-toast";
-import { getStatusBadge } from "@/utils/appointment";
+import { useConsultas } from "@/hooks/useConsultas";
+import { ConsultaFilters } from "@/components/consultas/ConsultaFilters";
+import { ConsultasTable } from "@/components/consultas/ConsultasTable";
+import { ConsultasMobileView } from "@/components/consultas/ConsultasMobileView";
 
 const Consultas = () => {
-  const { toast } = useToast();
   const [selectedProfessional, setSelectedProfessional] = useState("all");
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+<<<<<<< HEAD
   const [professionals, setProfessionals] = useState<any[]>([]);
   const [appointments, setAppointments] = useState<any[]>([]);
 
@@ -96,12 +70,22 @@ const handleDateChange = (date: Date | undefined) => {
       supabase.removeChannel(channel);
     };
   }, [selectedProfessional, selectedDate]);
+=======
+  
+  const { 
+    appointments, 
+    professionals, 
+    isLoading,
+    fetchAppointments 
+  } = useConsultas(selectedProfessional, selectedDate);
+>>>>>>> 3b55d426a400db89c431bf2ad80f68f921a3fcab
 
   return (
     <div className="container mx-auto p-4 md:p-8">
       <BackToHomeButton />
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
         <h1 className="text-2xl font-bold">Consultas</h1>
+<<<<<<< HEAD
         <div className="flex flex-col md:flex-row items-start md:items-center gap-4 w-full md:w-auto">
           <Select
             value={selectedProfessional}
@@ -137,70 +121,32 @@ const handleDateChange = (date: Date | undefined) => {
             </PopoverContent>
           </Popover>
         </div>
+=======
+        <ConsultaFilters
+          selectedProfessional={selectedProfessional}
+          setSelectedProfessional={setSelectedProfessional}
+          selectedDate={selectedDate}
+          setSelectedDate={setSelectedDate}
+          professionals={professionals}
+        />
+>>>>>>> 3b55d426a400db89c431bf2ad80f68f921a3fcab
       </div>
       
       {/* Mobile view */}
       <div className="md:hidden">
-        {appointments.length === 0 ? (
-          <Card className="p-4">
-            <p className="text-center text-muted-foreground">
-              Não há consultas agendadas para este dia
-            </p>
-          </Card>
-        ) : (
-          appointments.map((appointment) => (
-            <AppointmentCard 
-              key={appointment.id} 
-              appointment={appointment} 
-              onSuccess={fetchAppointments}
-            />
-          ))
-        )}
+        <ConsultasMobileView 
+          appointments={appointments} 
+          isLoading={isLoading}
+          onSuccess={fetchAppointments}
+        />
       </div>
 
       {/* Desktop view */}
       <div className="hidden md:block bg-white rounded-lg shadow">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Horário</TableHead>
-              <TableHead>Paciente</TableHead>
-              <TableHead>Profissional</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Prioridade</TableHead>
-              <TableHead>Ações</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {appointments.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={6} className="text-center text-muted-foreground">
-                  Não há consultas agendadas para este dia
-                </TableCell>
-              </TableRow>
-            ) : (
-              appointments.map((appointment) => (
-                <TableRow key={appointment.id}>
-                  <TableCell>{appointment.appointment_time}</TableCell>
-                  <TableCell>{appointment.patient_name}</TableCell>
-                  <TableCell>{appointment.professionals.name}</TableCell>
-                  <TableCell>{getStatusBadge(appointment.display_status)}</TableCell>
-                  <TableCell>
-                    <Badge variant={appointment.priority === 'priority' ? "destructive" : "secondary"}>
-                      {appointment.priority === 'priority' ? 'Prioritário' : 'Normal'}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <AppointmentActions 
-                      appointment={appointment}
-                      onSuccess={fetchAppointments}
-                    />
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+        <ConsultasTable 
+          appointments={appointments} 
+          onSuccess={fetchAppointments}
+        />
       </div>
     </div>
   );

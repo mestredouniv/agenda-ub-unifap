@@ -4,13 +4,7 @@ import { Appointment } from "@/types/appointment";
 import { useToast } from "@/components/ui/use-toast";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { Calendar, Clock } from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { Calendar, UserX } from "lucide-react";
 
 interface FinishActionsProps {
   appointment: Appointment;
@@ -21,7 +15,7 @@ export const FinishActions = ({ appointment, onUpdateRequired }: FinishActionsPr
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  const handleCompleteAppointment = async (status: 'completed' | 'missed' | 'rescheduled') => {
+  const handleCompleteAppointment = async (status: 'missed' | 'rescheduled') => {
     try {
       const { error } = await supabase
         .from('appointments')
@@ -34,7 +28,6 @@ export const FinishActions = ({ appointment, onUpdateRequired }: FinishActionsPr
       if (error) throw error;
 
       const messages = {
-        completed: "Consulta finalizada com sucesso.",
         missed: "Paciente marcado como falta.",
         rescheduled: "Consulta marcada para reagendamento."
       };
@@ -59,31 +52,33 @@ export const FinishActions = ({ appointment, onUpdateRequired }: FinishActionsPr
     }
   };
 
-  if (appointment.display_status !== 'in_progress') {
+  // Only show these actions if we're in certain statuses
+  if (appointment.display_status !== 'triage' && 
+      appointment.display_status !== 'in_progress' &&
+      appointment.display_status !== 'waiting') {
     return null;
   }
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button size="sm" variant="outline">
-          Finalizar
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent>
-        <DropdownMenuItem onClick={() => handleCompleteAppointment('completed')}>
-          <Clock className="mr-2 h-4 w-4" />
-          Consulta finalizada
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => handleCompleteAppointment('missed')}>
-          <Clock className="mr-2 h-4 w-4" />
-          Paciente faltou
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => handleCompleteAppointment('rescheduled')}>
-          <Calendar className="mr-2 h-4 w-4" />
-          Reagendar consulta
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <div className="flex gap-2">
+      <Button 
+        size="sm" 
+        variant="outline"
+        className="border-amber-500 text-amber-500 hover:bg-amber-100 hover:text-amber-600"
+        onClick={() => handleCompleteAppointment('missed')}
+      >
+        <UserX className="mr-2 h-4 w-4" />
+        Paciente Faltou
+      </Button>
+      
+      <Button 
+        size="sm" 
+        variant="outline"
+        onClick={() => handleCompleteAppointment('rescheduled')}
+      >
+        <Calendar className="mr-2 h-4 w-4" />
+        Reagendar
+      </Button>
+    </div>
   );
 };

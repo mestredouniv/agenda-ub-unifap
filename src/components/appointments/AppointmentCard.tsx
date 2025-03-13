@@ -1,5 +1,6 @@
 
 import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Appointment } from "@/types/appointment";
 import { AppointmentActions } from "./AppointmentActions";
 import { getStatusBadge } from "@/utils/appointment";
@@ -16,7 +17,7 @@ export const AppointmentCard = ({ appointment, onSuccess }: AppointmentCardProps
     try {
       return format(new Date(dateString), "dd/MM/yyyy", { locale: ptBR });
     } catch (error) {
-      console.error("[AppointmentCard] Erro ao formatar data:", error);
+      console.error("Erro ao formatar data:", error);
       return dateString;
     }
   };
@@ -31,24 +32,26 @@ export const AppointmentCard = ({ appointment, onSuccess }: AppointmentCardProps
               Data de Nascimento: {formatDate(appointment.birth_date)}
             </p>
             <p className="text-sm text-gray-500">
-              Horário: {appointment.appointment_time.slice(0, 5)}
+              Horário: {appointment.appointment_time}
             </p>
           </div>
           {getStatusBadge(appointment.display_status)}
         </div>
         <div className="text-sm text-gray-600">
-          <p>Profissional: {appointment.professional_name || 'Não especificado'}</p>
+          <p>Profissional: {appointment.professionals?.name}</p>
           {appointment.notes && (
             <p className="mt-2 text-gray-700">
               Observações: {appointment.notes}
             </p>
           )}
+          {(appointment.room || appointment.block) && (
+            <p className="mt-1 text-gray-700">
+              Localização: {appointment.block && `Bloco ${appointment.block}`} {appointment.room && `Sala ${appointment.room}`}
+            </p>
+          )}
         </div>
-        <div className="flex flex-wrap gap-2 mt-2">
-          <AppointmentActions 
-            appointment={appointment} 
-            onSuccess={onSuccess}
-          />
+        <div className="mt-3">
+          <AppointmentActions appointment={appointment} onSuccess={onSuccess} />
         </div>
       </div>
     </Card>

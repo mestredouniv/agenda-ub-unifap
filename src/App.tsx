@@ -14,7 +14,8 @@ import Tuberculose from "@/pages/Tuberculose";
 import Prep from "@/pages/Prep";
 import Reports from "@/pages/Reports";
 import { AgendaProfissional } from "@/pages/AgendaProfissional";
-import { NovaAgenda } from "@/pages/NovaAgenda";
+import AppointmentRequest from "@/pages/AppointmentRequest";
+import RequestsManager from "@/pages/RequestsManager";
 
 function App() {
   return (
@@ -23,8 +24,7 @@ function App() {
         <Route path="/" element={<Index />} />
         <Route path="/display" element={<Display />} />
         <Route path="/consultas" element={<Consultas />} />
-        <Route path="/agenda/:professionalId" element={<NovaAgenda />} />
-        <Route path="/agenda-antiga/:professionalId" element={<AgendaProfissional />} />
+        <Route path="/agenda/:professionalId" element={<AgendaProfissional />} />
         <Route path="/hanseniase" element={<Hanseniase />} />
         <Route path="/pre-natal" element={<PreNatal />} />
         <Route path="/puericultura" element={<Puericultura />} />
@@ -32,6 +32,8 @@ function App() {
         <Route path="/tuberculose" element={<Tuberculose />} />
         <Route path="/prep" element={<Prep />} />
         <Route path="/reports" element={<Reports />} />
+        <Route path="/solicitar-agendamento" element={<AppointmentRequest />} />
+        <Route path="/solicitar" element={<RequestsManager />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
       <Toaster />
