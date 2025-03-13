@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { BackToHomeButton } from "@/components/BackToHomeButton";
@@ -9,7 +10,7 @@ import { ConsultasMobileView } from "@/components/consultas/ConsultasMobileView"
 const Consultas = () => {
   const [selectedProfessional, setSelectedProfessional] = useState("all");
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-
+  
   const { 
     appointments, 
     professionals, 
@@ -32,17 +33,21 @@ const Consultas = () => {
       </div>
       
       {/* Mobile view */}
-      <ConsultasMobileView 
-        appointments={appointments} 
-        isLoading={isLoading}
-        onSuccess={fetchAppointments}
-      />
+      <div className="md:hidden">
+        <ConsultasMobileView 
+          appointments={appointments} 
+          isLoading={isLoading}
+          onSuccess={fetchAppointments}
+        />
+      </div>
 
       {/* Desktop view */}
-      <ConsultasTable 
-        appointments={appointments} 
-        onSuccess={fetchAppointments}
-      />
+      <div className="hidden md:block bg-white rounded-lg shadow">
+        <ConsultasTable 
+          appointments={appointments} 
+          onSuccess={fetchAppointments}
+        />
+      </div>
     </div>
   );
 };
