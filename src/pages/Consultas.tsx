@@ -40,39 +40,21 @@ const Consultas = () => {
   const [professionals, setProfessionals] = useState<any[]>([]);
   const [appointments, setAppointments] = useState<any[]>([]);
 
-  const fetchAppointments = async () => {
-    try {
-      const formattedDate = format(selectedDate, 'yyyy-MM-dd');
-      let query = supabase
-        .from('appointments')
-        .select(`
-          *,
-          professionals (
-            name
-          )
-        `)
-        .eq('appointment_date', formattedDate)
-        .is('deleted_at', null);
-
-      if (selectedProfessional !== "all") {
-        query = query.eq('professional_id', selectedProfessional);
-      }
-
-      const { data, error } = await query
-        .order('priority', { ascending: false })
-        .order('appointment_time', { ascending: true });
-
-      if (error) throw error;
-      setAppointments(data || []);
-    } catch (error) {
-      console.error('Erro ao buscar agendamentos:', error);
-      toast({
-        title: "Erro",
-        description: "Não foi possível carregar os agendamentos",
-        variant: "destructive",
-      });
+const handleDateChange = (date: Date | undefined) => {
+  try {
+    if (!date) {
+      throw new Error('Data inválida');
     }
-  };
+    setSelectedDate(date);
+  } catch (error) {
+    console.error('Erro ao alterar a data:', error);
+    toast({
+      title: 'Erro',
+      description: 'Não foi possível alterar a data',
+      variant: 'destructive',
+    });
+  }
+};
 
   useEffect(() => {
     const fetchProfessionals = async () => {
@@ -149,7 +131,7 @@ const Consultas = () => {
               <Calendar
                 mode="single"
                 selected={selectedDate}
-                onSelect={(date) => date && setSelectedDate(date)}
+                onSelect={handleDateChange}
                 initialFocus
               />
             </PopoverContent>
