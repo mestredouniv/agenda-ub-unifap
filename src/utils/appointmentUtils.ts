@@ -22,7 +22,6 @@ export const getTriageButtonStyle = (status: string) => {
   switch (status) {
     case 'triage':
       return 'bg-orange-500 hover:bg-orange-600'; // Triagem em andamento (laranja)
-    case 'triage_completed':
     case 'in_progress':
     case 'completed':
     case 'missed':
@@ -37,8 +36,6 @@ export const getTriageButtonText = (status: string) => {
   switch (status) {
     case 'triage':
       return 'Finalizar triagem';
-    case 'triage_completed':
-      return 'Triagem finalizada';
     case 'in_progress':
       return 'Em consulta';
     case 'completed':
@@ -57,10 +54,9 @@ export const getConsultButtonStyle = (status: string) => {
     case 'in_progress':
       return 'bg-red-600 hover:bg-red-700'; // Em consulta (vermelho)
     case 'waiting':
-    case 'triage':
       return 'bg-gray-400 hover:bg-gray-500 cursor-not-allowed'; // Desabilitado (aguardando triagem)
-    case 'triage_completed':
-      return 'bg-green-500 hover:bg-green-600'; // Pronto para chamar paciente (verde)
+    case 'triage':
+      return 'bg-green-500 hover:bg-green-600'; // Pronto para chamar paciente (verde - updated)
     case 'completed':
     case 'missed':
     case 'rescheduled':
@@ -74,10 +70,8 @@ export const getConsultButtonText = (status: string) => {
   switch (status) {
     case 'in_progress':
       return 'Finalizar consulta';
-    case 'triage_completed':
-      return 'Chamar paciente';
     case 'triage':
-      return 'Aguardando fim da triagem';
+      return 'Chamar paciente';
     case 'waiting':
       return 'Aguardando triagem';
     default:

@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from "react";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
@@ -7,7 +6,7 @@ import { Appointment } from "@/types/appointment";
 
 type ValidDisplayStatus = Appointment['display_status'];
 const isValidDisplayStatus = (status: string): status is ValidDisplayStatus => {
-  return ['waiting', 'triage', 'triage_completed', 'in_progress', 'completed', 'missed', 'rescheduled'].includes(status);
+  return ['waiting', 'triage', 'in_progress', 'completed', 'missed', 'rescheduled'].includes(status);
 };
 
 interface DatabaseAppointment {
