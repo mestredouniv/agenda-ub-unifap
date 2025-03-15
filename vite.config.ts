@@ -8,10 +8,6 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8080,
-    history: {
-      // Adicionando redirecionamento para o index.html
-      disableHtml5Mode: false,
-    },
   },
   plugins: [
     react(),

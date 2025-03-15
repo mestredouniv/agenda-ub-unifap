@@ -1,9 +1,8 @@
-
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
-import { supabase } from "../integrations/supabase/client"; // Ajuste do caminho de importação
-import { useToast } from "../components/ui/use-toast"; // Ajuste do caminho de importação
-import { fetchDailyAppointments } from "../services/appointment"; // Ajuste do caminho de importação
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/components/ui/use-toast";
+import { fetchDailyAppointments } from "@/services/appointment";
 
 export const useConsultas = (selectedProfessional: string, selectedDate: Date) => {
   const { toast } = useToast();
@@ -12,13 +11,8 @@ export const useConsultas = (selectedProfessional: string, selectedDate: Date) =
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchAppointments = async () => {
-    if (!selectedDate) {
-      console.error("Data selecionada é inválida.");
-      return; // Adicionando retorno para evitar execução adicional
-    }
     try {
       const formattedDate = format(selectedDate, 'yyyy-MM-dd');
-      console.log("Buscando agendamentos para a data:", formattedDate); // Log de depuração
       let query = supabase
         .from('appointments')
         .select(`
@@ -36,11 +30,7 @@ export const useConsultas = (selectedProfessional: string, selectedDate: Date) =
         .order('priority', { ascending: false })
         .order('appointment_time', { ascending: true });
 
-      if (error) {
-        console.error("Erro ao buscar agendamentos:", error); // Log de erro
-        throw error;
-      }
-      console.log("Agendamentos buscados:", data); // Log de depuração
+      if (error) throw error;
       setAppointments(data || []);
       setIsLoading(false);
     } catch (error) {
