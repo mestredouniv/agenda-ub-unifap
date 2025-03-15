@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/components/ui/use-toast";
-import { fetchDailyAppointments } from "@/services/appointment";
+import { supabase } from "../integrations/supabase/client"; // Adjusted import path
+import { useToast } from "../components/ui/use-toast"; // Adjusted import path
+import { fetchDailyAppointments } from "../services/appointment"; // Adjusted import path
 
 export const useConsultas = (selectedProfessional: string, selectedDate: Date) => {
   const { toast } = useToast();
@@ -11,6 +11,10 @@ export const useConsultas = (selectedProfessional: string, selectedDate: Date) =
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchAppointments = async () => {
+    if (!selectedDate) {
+      console.error("Data selecionada é inválida.");
+      return; // Adicionando retorno para evitar execução adicional
+    }
     try {
       const formattedDate = format(selectedDate, 'yyyy-MM-dd');
       let query = supabase
