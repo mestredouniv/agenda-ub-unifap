@@ -1,8 +1,9 @@
+
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
-import { supabase } from "../integrations/supabase/client"; // Adjusted import path
-import { useToast } from "../components/ui/use-toast"; // Adjusted import path
-import { fetchDailyAppointments } from "../services/appointment"; // Adjusted import path
+import { supabase } from "../integrations/supabase/client"; // Ajuste do caminho de importação
+import { useToast } from "../components/ui/use-toast"; // Ajuste do caminho de importação
+import { fetchDailyAppointments } from "../services/appointment"; // Ajuste do caminho de importação
 
 export const useConsultas = (selectedProfessional: string, selectedDate: Date) => {
   const { toast } = useToast();
@@ -17,6 +18,7 @@ export const useConsultas = (selectedProfessional: string, selectedDate: Date) =
     }
     try {
       const formattedDate = format(selectedDate, 'yyyy-MM-dd');
+      console.log("Buscando agendamentos para a data:", formattedDate); // Log de depuração
       let query = supabase
         .from('appointments')
         .select(`
@@ -34,7 +36,11 @@ export const useConsultas = (selectedProfessional: string, selectedDate: Date) =
         .order('priority', { ascending: false })
         .order('appointment_time', { ascending: true });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Erro ao buscar agendamentos:", error); // Log de erro
+        throw error;
+      }
+      console.log("Agendamentos buscados:", data); // Log de depuração
       setAppointments(data || []);
       setIsLoading(false);
     } catch (error) {
