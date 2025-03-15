@@ -953,6 +953,7 @@ export type Database = {
         | "completed"
         | "missed"
         | "rescheduled"
+        | "triage_completed"
     }
     CompositeTypes: {
       [_ in never]: never

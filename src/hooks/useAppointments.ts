@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from "react";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
@@ -6,7 +7,7 @@ import { Appointment } from "@/types/appointment";
 
 type ValidDisplayStatus = Appointment['display_status'];
 const isValidDisplayStatus = (status: string): status is ValidDisplayStatus => {
-  return ['waiting', 'triage', 'in_progress', 'completed', 'missed', 'rescheduled'].includes(status);
+  return ['waiting', 'triage', 'triage_completed', 'in_progress', 'completed', 'missed', 'rescheduled'].includes(status);
 };
 
 interface DatabaseAppointment {
@@ -90,9 +91,18 @@ export const useAppointments = (professionalId: string, selectedDate: Date) => {
       const transformedData: Appointment[] = (data || []).map((rawItem: any) => {
         console.log('[Agenda] Transformando item:', rawItem);
         
-        const displayStatus: ValidDisplayStatus = isValidDisplayStatus(rawItem.display_status || 'waiting')
-          ? rawItem.display_status as ValidDisplayStatus
-          : 'waiting';
+        // Handle display_status mapping
+        let displayStatus: ValidDisplayStatus = 'waiting';
+        
+        if (rawItem.display_status) {
+          // Try to map the database value to our expanded status set
+          if (isValidDisplayStatus(rawItem.display_status)) {
+            displayStatus = rawItem.display_status as ValidDisplayStatus;
+          } else if (rawItem.display_status === 'triage_completed') {
+            // Handle specific mapping for triage_completed if needed
+            displayStatus = 'triage_completed';
+          }
+        }
 
         const item: Appointment = {
           id: rawItem.id,

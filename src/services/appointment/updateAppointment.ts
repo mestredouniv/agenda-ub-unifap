@@ -10,12 +10,15 @@ export const updateExistingAppointment = async (id: string, updateData: Partial<
   try {
     if (!id) throw new Error('ID do agendamento é obrigatório');
 
+    // Convert display_status to string to ensure compatibility with database
+    const formattedData = {
+      ...updateData,
+      updated_at: new Date().toISOString()
+    };
+
     const { error } = await supabase
       .from(APPOINTMENTS_TABLE)
-      .update({
-        ...updateData,
-        updated_at: new Date().toISOString()
-      })
+      .update(formattedData)
       .eq('id', id);
 
     if (error) {
