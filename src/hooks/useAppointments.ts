@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from "react";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
@@ -90,11 +89,9 @@ export const useAppointments = (professionalId: string, selectedDate: Date) => {
       const transformedData: Appointment[] = (data || []).map((rawItem: any) => {
         console.log('[Agenda] Transformando item:', rawItem);
         
-        // Handle display_status mapping
         let displayStatus: DisplayStatus = 'waiting';
         
         if (rawItem.display_status) {
-          // Try to map the database value to our expanded status set
           if (isValidDisplayStatus(rawItem.display_status)) {
             displayStatus = rawItem.display_status as DisplayStatus;
           }

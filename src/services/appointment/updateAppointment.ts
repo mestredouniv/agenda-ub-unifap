@@ -10,7 +10,7 @@ export const updateExistingAppointment = async (id: string, updateData: Partial<
   try {
     if (!id) throw new Error('ID do agendamento é obrigatório');
 
-    // Convert display_status to string to ensure compatibility with database
+    // Garantir que o status seja válido para o banco de dados
     const formattedData = {
       ...updateData,
       updated_at: new Date().toISOString()

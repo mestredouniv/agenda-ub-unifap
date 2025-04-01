@@ -1,4 +1,3 @@
-
 export type DisplayStatus = 'waiting' | 'triage' | 'triage_completed' | 'in_progress' | 'completed' | 'missed' | 'rescheduled';
 
 export interface Appointment {
