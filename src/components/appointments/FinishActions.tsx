@@ -55,7 +55,8 @@ export const FinishActions = ({ appointment, onUpdateRequired }: FinishActionsPr
   // Only show these actions if we're in certain statuses
   if (appointment.display_status !== 'triage' && 
       appointment.display_status !== 'in_progress' &&
-      appointment.display_status !== 'waiting') {
+      appointment.display_status !== 'waiting' &&
+      appointment.display_status !== 'triage_completed') {
     return null;
   }
 

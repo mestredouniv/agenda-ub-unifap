@@ -1,12 +1,14 @@
+
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { fetchDailyAppointments } from "@/services/appointment";
+import { Appointment } from "@/types/appointment";
 
 export const useConsultas = (selectedProfessional: string, selectedDate: Date) => {
   const { toast } = useToast();
-  const [appointments, setAppointments] = useState<any[]>([]);
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [professionals, setProfessionals] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 

@@ -1,4 +1,6 @@
 
+export type DisplayStatus = 'waiting' | 'triage' | 'triage_completed' | 'in_progress' | 'completed' | 'missed' | 'rescheduled';
+
 export interface Appointment {
   id: string;
   patient_name: string;
@@ -9,7 +11,7 @@ export interface Appointment {
   };
   appointment_date: string;
   appointment_time: string;
-  display_status: 'waiting' | 'triage' | 'triage_completed' | 'in_progress' | 'completed' | 'missed' | 'rescheduled';
+  display_status: DisplayStatus;
   priority: 'priority' | 'normal';
   notes?: string | null;
   actual_start_time?: string | null;

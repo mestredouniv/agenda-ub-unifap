@@ -1,6 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { Appointment } from "@/types/appointment";
+import { Appointment, DisplayStatus } from "@/types/appointment";
 
 const APPOINTMENTS_TABLE = 'appointments';
 
