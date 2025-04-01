@@ -13,10 +13,15 @@ export interface Announcement {
 
 export const useAnnouncements = () => {
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [hasError, setHasError] = useState(false);
   const { toast } = useToast();
 
   const fetchAnnouncements = async () => {
     try {
+      setIsLoading(true);
+      setHasError(false);
+      
       const now = new Date().toISOString();
       const { data, error } = await supabase
         .from('announcements')
@@ -29,11 +34,9 @@ export const useAnnouncements = () => {
       setAnnouncements(data || []);
     } catch (error) {
       console.error('Error fetching announcements:', error);
-      toast({
-        title: "Erro",
-        description: "Não foi possível carregar os avisos.",
-        variant: "destructive",
-      });
+      setHasError(true);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -62,7 +65,7 @@ export const useAnnouncements = () => {
       console.error('Error adding announcement:', error);
       toast({
         title: "Erro",
-        description: "Não foi possível adicionar o aviso.",
+        description: "Não foi possível adicionar o aviso. Tente novamente mais tarde.",
         variant: "destructive",
       });
       return false;
@@ -87,7 +90,7 @@ export const useAnnouncements = () => {
       console.error('Error removing announcement:', error);
       toast({
         title: "Erro",
-        description: "Não foi possível remover o aviso.",
+        description: "Não foi possível remover o aviso. Tente novamente mais tarde.",
         variant: "destructive",
       });
       return false;
@@ -103,6 +106,8 @@ export const useAnnouncements = () => {
 
   return {
     announcements,
+    isLoading,
+    hasError,
     addAnnouncement,
     removeAnnouncement,
     refetch: fetchAnnouncements,

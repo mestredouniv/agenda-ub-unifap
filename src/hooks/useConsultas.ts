@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
@@ -10,9 +11,13 @@ export const useConsultas = (selectedProfessional: string, selectedDate: Date) =
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [professionals, setProfessionals] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [hasError, setHasError] = useState(false);
 
   const fetchAppointments = async () => {
     try {
+      setIsLoading(true);
+      setHasError(false);
+      
       const formattedDate = format(selectedDate, 'yyyy-MM-dd');
       let query = supabase
         .from('appointments')
@@ -33,14 +38,15 @@ export const useConsultas = (selectedProfessional: string, selectedDate: Date) =
 
       if (error) throw error;
       setAppointments(data || []);
-      setIsLoading(false);
     } catch (error) {
       console.error('Erro ao buscar agendamentos:', error);
+      setHasError(true);
       toast({
         title: "Erro",
-        description: "Não foi possível carregar os agendamentos",
+        description: "Não foi possível carregar os agendamentos. Tente novamente mais tarde.",
         variant: "destructive",
       });
+    } finally {
       setIsLoading(false);
     }
   };
@@ -60,7 +66,7 @@ export const useConsultas = (selectedProfessional: string, selectedDate: Date) =
       console.error('Erro ao buscar profissionais:', error);
       toast({
         title: "Erro",
-        description: "Não foi possível carregar a lista de profissionais",
+        description: "Não foi possível carregar a lista de profissionais. Tente novamente mais tarde.",
         variant: "destructive",
       });
     }
@@ -93,6 +99,8 @@ export const useConsultas = (selectedProfessional: string, selectedDate: Date) =
     appointments, 
     professionals, 
     isLoading,
-    fetchAppointments 
+    hasError,
+    fetchAppointments,
+    refetchProfessionals: fetchProfessionals
   };
 };

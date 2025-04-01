@@ -7,13 +7,15 @@ import {
   NavigationMenuContent,
 } from "@/components/ui/navigation-menu";
 import { Plus, Calendar, FileText, Volume2, Stethoscope, FileSignature, Heart, UserCog } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 interface NavigationBarProps {
   onAddProfessional: () => void;
 }
 
 export const NavigationBar = ({ onAddProfessional }: NavigationBarProps) => {
+  const navigate = useNavigate();
+  
   return (
     <NavigationMenu className="mb-4">
       <NavigationMenuList>
@@ -45,13 +47,20 @@ export const NavigationBar = ({ onAddProfessional }: NavigationBarProps) => {
           <NavigationMenuTrigger>Páginas</NavigationMenuTrigger>
           <NavigationMenuContent>
             <div className="w-48 p-2 space-y-2">
-              <Link
-                to="/solicitar"
+              <button
+                onClick={() => navigate("/solicitar")}
                 className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-accent"
               >
                 <UserCog className="h-4 w-4" />
                 Gerenciar Solicitações
-              </Link>
+              </button>
+              <button
+                onClick={() => navigate("/")}
+                className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-accent"
+              >
+                <Home className="h-4 w-4" />
+                Página Inicial
+              </button>
             </div>
           </NavigationMenuContent>
         </NavigationMenuItem>
@@ -60,80 +69,80 @@ export const NavigationBar = ({ onAddProfessional }: NavigationBarProps) => {
           <NavigationMenuTrigger>Saúde</NavigationMenuTrigger>
           <NavigationMenuContent>
             <div className="w-48 p-2 space-y-2">
-              <Link
-                to="/hanseniase"
+              <button
+                onClick={() => navigate("/hanseniase")}
                 className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-accent"
               >
                 <Heart className="h-4 w-4" />
                 Hanseníase
-              </Link>
-              <Link
-                to="/pre-natal"
+              </button>
+              <button
+                onClick={() => navigate("/pre-natal")}
                 className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-accent"
               >
                 <Heart className="h-4 w-4" />
                 Pré-Natal
-              </Link>
-              <Link
-                to="/tuberculose"
+              </button>
+              <button
+                onClick={() => navigate("/tuberculose")}
                 className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-accent"
               >
                 <Heart className="h-4 w-4" />
                 Tuberculose
-              </Link>
-              <Link
-                to="/prep"
+              </button>
+              <button
+                onClick={() => navigate("/prep")}
                 className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-accent"
               >
                 <Heart className="h-4 w-4" />
                 PREP
-              </Link>
-              <Link
-                to="/doencas-cronicas"
+              </button>
+              <button
+                onClick={() => navigate("/doencas-cronicas")}
                 className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-accent"
               >
                 <Heart className="h-4 w-4" />
                 Doenças Crônicas
-              </Link>
-              <Link
-                to="/puericultura"
+              </button>
+              <button
+                onClick={() => navigate("/puericultura")}
                 className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-accent"
               >
                 <Heart className="h-4 w-4" />
                 Puericultura
-              </Link>
+              </button>
             </div>
           </NavigationMenuContent>
         </NavigationMenuItem>
 
         <NavigationMenuItem>
-          <Link
-            to="/consultas"
+          <button
+            onClick={() => navigate("/consultas")}
             className="flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-accent"
           >
             <Stethoscope className="h-4 w-4" />
             Consultas
-          </Link>
+          </button>
         </NavigationMenuItem>
         
         <NavigationMenuItem>
-          <Link
-            to="/reports"
+          <button
+            onClick={() => navigate("/reports")}
             className="flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-accent"
           >
             <FileText className="h-4 w-4" />
             Relatórios
-          </Link>
+          </button>
         </NavigationMenuItem>
         
         <NavigationMenuItem>
-          <Link
-            to="/solicitar-agendamento"
+          <button
+            onClick={() => navigate("/solicitar-agendamento")}
             className="flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-accent"
           >
             <Calendar className="h-4 w-4" />
             Solicitar Agendamento
-          </Link>
+          </button>
         </NavigationMenuItem>
       </NavigationMenuList>
     </NavigationMenu>

@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -11,16 +11,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { UserX, UserCog } from "lucide-react";
+import { UserX, UserCog, Loader2 } from "lucide-react";
 import { Professional } from "@/types/professional";
 import { supabase } from "@/integrations/supabase/client";
 
 interface AddProfessionalModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onAdd: (name: string, profession: string) => void;
-  onEdit?: (id: string, name: string, profession: string) => void;
-  onDelete?: (id: string) => void;
+  onAdd: (name: string, profession: string) => Promise<boolean>;
+  onEdit?: (id: string, name: string, profession: string) => Promise<boolean>;
+  onDelete?: (id: string) => Promise<boolean>;
   professional?: Professional | null;
   mode?: "add" | "edit";
 }
@@ -36,7 +36,18 @@ export const AddProfessionalModal = ({
 }: AddProfessionalModalProps) => {
   const [name, setName] = useState(professional?.name || "");
   const [profession, setProfession] = useState(professional?.profession || "");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
+
+  useEffect(() => {
+    if (isOpen && professional && mode === "edit") {
+      setName(professional.name || "");
+      setProfession(professional.profession || "");
+    } else if (isOpen && mode === "add") {
+      setName("");
+      setProfession("");
+    }
+  }, [isOpen, professional, mode]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,14 +61,14 @@ export const AddProfessionalModal = ({
     }
 
     try {
+      setIsSubmitting(true);
+
       if (mode === "edit" && professional && onEdit) {
-        onEdit(professional.id, name, profession);
+        await onEdit(professional.id, name, profession);
       } else {
-        onAdd(name, profession);
+        await onAdd(name, profession);
       }
       
-      setName("");
-      setProfession("");
       onClose();
     } catch (error) {
       toast({
@@ -65,13 +76,34 @@ export const AddProfessionalModal = ({
         description: "Ocorreu um erro ao salvar o profissional",
         variant: "destructive",
       });
+      console.error("Error saving professional:", error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleDelete = async () => {
-    if (professional && onDelete) {
-      onDelete(professional.id);
-      onClose();
+    if (!professional || !onDelete) return;
+    
+    try {
+      setIsSubmitting(true);
+      const confirmed = window.confirm(
+        `Tem certeza que deseja remover ${professional.name}?`
+      );
+
+      if (confirmed) {
+        await onDelete(professional.id);
+        onClose();
+      }
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Ocorreu um erro ao remover o profissional",
+        variant: "destructive",
+      });
+      console.error("Error deleting professional:", error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -96,6 +128,7 @@ export const AddProfessionalModal = ({
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Digite o nome do profissional"
+              disabled={isSubmitting}
             />
           </div>
           <div className="space-y-2">
@@ -105,6 +138,7 @@ export const AddProfessionalModal = ({
               value={profession}
               onChange={(e) => setProfession(e.target.value)}
               placeholder="Digite a profissão"
+              disabled={isSubmitting}
             />
           </div>
           <div className="flex justify-end gap-2">
@@ -114,23 +148,34 @@ export const AddProfessionalModal = ({
                 variant="destructive"
                 onClick={handleDelete}
                 className="flex items-center gap-2"
+                disabled={isSubmitting}
               >
-                <UserX className="h-4 w-4" />
+                {isSubmitting ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <UserX className="h-4 w-4" />
+                )}
                 Remover
               </Button>
             )}
-            <Button variant="outline" type="button" onClick={onClose}>
+            <Button variant="outline" type="button" onClick={onClose} disabled={isSubmitting}>
               Cancelar
             </Button>
-            <Button type="submit" className="bg-primary hover:bg-primary/90 flex items-center gap-2">
-              {mode === "edit" ? (
-                <>
-                  <UserCog className="h-4 w-4" />
-                  Atualizar
-                </>
-              ) : (
-                "Adicionar"
-              )}
+            <Button 
+              type="submit" 
+              className="bg-primary hover:bg-primary/90 flex items-center gap-2"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : mode === "edit" ? (
+                <UserCog className="h-4 w-4" />
+              ) : null}
+              {isSubmitting 
+                ? "Processando..." 
+                : mode === "edit" 
+                  ? "Atualizar" 
+                  : "Adicionar"}
             </Button>
           </div>
         </form>

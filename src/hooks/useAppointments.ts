@@ -1,42 +1,20 @@
+
 import { useState, useEffect, useCallback } from "react";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { Appointment, DisplayStatus } from "@/types/appointment";
 
 const isValidDisplayStatus = (status: string): status is DisplayStatus => {
   return ['waiting', 'triage', 'triage_completed', 'in_progress', 'completed', 'missed', 'rescheduled'].includes(status);
 };
 
-interface DatabaseAppointment {
-  id: string;
-  patient_name: string;
-  birth_date: string;
-  professional_id: string;
-  appointment_date: string;
-  appointment_time: string;
-  display_status: string | null;
-  priority: string;
-  notes: string | null;
-  actual_start_time: string | null;
-  actual_end_time: string | null;
-  updated_at: string | null;
-  deleted_at: string | null;
-  is_minor: boolean;
-  responsible_name: string | null;
-  has_record: string | null;
-  phone: string;
-  room: string | null;
-  block: string | null;
-  ticket_number: string | null;
-  professionals: { name: string } | null;
-}
-
 export const useAppointments = (professionalId: string, selectedDate: Date) => {
   const { toast } = useToast();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+  const [hasConnectionError, setHasConnectionError] = useState(false);
 
   const fetchAppointments = useCallback(async () => {
     if (!professionalId || !selectedDate) {
@@ -47,6 +25,7 @@ export const useAppointments = (professionalId: string, selectedDate: Date) => {
     try {
       setIsLoading(true);
       setError(null);
+      setHasConnectionError(false);
       
       const formattedDate = format(selectedDate, 'yyyy-MM-dd');
       console.log('[Agenda] Buscando agendamentos para:', { professionalId, formattedDate });
@@ -82,7 +61,12 @@ export const useAppointments = (professionalId: string, selectedDate: Date) => {
         .order('priority', { ascending: false })
         .order('appointment_time', { ascending: true });
 
-      if (fetchError) throw fetchError;
+      if (fetchError) {
+        if (fetchError.message.includes('connect error')) {
+          setHasConnectionError(true);
+        }
+        throw fetchError;
+      }
       
       console.log('[Agenda] Dados recebidos:', data);
 
@@ -132,15 +116,18 @@ export const useAppointments = (professionalId: string, selectedDate: Date) => {
       const error = err instanceof Error ? err : new Error('Erro desconhecido');
       console.error('[Agenda] Erro ao buscar consultas:', error);
       setError(error);
-      toast({
-        title: "Erro ao carregar agenda",
-        description: error.message,
-        variant: "destructive",
-      });
+      
+      if (!hasConnectionError) {
+        toast({
+          title: "Erro ao carregar agenda",
+          description: "Não foi possível carregar os agendamentos. Verifique sua conexão.",
+          variant: "destructive",
+        });
+      }
     } finally {
       setIsLoading(false);
     }
-  }, [professionalId, selectedDate, toast]);
+  }, [professionalId, selectedDate, toast, hasConnectionError]);
 
   useEffect(() => {
     let mounted = true;
@@ -178,6 +165,7 @@ export const useAppointments = (professionalId: string, selectedDate: Date) => {
     appointments,
     isLoading,
     error,
+    hasConnectionError,
     fetchAppointments
   };
 };
