@@ -4,13 +4,22 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import { Plus, X, RefreshCcw, Loader2, WifiOff, AlertTriangle } from "lucide-react";
+import { Plus, X, RefreshCcw, Loader2, WifiOff, AlertTriangle, ServerOff } from "lucide-react";
 import { useAnnouncements } from "@/hooks/useAnnouncements";
 import { format } from "date-fns";
 
 export const DailyAnnouncements = () => {
   const [newAnnouncement, setNewAnnouncement] = useState("");
-  const { announcements, addAnnouncement, removeAnnouncement, isLoading, hasError, isOffline, refetch } = useAnnouncements();
+  const { 
+    announcements, 
+    addAnnouncement, 
+    removeAnnouncement, 
+    isLoading, 
+    hasError, 
+    isOffline, 
+    isRetrying, 
+    refetch 
+  } = useAnnouncements();
 
   const handleAddAnnouncement = async () => {
     if (!newAnnouncement.trim()) return;
@@ -30,9 +39,15 @@ export const DailyAnnouncements = () => {
               variant="ghost" 
               size="sm" 
               onClick={refetch} 
+              disabled={isRetrying}
               className="text-muted-foreground hover:text-primary"
             >
-              <RefreshCcw className="h-4 w-4 mr-1" /> Recarregar
+              {isRetrying ? (
+                <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+              ) : (
+                <RefreshCcw className="h-4 w-4 mr-1" />
+              )}
+              Recarregar
             </Button>
           )}
         </div>
@@ -43,6 +58,16 @@ export const DailyAnnouncements = () => {
             <AlertTitle>Sem conexão</AlertTitle>
             <AlertDescription>
               Você está offline. Verifique sua conexão com a internet.
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {hasError && !isOffline && (
+          <Alert variant="destructive" className="mb-4">
+            <ServerOff className="h-4 w-4" />
+            <AlertTitle>Erro de conexão</AlertTitle>
+            <AlertDescription>
+              Não foi possível conectar ao servidor. Verifique a disponibilidade do servidor.
             </AlertDescription>
           </Alert>
         )}
@@ -58,14 +83,14 @@ export const DailyAnnouncements = () => {
                 handleAddAnnouncement();
               }
             }}
-            disabled={isLoading || hasError || isOffline}
+            disabled={isLoading || hasError || isOffline || isRetrying}
           />
           <Button
             onClick={handleAddAnnouncement}
             className="bg-primary hover:bg-primary/90 text-white"
-            disabled={isLoading || hasError || isOffline || !newAnnouncement.trim()}
+            disabled={isLoading || hasError || isOffline || isRetrying || !newAnnouncement.trim()}
           >
-            <Plus className="h-4 w-4" />
+            {isRetrying ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
           </Button>
         </div>
 
@@ -78,15 +103,21 @@ export const DailyAnnouncements = () => {
             <AlertTriangle className="h-8 w-8 text-amber-500 mx-auto mb-2" />
             <p className="text-red-500 mb-2">Não foi possível carregar os avisos</p>
             <p className="text-sm text-muted-foreground">
-              Verifique sua conexão com a internet e tente novamente
+              Verifique a conexão com o servidor e tente novamente
             </p>
             <Button 
               variant="outline" 
               size="sm" 
               onClick={refetch} 
+              disabled={isRetrying}
               className="mt-4"
             >
-              <RefreshCcw className="h-4 w-4 mr-2" /> Tentar novamente
+              {isRetrying ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <RefreshCcw className="h-4 w-4 mr-2" />
+              )}
+              Tentar novamente
             </Button>
           </div>
         ) : (
@@ -108,7 +139,7 @@ export const DailyAnnouncements = () => {
                     size="sm"
                     className="opacity-0 group-hover:opacity-100 transition-opacity"
                     onClick={() => removeAnnouncement(announcement.id)}
-                    disabled={isOffline}
+                    disabled={isOffline || isRetrying}
                   >
                     <X className="h-4 w-4" />
                   </Button>

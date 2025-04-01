@@ -6,11 +6,62 @@ import type { Database } from './types';
 const SUPABASE_URL = "https://bjtipxxqabntdfynzokr.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJqdGlweHhxYWJudGRmeW56b2tyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzg1MDU3OTEsImV4cCI6MjA1NDA4MTc5MX0.xIHQY_Omf6E0qYXObN9sFF2mwVuwgAZHv0QVSCKdKqs";
 
-// Configurar cliente Supabase com opções extras para autenticação
+// Create a more robust client with retries and extended timeouts
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: {
     autoRefreshToken: true,
     persistSession: true,
   },
+  global: {
+    headers: { 
+      'x-application-name': 'unifap-app',
+    },
+    // Increase the timeout for better handling of slow connections
+    fetch: (url, options) => {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+      
+      const fetchPromise = fetch(url, {
+        ...options,
+        signal: controller.signal,
+      });
+      
+      fetchPromise.finally(() => clearTimeout(timeoutId));
+      return fetchPromise;
+    }
+  },
 });
 
+// Helper function to check if the Supabase service is online
+export const checkSupabaseConnection = async (): Promise<boolean> => {
+  try {
+    // Simple query to check if the connection works
+    const { error } = await supabase
+      .from('professionals')
+      .select('id')
+      .limit(1)
+      .maybeSingle();
+    
+    return !error;
+  } catch (err) {
+    console.error('Supabase connection check failed:', err);
+    return false;
+  }
+};
+
+// Retry mechanism for Supabase queries
+export const retryOperation = async <T>(
+  operation: () => Promise<T>, 
+  retries = 3,
+  delay = 1000,
+): Promise<T> => {
+  try {
+    return await operation();
+  } catch (error) {
+    if (retries <= 0) throw error;
+    
+    console.log(`Operation failed, retrying in ${delay}ms. Retries left: ${retries}`);
+    await new Promise(resolve => setTimeout(resolve, delay));
+    return retryOperation(operation, retries - 1, delay * 1.5);
+  }
+};

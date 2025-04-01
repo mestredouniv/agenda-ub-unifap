@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, retryOperation } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 import { fetchDailyAppointments } from "@/services/appointment";
 import { Appointment } from "@/types/appointment";
@@ -13,10 +13,18 @@ export const useConsultas = (selectedProfessional: string, selectedDate: Date) =
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
   const [isOffline, setIsOffline] = useState(false);
+  const [isRetrying, setIsRetrying] = useState(false);
 
   // Track online/offline status
   useEffect(() => {
-    const handleOnline = () => setIsOffline(false);
+    const handleOnline = () => {
+      setIsOffline(false);
+      // Auto-retry when coming back online
+      if (hasError) {
+        fetchAppointments();
+        fetchProfessionals();
+      }
+    };
     const handleOffline = () => setIsOffline(true);
     
     window.addEventListener('online', handleOnline);
@@ -29,7 +37,7 @@ export const useConsultas = (selectedProfessional: string, selectedDate: Date) =
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
     };
-  }, []);
+  }, [hasError]);
 
   const fetchAppointments = async () => {
     if (isOffline) {
@@ -41,24 +49,29 @@ export const useConsultas = (selectedProfessional: string, selectedDate: Date) =
     try {
       setIsLoading(true);
       setHasError(false);
+      setIsRetrying(false);
       
       const formattedDate = format(selectedDate, 'yyyy-MM-dd');
-      let query = supabase
-        .from('appointments')
-        .select(`
-          *,
-          professionals:professional_id(name)
-        `)
-        .eq('appointment_date', formattedDate)
-        .is('deleted_at', null);
+      
+      // Using the retry utility
+      const { data, error } = await retryOperation(async () => {
+        let query = supabase
+          .from('appointments')
+          .select(`
+            *,
+            professionals:professional_id(name)
+          `)
+          .eq('appointment_date', formattedDate)
+          .is('deleted_at', null);
 
-      if (selectedProfessional !== "all") {
-        query = query.eq('professional_id', selectedProfessional);
-      }
+        if (selectedProfessional !== "all") {
+          query = query.eq('professional_id', selectedProfessional);
+        }
 
-      const { data, error } = await query
-        .order('priority', { ascending: false })
-        .order('appointment_time', { ascending: true });
+        return query
+          .order('priority', { ascending: false })
+          .order('appointment_time', { ascending: true });
+      });
 
       if (error) throw error;
       setAppointments(data || []);
@@ -70,7 +83,7 @@ export const useConsultas = (selectedProfessional: string, selectedDate: Date) =
       if (navigator.onLine) {
         toast({
           title: "Erro",
-          description: "Não foi possível carregar os agendamentos. Verifique sua conexão com a internet.",
+          description: "Não foi possível carregar os agendamentos. Verifique sua conexão com o servidor.",
           variant: "destructive",
         });
       }
@@ -85,23 +98,29 @@ export const useConsultas = (selectedProfessional: string, selectedDate: Date) =
     }
     
     try {
-      const { data, error } = await supabase
-        .from('professionals')
-        .select('*');
+      setIsRetrying(true);
+      
+      // Using the retry utility
+      const { data, error } = await retryOperation(async () => {
+        return supabase
+          .from('professionals')
+          .select('*');
+      });
       
       if (error) {
         throw error;
       }
 
       setProfessionals(data || []);
+      setIsRetrying(false);
     } catch (error) {
       console.error('Erro ao buscar profissionais:', error);
       
       // Only show toast if we're online (to avoid double error messages)
-      if (navigator.onLine) {
+      if (navigator.onLine && !isRetrying) {
         toast({
           title: "Erro",
-          description: "Não foi possível carregar a lista de profissionais. Verifique sua conexão com a internet.",
+          description: "Não foi possível carregar a lista de profissionais. Tente novamente mais tarde.",
           variant: "destructive",
         });
       }
@@ -142,6 +161,7 @@ export const useConsultas = (selectedProfessional: string, selectedDate: Date) =
     isLoading,
     hasError,
     isOffline,
+    isRetrying,
     fetchAppointments,
     refetchProfessionals: fetchProfessionals
   };
