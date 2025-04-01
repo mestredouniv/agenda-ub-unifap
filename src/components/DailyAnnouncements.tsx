@@ -3,13 +3,14 @@ import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, X, RefreshCcw, Loader2 } from "lucide-react";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { Plus, X, RefreshCcw, Loader2, WifiOff, AlertTriangle } from "lucide-react";
 import { useAnnouncements } from "@/hooks/useAnnouncements";
 import { format } from "date-fns";
 
 export const DailyAnnouncements = () => {
   const [newAnnouncement, setNewAnnouncement] = useState("");
-  const { announcements, addAnnouncement, removeAnnouncement, isLoading, hasError, refetch } = useAnnouncements();
+  const { announcements, addAnnouncement, removeAnnouncement, isLoading, hasError, isOffline, refetch } = useAnnouncements();
 
   const handleAddAnnouncement = async () => {
     if (!newAnnouncement.trim()) return;
@@ -24,7 +25,7 @@ export const DailyAnnouncements = () => {
       <Card className="p-6">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-semibold">Avisos do Dia</h2>
-          {hasError && (
+          {hasError && !isOffline && (
             <Button 
               variant="ghost" 
               size="sm" 
@@ -36,6 +37,16 @@ export const DailyAnnouncements = () => {
           )}
         </div>
         
+        {isOffline && (
+          <Alert variant="destructive" className="mb-4">
+            <WifiOff className="h-4 w-4" />
+            <AlertTitle>Sem conexão</AlertTitle>
+            <AlertDescription>
+              Você está offline. Verifique sua conexão com a internet.
+            </AlertDescription>
+          </Alert>
+        )}
+
         <div className="flex gap-2 mb-4">
           <Input
             value={newAnnouncement}
@@ -47,12 +58,12 @@ export const DailyAnnouncements = () => {
                 handleAddAnnouncement();
               }
             }}
-            disabled={isLoading || hasError}
+            disabled={isLoading || hasError || isOffline}
           />
           <Button
             onClick={handleAddAnnouncement}
             className="bg-primary hover:bg-primary/90 text-white"
-            disabled={isLoading || hasError || !newAnnouncement.trim()}
+            disabled={isLoading || hasError || isOffline || !newAnnouncement.trim()}
           >
             <Plus className="h-4 w-4" />
           </Button>
@@ -62,12 +73,21 @@ export const DailyAnnouncements = () => {
           <div className="flex justify-center items-center p-8">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
-        ) : hasError ? (
+        ) : hasError && !isOffline ? (
           <div className="p-6 text-center">
+            <AlertTriangle className="h-8 w-8 text-amber-500 mx-auto mb-2" />
             <p className="text-red-500 mb-2">Não foi possível carregar os avisos</p>
             <p className="text-sm text-muted-foreground">
               Verifique sua conexão com a internet e tente novamente
             </p>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={refetch} 
+              className="mt-4"
+            >
+              <RefreshCcw className="h-4 w-4 mr-2" /> Tentar novamente
+            </Button>
           </div>
         ) : (
           <div className="space-y-2">
@@ -88,6 +108,7 @@ export const DailyAnnouncements = () => {
                     size="sm"
                     className="opacity-0 group-hover:opacity-100 transition-opacity"
                     onClick={() => removeAnnouncement(announcement.id)}
+                    disabled={isOffline}
                   >
                     <X className="h-4 w-4" />
                   </Button>
@@ -95,7 +116,7 @@ export const DailyAnnouncements = () => {
               </div>
             ))}
             
-            {announcements.length === 0 && (
+            {announcements.length === 0 && !isOffline && !hasError && (
               <p className="text-gray-500 text-sm text-center">
                 Nenhum aviso para hoje
               </p>

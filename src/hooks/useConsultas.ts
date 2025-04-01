@@ -12,8 +12,32 @@ export const useConsultas = (selectedProfessional: string, selectedDate: Date) =
   const [professionals, setProfessionals] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
+  const [isOffline, setIsOffline] = useState(false);
+
+  // Track online/offline status
+  useEffect(() => {
+    const handleOnline = () => setIsOffline(false);
+    const handleOffline = () => setIsOffline(true);
+    
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    
+    // Set initial state
+    setIsOffline(!navigator.onLine);
+    
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
 
   const fetchAppointments = async () => {
+    if (isOffline) {
+      setHasError(true);
+      setIsLoading(false);
+      return;
+    }
+    
     try {
       setIsLoading(true);
       setHasError(false);
@@ -41,17 +65,25 @@ export const useConsultas = (selectedProfessional: string, selectedDate: Date) =
     } catch (error) {
       console.error('Erro ao buscar agendamentos:', error);
       setHasError(true);
-      toast({
-        title: "Erro",
-        description: "Não foi possível carregar os agendamentos. Tente novamente mais tarde.",
-        variant: "destructive",
-      });
+      
+      // Only show toast if we're online (to avoid double error messages)
+      if (navigator.onLine) {
+        toast({
+          title: "Erro",
+          description: "Não foi possível carregar os agendamentos. Verifique sua conexão com a internet.",
+          variant: "destructive",
+        });
+      }
     } finally {
       setIsLoading(false);
     }
   };
 
   const fetchProfessionals = async () => {
+    if (isOffline) {
+      return;
+    }
+    
     try {
       const { data, error } = await supabase
         .from('professionals')
@@ -64,42 +96,52 @@ export const useConsultas = (selectedProfessional: string, selectedDate: Date) =
       setProfessionals(data || []);
     } catch (error) {
       console.error('Erro ao buscar profissionais:', error);
-      toast({
-        title: "Erro",
-        description: "Não foi possível carregar a lista de profissionais. Tente novamente mais tarde.",
-        variant: "destructive",
-      });
+      
+      // Only show toast if we're online (to avoid double error messages)
+      if (navigator.onLine) {
+        toast({
+          title: "Erro",
+          description: "Não foi possível carregar a lista de profissionais. Verifique sua conexão com a internet.",
+          variant: "destructive",
+        });
+      }
     }
   };
 
   useEffect(() => {
     fetchProfessionals();
-  }, []);
+  }, [isOffline]); // Re-fetch when online status changes
 
   useEffect(() => {
     fetchAppointments();
 
-    const channel = supabase
-      .channel('appointments-changes')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'appointments',
-      }, () => {
-        fetchAppointments();
-      })
-      .subscribe();
+    // Only set up realtime subscription if we're online
+    if (!isOffline) {
+      const channel = supabase
+        .channel('appointments-changes')
+        .on('postgres_changes', {
+          event: '*',
+          schema: 'public',
+          table: 'appointments',
+        }, () => {
+          fetchAppointments();
+        })
+        .subscribe((status) => {
+          console.log('Subscription status:', status);
+        });
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [selectedProfessional, selectedDate]);
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    }
+  }, [selectedProfessional, selectedDate, isOffline]);
 
   return { 
     appointments, 
     professionals, 
     isLoading,
     hasError,
+    isOffline,
     fetchAppointments,
     refetchProfessionals: fetchProfessionals
   };
