@@ -6,7 +6,7 @@ import {
   NavigationMenuTrigger,
   NavigationMenuContent,
 } from "@/components/ui/navigation-menu";
-import { Plus, Calendar, FileText, Volume2, Stethoscope, FileSignature, Heart, UserCog } from "lucide-react";
+import { Plus, Calendar, FileText, Volume2, Stethoscope, FileSignature, Heart, UserCog, Home } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 
 interface NavigationBarProps {
