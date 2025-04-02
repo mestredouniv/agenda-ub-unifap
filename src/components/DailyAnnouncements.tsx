@@ -10,6 +10,7 @@ import { format } from "date-fns";
 
 export const DailyAnnouncements = () => {
   const [newAnnouncement, setNewAnnouncement] = useState("");
+  const [isRefetching, setIsRefetching] = useState(false);
   const { 
     announcements, 
     addAnnouncement, 
@@ -29,20 +30,29 @@ export const DailyAnnouncements = () => {
     }
   };
 
+  const handleRefetch = async () => {
+    setIsRefetching(true);
+    try {
+      await refetch();
+    } finally {
+      setTimeout(() => setIsRefetching(false), 500);
+    }
+  };
+
   return (
     <div className="w-full max-w-2xl mx-auto mb-8 animate-fade-in">
       <Card className="p-6">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-semibold">Avisos do Dia</h2>
-          {hasError && !isOffline && (
+          {(hasError || isRetrying) && !isOffline && (
             <Button 
               variant="ghost" 
               size="sm" 
-              onClick={refetch} 
-              disabled={isRetrying}
+              onClick={handleRefetch} 
+              disabled={isRefetching}
               className="text-muted-foreground hover:text-primary"
             >
-              {isRetrying ? (
+              {isRefetching ? (
                 <Loader2 className="h-4 w-4 mr-1 animate-spin" />
               ) : (
                 <RefreshCcw className="h-4 w-4 mr-1" />
@@ -108,11 +118,11 @@ export const DailyAnnouncements = () => {
             <Button 
               variant="outline" 
               size="sm" 
-              onClick={refetch} 
-              disabled={isRetrying}
+              onClick={handleRefetch} 
+              disabled={isRefetching}
               className="mt-4"
             >
-              {isRetrying ? (
+              {isRefetching ? (
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
               ) : (
                 <RefreshCcw className="h-4 w-4 mr-2" />

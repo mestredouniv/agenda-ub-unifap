@@ -3,6 +3,7 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
+// Update these with your new database credentials
 const SUPABASE_URL = "https://bjtipxxqabntdfynzokr.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJqdGlweHhxYWJudGRmeW56b2tyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzg1MDU3OTEsImV4cCI6MjA1NDA4MTc5MX0.xIHQY_Omf6E0qYXObN9sFF2mwVuwgAZHv0QVSCKdKqs";
 
@@ -12,18 +13,32 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     autoRefreshToken: true,
     persistSession: true,
   },
+  realtime: {
+    params: {
+      eventsPerSecond: 10,
+    },
+  },
   global: {
     headers: { 
       'x-application-name': 'unifap-app',
+      'Cache-Control': 'no-cache',
     },
     // Increase the timeout for better handling of slow connections
-    fetch: (url, options) => {
+    fetch: (url, options = {}) => {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+      
+      // Use the original signal if provided
+      const originalSignal = options.signal;
+      
+      if (originalSignal) {
+        originalSignal.addEventListener('abort', () => controller.abort());
+      }
       
       const fetchPromise = fetch(url, {
         ...options,
         signal: controller.signal,
+        cache: 'no-cache', // Prevent caching issues
       });
       
       fetchPromise.finally(() => clearTimeout(timeoutId));
@@ -49,7 +64,7 @@ export const checkSupabaseConnection = async (): Promise<boolean> => {
   }
 };
 
-// Retry mechanism for Supabase queries
+// Retry mechanism for Supabase queries with improved error handling
 export const retryOperation = async <T>(
   operation: () => Promise<T>, 
   retries = 3,

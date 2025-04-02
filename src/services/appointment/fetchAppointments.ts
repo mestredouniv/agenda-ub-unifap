@@ -8,6 +8,11 @@ export const fetchDailyAppointments = async (professionalId: string) => {
   console.log('[Agenda] Buscando agendamentos para:', { professionalId, today });
   
   try {
+    if (!navigator.onLine) {
+      console.warn('[Agenda] Dispositivo está offline');
+      throw new Error('Você está offline. Verifique sua conexão com a internet.');
+    }
+
     // Using retry utility for better reliability
     const { data, error } = await retryOperation(async () => {
       let query = supabase
@@ -26,7 +31,7 @@ export const fetchDailyAppointments = async (professionalId: string) => {
       return query
         .order('priority', { ascending: false })
         .order('appointment_time', { ascending: true });
-    });
+    }, 5, 800); // 5 retries, starting with 800ms delay
 
     if (error) {
       console.error('[Agenda] Erro na busca:', error);

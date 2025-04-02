@@ -9,6 +9,7 @@ export const updateExistingAppointment = async (id: string, updateData: Partial<
   
   try {
     if (!id) throw new Error('ID do agendamento é obrigatório');
+    if (!navigator.onLine) throw new Error('Dispositivo está offline');
 
     // Garantir que o status seja válido para o banco de dados
     const formattedData = {
@@ -16,13 +17,15 @@ export const updateExistingAppointment = async (id: string, updateData: Partial<
       updated_at: new Date().toISOString()
     };
 
+    console.log('[Agenda] Dados para atualização:', formattedData);
+
     // Using retry utility for better reliability
     const { error } = await retryOperation(async () => {
       return supabase
         .from(APPOINTMENTS_TABLE)
         .update(formattedData)
         .eq('id', id);
-    });
+    }, 5, 800); // 5 retries, starting with 800ms delay
 
     if (error) {
       console.error('[Agenda] Erro na atualização:', error);
