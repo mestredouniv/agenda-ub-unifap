@@ -1,5 +1,5 @@
 
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, retryOperation } from "@/integrations/supabase/client";
 import { Appointment, DisplayStatus } from "@/types/appointment";
 
 const APPOINTMENTS_TABLE = 'appointments';
@@ -16,10 +16,13 @@ export const updateExistingAppointment = async (id: string, updateData: Partial<
       updated_at: new Date().toISOString()
     };
 
-    const { error } = await supabase
-      .from(APPOINTMENTS_TABLE)
-      .update(formattedData)
-      .eq('id', id);
+    // Using retry utility for better reliability
+    const { error } = await retryOperation(async () => {
+      return supabase
+        .from(APPOINTMENTS_TABLE)
+        .update(formattedData)
+        .eq('id', id);
+    });
 
     if (error) {
       console.error('[Agenda] Erro na atualização:', error);

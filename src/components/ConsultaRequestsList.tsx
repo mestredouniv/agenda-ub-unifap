@@ -1,9 +1,12 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, retryOperation } from "@/integrations/supabase/client";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle, Wifi, WifiOff } from "lucide-react";
 
 interface AppointmentRequest {
   id: string;
@@ -17,19 +20,49 @@ interface AppointmentRequest {
 
 export const ConsultaRequestsList = () => {
   const [requests, setRequests] = useState<AppointmentRequest[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [hasError, setHasError] = useState(false);
+  const [isOffline, setIsOffline] = useState(false);
 
   useEffect(() => {
-    // Initial fetch of appointment requests
-    const fetchRequests = async () => {
-      const { data, error } = await supabase
-        .from('appointments')
-        .select('*')
-        .order('created_at', { ascending: false });
+    const handleOnline = () => {
+      setIsOffline(false);
+      fetchRequests();
+    };
+    const handleOffline = () => setIsOffline(true);
+    
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    
+    // Set initial state
+    setIsOffline(!navigator.onLine);
+    
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
+  // Initial fetch of appointment requests
+  const fetchRequests = async () => {
+    if (isOffline) {
+      setIsLoading(false);
+      setHasError(true);
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      setHasError(false);
       
-      if (error) {
-        console.error('Error fetching requests:', error);
-        return;
-      }
+      const { data, error } = await retryOperation(async () => {
+        return supabase
+          .from('appointments')
+          .select('*')
+          .order('created_at', { ascending: false });
+      });
+      
+      if (error) throw error;
 
       setRequests(data.map(appointment => ({
         id: appointment.id,
@@ -40,30 +73,40 @@ export const ConsultaRequestsList = () => {
         status: appointment.display_status as AppointmentRequest['status'],
         message: appointment.has_record
       })));
-    };
+      
+      setIsLoading(false);
+    } catch (error) {
+      console.error('Error fetching requests:', error);
+      setHasError(true);
+      setIsLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchRequests();
 
-    // Subscribe to realtime updates
-    const channel = supabase
-      .channel('appointment-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'appointments'
-        },
-        () => {
-          fetchRequests(); // Refetch data when changes occur
-        }
-      )
-      .subscribe();
+    // Only set up realtime subscription if we're online
+    if (!isOffline) {
+      const channel = supabase
+        .channel('appointment-changes')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'appointments'
+          },
+          () => {
+            fetchRequests(); // Refetch data when changes occur
+          }
+        )
+        .subscribe();
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, []);
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    }
+  }, [isOffline]);
 
   const getStatusBadge = (status: AppointmentRequest["status"]) => {
     switch (status) {
@@ -81,6 +124,59 @@ export const ConsultaRequestsList = () => {
         return null;
     }
   };
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Lista de Solicitações</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-center text-muted-foreground">
+            Carregando solicitações...
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (isOffline) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Lista de Solicitações</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Alert variant="destructive">
+            <WifiOff className="h-4 w-4" />
+            <AlertTitle>Sem conexão</AlertTitle>
+            <AlertDescription>
+              Você está offline. Conecte-se à internet para ver as solicitações.
+            </AlertDescription>
+          </Alert>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (hasError) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Lista de Solicitações</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Erro de conexão</AlertTitle>
+            <AlertDescription>
+              Não foi possível carregar as solicitações. Verifique sua conexão e tente novamente.
+            </AlertDescription>
+          </Alert>
+        </CardContent>
+      </Card>
+    );
+  }
 
   if (requests.length === 0) {
     return (
