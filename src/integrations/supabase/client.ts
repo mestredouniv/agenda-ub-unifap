@@ -24,7 +24,7 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
       'Cache-Control': 'no-cache',
     },
     // Increase the timeout for better handling of slow connections
-    fetch: (url, options = {}) => {
+    fetch: (url, options: RequestInit = {}) => {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
       
