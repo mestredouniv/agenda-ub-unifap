@@ -2,17 +2,23 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
-// Update these with your new database credentials
+// Credenciais do banco de dados
 const SUPABASE_URL = "https://bjtipxxqabntdfynzokr.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJqdGlweHhxYWJudGRmeW56b2tyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzg1MDU3OTEsImV4cCI6MjA1NDA4MTc5MX0.xIHQY_Omf6E0qYXObN9sFF2mwVuwgAZHv0QVSCKdKqs";
 
-// Define a fallback response for offline mode
-const OFFLINE_ERROR = new Error('You are currently offline');
+// Cache local para modo offline
+const localCache = new Map<string, any>();
+const CACHE_KEY_PREFIX = 'supabase_cache_';
 
-// Create a simple offline cache
-const offlineCache = new Map<string, any>();
+// Erro padrão para modo offline
+export class OfflineError extends Error {
+  constructor() {
+    super('A aplicação está offline');
+    this.name = 'OfflineError';
+  }
+}
 
-// Helper function for retrying operations with exponential backoff
+// Função auxiliar para tentativas com backoff exponencial
 export const retryOperation = async <T>(
   operation: () => Promise<T>,
   maxRetries = 3,
@@ -24,23 +30,23 @@ export const retryOperation = async <T>(
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
       if (!navigator.onLine) {
-        throw OFFLINE_ERROR;
+        throw new OfflineError();
       }
       
       return await operation();
     } catch (error) {
       lastError = error;
       
-      // If we're offline, no need to retry
+      // Se estamos offline, não precisa tentar novamente
       if (isOfflineError(error) || !navigator.onLine) {
-        console.log(`Device is offline, aborting retry`);
+        console.log(`Dispositivo está offline, abortando tentativas`);
         break;
       }
       
       if (attempt < maxRetries) {
-        console.log(`Operation failed, retrying in ${delay}ms (attempt ${attempt + 1}/${maxRetries})`);
+        console.log(`Operação falhou, tentando novamente em ${delay}ms (tentativa ${attempt + 1}/${maxRetries})`);
         await new Promise(resolve => setTimeout(resolve, delay));
-        delay *= 2; // Exponential backoff
+        delay *= 2; // Backoff exponencial
       }
     }
   }
@@ -48,57 +54,58 @@ export const retryOperation = async <T>(
   throw lastError;
 };
 
-// Create a more robust client with retries and extended timeouts
+// Cliente Supabase com melhor gerenciamento de cache e erros
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: {
     autoRefreshToken: true,
     persistSession: true,
   },
-  realtime: {
-    params: {
-      eventsPerSecond: 10,
-    },
-  },
   global: {
     headers: { 
       'x-application-name': 'unifap-app',
-      'Cache-Control': 'no-cache',
     },
-    // Implement robust offline-first approach
-    fetch: (url: string, options: RequestInit = {}) => {
-      // First check if the device is online at all
+    // Implementa fetch personalizado para gerenciar estado offline
+    fetch: (url, options = {}) => {
+      const cacheKey = `${CACHE_KEY_PREFIX}${url}_${JSON.stringify(options)}`;
+      
+      // Se estiver offline, usa dados em cache se disponíveis
       if (!navigator.onLine) {
-        console.log('Device is offline, using cached data if available');
-        return Promise.reject(OFFLINE_ERROR);
+        const cachedData = localStorage.getItem(cacheKey);
+        if (cachedData) {
+          console.log('Dispositivo offline, usando dados em cache', { url });
+          return Promise.resolve(new Response(cachedData, {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' }
+          }));
+        }
+        return Promise.reject(new OfflineError());
       }
       
-      // Implement a more aggressive timeout strategy
+      // Configuração de timeout para evitar solicitações lentas
       const controller = new AbortController();
       const timeoutId = setTimeout(() => {
-        console.log('Request timeout reached, aborting');
-        controller.abort('Request timeout reached');
-      }, 8000); // 8 second timeout - more aggressive
+        controller.abort('Tempo limite de solicitação atingido');
+      }, 10000);
       
-      // Handle original signal if provided
-      const originalSignal = options.signal;
-      
-      if (originalSignal) {
-        originalSignal.addEventListener('abort', () => controller.abort());
-      }
-      
-      // Implement network request with strict timeout
+      // Implementa solicitação de rede com timeout estrito
       const fetchPromise = fetch(url, {
         ...options,
         signal: controller.signal,
-        cache: 'no-store', // Force fresh data
-        headers: {
-          ...options.headers,
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache',
+      }).then(async (response) => {
+        if (response.ok) {
+          // Armazena em cache para uso offline
+          try {
+            const clonedResponse = response.clone();
+            const data = await clonedResponse.text();
+            localStorage.setItem(cacheKey, data);
+          } catch (err) {
+            console.warn('Erro ao armazenar em cache:', err);
+          }
         }
+        return response;
       });
       
-      // Clear timeout on response/error
+      // Limpa timeout quando a resposta/erro ocorrer
       fetchPromise.finally(() => clearTimeout(timeoutId));
       
       return fetchPromise;
@@ -106,19 +113,16 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
   },
 });
 
-// Helper function to check if the Supabase service is online
-export const checkSupabaseConnection = async (): Promise<boolean> => {
+// Verifica se o servidor está acessível
+export const checkServerConnection = async (): Promise<boolean> => {
   try {
     if (!navigator.onLine) {
-      console.log('Device is offline, skipping connection check');
       return false;
     }
     
-    // Simple query with short timeout
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 5000);
     
-    // Simple query to check if the connection works
     const { error } = await supabase
       .from('professionals')
       .select('id')
@@ -127,25 +131,20 @@ export const checkSupabaseConnection = async (): Promise<boolean> => {
       .maybeSingle();
     
     clearTimeout(timeoutId);
-    
-    const isConnected = !error;
-    console.log('Supabase connection check:', isConnected ? 'SUCCESS' : 'FAILED', error ? error.message : '');
-    return isConnected;
+    return !error;
   } catch (err) {
-    console.error('Supabase connection check failed:', err);
     return false;
   }
 };
 
-// Helper to determine if an error is due to being offline
+// Determina se um erro é devido a estar offline
 export const isOfflineError = (error: any): boolean => {
   if (!error) return false;
   
   if (!navigator.onLine) return true;
   
-  // Check various signals that might indicate an offline state
   return (
-    error === OFFLINE_ERROR ||
+    error instanceof OfflineError ||
     error.message?.includes('Failed to fetch') ||
     error.message?.includes('offline') ||
     error.message?.includes('network') ||
@@ -156,82 +155,114 @@ export const isOfflineError = (error: any): boolean => {
   );
 };
 
-// Add a global network status monitor to the window
-export const setupNetworkMonitoring = () => {
-  // Create a singleton for network status
-  if (!(window as any).networkStatus) {
-    (window as any).networkStatus = {
-      isOnline: navigator.onLine,
-      serverReachable: null as boolean | null,
-      lastCheck: Date.now(),
-      listeners: new Set<() => void>(),
-    };
+// Serviço para monitoramento de rede
+export class NetworkMonitor {
+  private static instance: NetworkMonitor;
+  private listeners: Set<() => void>;
+  private isOnline: boolean;
+  private serverReachable: boolean | null;
+  private lastCheck: number;
+  private checkingPromise: Promise<boolean> | null;
 
-    // Set up event listeners for online/offline events
-    window.addEventListener('online', () => {
-      console.log('Browser reports online');
-      (window as any).networkStatus.isOnline = true;
-      checkServerAndNotify();
-    });
+  private constructor() {
+    this.listeners = new Set();
+    this.isOnline = navigator.onLine;
+    this.serverReachable = null;
+    this.lastCheck = 0;
+    this.checkingPromise = null;
 
-    window.addEventListener('offline', () => {
-      console.log('Browser reports offline');
-      (window as any).networkStatus.isOnline = false;
-      (window as any).networkStatus.serverReachable = false;
-      notifyListeners();
-    });
+    // Configuração de listeners para eventos online/offline
+    window.addEventListener('online', this.handleOnline.bind(this));
+    window.addEventListener('offline', this.handleOffline.bind(this));
+
+    // Verifica o estado inicial
+    this.checkServerConnection();
   }
 
-  // Function to check server and notify listeners
-  const checkServerAndNotify = async () => {
-    if ((window as any).networkStatus.isOnline) {
-      try {
-        (window as any).networkStatus.serverReachable = await checkSupabaseConnection();
-      } catch (err) {
-        (window as any).networkStatus.serverReachable = false;
-      }
-    } else {
-      (window as any).networkStatus.serverReachable = false;
+  public static getInstance(): NetworkMonitor {
+    if (!NetworkMonitor.instance) {
+      NetworkMonitor.instance = new NetworkMonitor();
     }
-    
-    (window as any).networkStatus.lastCheck = Date.now();
-    notifyListeners();
-  };
+    return NetworkMonitor.instance;
+  }
 
-  // Notify all registered listeners
-  const notifyListeners = () => {
-    (window as any).networkStatus.listeners.forEach((listener: () => void) => {
+  private handleOnline(): void {
+    this.isOnline = true;
+    this.checkServerConnection();
+  }
+
+  private handleOffline(): void {
+    this.isOnline = false;
+    this.serverReachable = false;
+    this.notifyListeners();
+  }
+
+  public async checkServerConnection(): Promise<boolean> {
+    if (!this.isOnline) {
+      this.serverReachable = false;
+      this.notifyListeners();
+      return false;
+    }
+
+    // Evita múltiplas verificações simultâneas
+    if (this.checkingPromise) {
+      return this.checkingPromise;
+    }
+
+    this.checkingPromise = checkServerConnection()
+      .then(reachable => {
+        this.serverReachable = reachable;
+        this.lastCheck = Date.now();
+        this.notifyListeners();
+        this.checkingPromise = null;
+        return reachable;
+      })
+      .catch(() => {
+        this.serverReachable = false;
+        this.lastCheck = Date.now();
+        this.notifyListeners();
+        this.checkingPromise = null;
+        return false;
+      });
+
+    return this.checkingPromise;
+  }
+
+  private notifyListeners(): void {
+    this.listeners.forEach(listener => {
       try {
         listener();
       } catch (err) {
-        console.error('Error in network status listener:', err);
+        console.error('Erro em listener de status de rede:', err);
       }
     });
-  };
+  }
 
-  // Check server status every minute when online
-  setInterval(() => {
-    if ((window as any).networkStatus.isOnline) {
-      checkServerAndNotify();
-    }
-  }, 60000);
+  public getStatus(): { isOnline: boolean; serverReachable: boolean | null; lastCheck: number } {
+    return {
+      isOnline: this.isOnline,
+      serverReachable: this.serverReachable,
+      lastCheck: this.lastCheck
+    };
+  }
 
-  // Initial check
-  checkServerAndNotify();
+  public addListener(listener: () => void): void {
+    this.listeners.add(listener);
+  }
 
-  return {
-    addListener: (listener: () => void) => {
-      (window as any).networkStatus.listeners.add(listener);
-    },
-    removeListener: (listener: () => void) => {
-      (window as any).networkStatus.listeners.delete(listener);
-    },
-    getStatus: () => {
-      return {
-        isOnline: (window as any).networkStatus.isOnline,
-        serverReachable: (window as any).networkStatus.serverReachable,
-        lastCheck: (window as any).networkStatus.lastCheck
-      };
-    }
-  };
-};
+  public removeListener(listener: () => void): void {
+    this.listeners.delete(listener);
+  }
+
+  // Iniciar verificação periódica
+  public startPeriodicChecks(interval = 60000): void {
+    setInterval(() => {
+      if (this.isOnline) {
+        this.checkServerConnection();
+      }
+    }, interval);
+  }
+}
+
+export const networkMonitor = NetworkMonitor.getInstance();
+networkMonitor.startPeriodicChecks();
