@@ -10,8 +10,8 @@ import { useProfessionals } from "@/hooks/useProfessionals";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { RefreshCcw, Loader2, WifiOff, ServerOff } from "lucide-react";
-import { checkSupabaseConnection, isOfflineError } from "@/integrations/supabase/client";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { useNetworkStatus } from "@/contexts/NetworkStatusContext";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -19,8 +19,10 @@ const Index = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedProfessional, setSelectedProfessional] = useState<Professional | null>(null);
   const [modalMode, setModalMode] = useState<"add" | "edit">("add");
-  const [isConnectionChecking, setIsConnectionChecking] = useState(false);
-  const [connectionStatus, setConnectionStatus] = useState<'checking' | 'online' | 'offline' | 'server-error'>('checking');
+  const [retryCount, setRetryCount] = useState(0);
+  
+  // Use the network context instead of local state
+  const { status, checkConnection, isLoading: isConnectionChecking } = useNetworkStatus();
   
   const {
     professionals,
@@ -33,115 +35,85 @@ const Index = () => {
     refetch
   } = useProfessionals();
 
-  // Check connection status
+  // Force refetch when we gain connectivity
   useEffect(() => {
-    const checkConnection = async () => {
-      try {
-        setConnectionStatus('checking');
-        setIsConnectionChecking(true);
-        
-        // First check if device is online
-        if (!navigator.onLine) {
-          setConnectionStatus('offline');
-          setIsConnectionChecking(false);
-          return;
-        }
-        
-        // Then check if server is reachable
-        const isConnected = await checkSupabaseConnection();
-        setConnectionStatus(isConnected ? 'online' : 'server-error');
-        
-        if (isConnected) {
-          console.log('Database connection successful, refreshing data');
-          refetch();
-        } else {
-          console.log('Database connection failed');
-        }
-      } catch (err) {
-        console.error('Connection check error:', err);
-        setConnectionStatus(isOfflineError(err) ? 'offline' : 'server-error');
-      } finally {
-        setIsConnectionChecking(false);
-      }
-    };
-    
-    checkConnection();
-    
-    // Setup listeners for online/offline events
-    const handleOnline = () => {
-      console.log('Device came online');
-      checkConnection();
-    };
-    
-    const handleOffline = () => {
-      console.log('Device went offline');
-      setConnectionStatus('offline');
-    };
-    
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-    
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    };
-  }, []);
+    if (status.isOnline && status.serverReachable && retryCount < 3) {
+      refetch();
+      setRetryCount(prev => prev + 1);
+    }
+  }, [status.isOnline, status.serverReachable, refetch, retryCount]);
 
   const handleRefreshConnection = async () => {
-    setIsConnectionChecking(true);
-    try {
-      if (!navigator.onLine) {
-        toast({
-          title: "Sem conexão",
-          description: "Seu dispositivo está offline. Verifique sua conexão com a internet.",
-          variant: "destructive",
-        });
-        setConnectionStatus('offline');
-        setIsConnectionChecking(false);
-        return;
-      }
-      
-      const isConnected = await checkSupabaseConnection();
-      if (isConnected) {
-        toast({
-          title: "Conexão restabelecida",
-          description: "A conexão com o servidor foi restabelecida com sucesso.",
-        });
-        setConnectionStatus('online');
-        refetch();
-      } else {
-        toast({
-          title: "Erro de conexão",
-          description: "Ainda não foi possível conectar ao servidor. Tente novamente mais tarde.",
-          variant: "destructive",
-        });
-        setConnectionStatus('server-error');
-      }
-    } catch (err) {
-      console.error('Connection check error:', err);
-      setConnectionStatus(isOfflineError(err) ? 'offline' : 'server-error');
-    } finally {
-      setIsConnectionChecking(false);
+    const isConnected = await checkConnection();
+    
+    if (isConnected) {
+      toast({
+        title: "Conexão restabelecida",
+        description: "A conexão com o servidor foi restabelecida com sucesso.",
+      });
+      refetch();
+    } else {
+      toast({
+        title: "Erro de conexão",
+        description: status.isOnline 
+          ? "O servidor está inacessível. Tente novamente mais tarde."
+          : "Você está offline. Verifique sua conexão com a internet.",
+        variant: "destructive",
+      });
     }
   };
 
   const handleProfessionalClick = (professional: Professional) => {
+    if (!status.isOnline) {
+      toast({
+        title: "Sem conexão",
+        description: "Você está offline. Algumas funções podem não estar disponíveis.",
+        variant: "destructive",
+      });
+    }
     navigate(`/agenda/${professional.id}`);
   };
 
   const handleEditClick = (professional: Professional) => {
+    if (!status.isOnline || !status.serverReachable) {
+      toast({
+        title: "Sem conexão",
+        description: "Você está offline. Não é possível editar profissionais.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setSelectedProfessional(professional);
     setModalMode("edit");
     setIsModalOpen(true);
   };
 
   const handleAddClick = () => {
+    if (!status.isOnline || !status.serverReachable) {
+      toast({
+        title: "Sem conexão",
+        description: "Você está offline. Não é possível adicionar profissionais.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setSelectedProfessional(null);
     setModalMode("add");
     setIsModalOpen(true);
   };
 
   const handleRemoveClick = async (professional: Professional) => {
+    if (!status.isOnline || !status.serverReachable) {
+      toast({
+        title: "Sem conexão",
+        description: "Você está offline. Não é possível remover profissionais.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     if (!professional?.id) {
       toast({
         title: "Erro",
@@ -168,7 +140,7 @@ const Index = () => {
 
   // Render connection error message
   const renderConnectionAlert = () => {
-    if (connectionStatus === 'offline') {
+    if (!status.isOnline) {
       return (
         <Alert variant="destructive" className="mb-6">
           <WifiOff className="h-4 w-4 mr-2" />
@@ -194,7 +166,7 @@ const Index = () => {
       );
     }
     
-    if (connectionStatus === 'server-error') {
+    if (!status.serverReachable) {
       return (
         <Alert variant="destructive" className="mb-6">
           <ServerOff className="h-4 w-4 mr-2" />
@@ -229,9 +201,7 @@ const Index = () => {
         onAddClick={handleAddClick}
         onRemoveClick={() => {
           if (professionals.length > 0) {
-            setSelectedProfessional(professionals[0]);
-            setModalMode("edit");
-            setIsModalOpen(true);
+            handleEditClick(professionals[0]);
           } else {
             toast({
               title: "Aviso",
@@ -252,8 +222,8 @@ const Index = () => {
         <div className="mt-8">
           <ProfessionalList
             professionals={professionals}
-            isLoading={isLoading || connectionStatus === 'checking'}
-            hasError={hasError || connectionStatus === 'server-error'}
+            isLoading={isLoading || isConnectionChecking}
+            hasError={hasError || (!status.isOnline || !status.serverReachable)}
             onRefresh={handleRefreshConnection}
             onProfessionalClick={handleProfessionalClick}
             onEditClick={handleEditClick}
