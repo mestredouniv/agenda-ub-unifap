@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Bold, Italic, Underline, Image as ImageIcon, Youtube, Plus, Loader2 } from "lucide-react";
 
-interface AnnouncementEditorProps {
+export interface AnnouncementEditorProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (content: string) => Promise<boolean>;
