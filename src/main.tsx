@@ -7,16 +7,17 @@ import './index.css'
 import './styles/print.css'
 import { BrowserRouter } from 'react-router-dom'
 import { toast } from "@/hooks/use-toast"
-import { isOfflineError } from "@/integrations/supabase/client"
-import { offlineService } from '@/services/OfflineService'
-import { Toaster } from '@/components/ui/toaster'
+import { isOfflineError, setupNetworkMonitoring } from "@/integrations/supabase/client"
+
+// Initialize the global network monitor
+const networkMonitor = setupNetworkMonitoring();
 
 // Setup global error handlers with better error categorization
 window.addEventListener('error', (event) => {
   console.error('Unhandled error:', event.error);
   
   // Don't show errors for network issues when offline
-  if (isOfflineError(event.error) && !offlineService.isNetworkOnline()) {
+  if (isOfflineError(event.error) && !navigator.onLine) {
     event.preventDefault();
     return;
   }
@@ -27,9 +28,40 @@ window.addEventListener('unhandledrejection', (event) => {
   console.error('Unhandled promise rejection:', error);
   
   // Don't show offline errors if they're already being handled
-  if (isOfflineError(error) && !offlineService.isNetworkOnline()) {
+  if (isOfflineError(error) && !navigator.onLine) {
     event.preventDefault();
     return;
+  }
+});
+
+// Initialize toast for network status change notifications
+let onlineToastShown = false;
+let offlineToastShown = false;
+
+// Monitor network status changes to provide user feedback
+networkMonitor.addListener(() => {
+  const status = networkMonitor.getStatus();
+  
+  // Show online toast only once
+  if (status.isOnline && status.serverReachable && !onlineToastShown) {
+    onlineToastShown = true;
+    offlineToastShown = false;
+    
+    toast({
+      title: "Conexão restabelecida",
+      description: "Sua conexão com a internet foi restabelecida.",
+    });
+  } 
+  // Show offline toast only once
+  else if ((!status.isOnline || !status.serverReachable) && !offlineToastShown) {
+    offlineToastShown = true;
+    onlineToastShown = false;
+    
+    toast({
+      title: "Sem conexão",
+      description: "Você está offline. Alguns recursos podem não estar disponíveis.",
+      variant: "destructive",
+    });
   }
 });
 
@@ -38,7 +70,7 @@ const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 1000 * 60 * 5, // 5 minutes
-      gcTime: 1000 * 60 * 60 * 24, // Cache for 24 hours for offline support (replaces old cacheTime)
+      gcTime: 1000 * 60 * 60 * 24, // Cache for 24 hours for offline support - updated from cacheTime
       retry: (failureCount, error) => {
         // Don't retry if we're offline
         if (isOfflineError(error) || !navigator.onLine) {
@@ -58,7 +90,6 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     <BrowserRouter>
       <QueryClientProvider client={queryClient}>
         <App />
-        <Toaster />
       </QueryClientProvider>
     </BrowserRouter>
   </React.StrictMode>,

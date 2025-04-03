@@ -156,11 +156,9 @@ export const isOfflineError = (error: any): boolean => {
   );
 };
 
-// Deprecated - use OfflineService instead
+// Add a global network status monitor to the window
 export const setupNetworkMonitoring = () => {
-  console.warn('setupNetworkMonitoring is deprecated. Use the OfflineService instead.');
-  
-  // Add a global network status monitor to the window
+  // Create a singleton for network status
   if (!(window as any).networkStatus) {
     (window as any).networkStatus = {
       isOnline: navigator.onLine,

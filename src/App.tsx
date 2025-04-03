@@ -1,66 +1,48 @@
 
-import { useEffect } from 'react'
-import { Routes, Route } from 'react-router-dom'
-import { Toaster } from "@/components/ui/toaster"
-import { NetworkStatusProvider } from "@/contexts/NetworkStatusContext"
-import { OfflineBanner } from "@/components/OfflineBanner"
+import { Routes, Route } from "react-router-dom";
+import Index from "./pages/Index";
+import NotFound from "./pages/NotFound";
+import AgendaProfissional from "./pages/AgendaProfissional";
+import Consultas from "./pages/Consultas";
+import Reports from "./pages/Reports";
+import RequestsManager from "./pages/RequestsManager";
+import AppointmentRequest from "./pages/AppointmentRequest";
+import CheckAppointment from "./pages/CheckAppointment";
+import Display from "./pages/Display";
+import ProfessionalSchedule from "./pages/ProfessionalSchedule";
+import DoencasCronicas from "./pages/DoencasCronicas";
+import PreNatal from "./pages/PreNatal";
+import Puericultura from "./pages/Puericultura";
+import Tuberculose from "./pages/Tuberculose";
+import Hanseniase from "./pages/Hanseniase";
+import Prep from "./pages/Prep";
+import { Toaster } from "@/components/ui/toaster";
+import { NetworkStatusProvider } from "./contexts/NetworkStatusContext";
 
-// Pages
-import Index from './pages/Index'
-import Consultas from './pages/Consultas'
-import AgendaProfissional from './pages/AgendaProfissional'
-import NotFound from './pages/NotFound'
-import CheckAppointment from './pages/CheckAppointment'
-import ProfessionalSchedule from './pages/ProfessionalSchedule'
-import AppointmentRequest from './pages/AppointmentRequest'
-import RequestsManager from './pages/RequestsManager'
-import Display from './pages/Display'
-import Hanseniase from './pages/Hanseniase'
-import Tuberculose from './pages/Tuberculose'
-import DoencasCronicas from './pages/DoencasCronicas'
-import PreNatal from './pages/PreNatal'
-import Prep from './pages/Prep'
-import Puericultura from './pages/Puericultura'
-import Reports from './pages/Reports'
-
-function App() {
-  // Register the service worker for offline support
-  useEffect(() => {
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js').then(registration => {
-          console.log('ServiceWorker registration successful with scope: ', registration.scope);
-        }).catch(err => {
-          console.log('ServiceWorker registration failed: ', err);
-        });
-      });
-    }
-  }, []);
-
+const App = () => {
   return (
     <NetworkStatusProvider>
-      <OfflineBanner />
       <Routes>
         <Route path="/" element={<Index />} />
-        <Route path="/consultas" element={<Consultas />} />
         <Route path="/agenda/:professionalId" element={<AgendaProfissional />} />
-        <Route path="/consulta/:appointmentId" element={<CheckAppointment />} />
-        <Route path="/profissional/:professionalId/disponibilidade" element={<ProfessionalSchedule />} />
+        <Route path="/consultas" element={<Consultas />} />
+        <Route path="/relatorios" element={<Reports />} />
+        <Route path="/solicitacoes" element={<RequestsManager />} />
         <Route path="/solicitar-consulta" element={<AppointmentRequest />} />
-        <Route path="/gerenciar-solicitacoes" element={<RequestsManager />} />
+        <Route path="/consultar-agendamento" element={<CheckAppointment />} />
         <Route path="/display" element={<Display />} />
-        <Route path="/hanseniase" element={<Hanseniase />} />
-        <Route path="/tuberculose" element={<Tuberculose />} />
+        <Route path="/agenda-profissional" element={<ProfessionalSchedule />} />
         <Route path="/doencas-cronicas" element={<DoencasCronicas />} />
         <Route path="/pre-natal" element={<PreNatal />} />
-        <Route path="/prep" element={<Prep />} />
         <Route path="/puericultura" element={<Puericultura />} />
-        <Route path="/relatorios" element={<Reports />} />
+        <Route path="/tuberculose" element={<Tuberculose />} />
+        <Route path="/hanseniase" element={<Hanseniase />} />
+        <Route path="/prep" element={<Prep />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
       <Toaster />
     </NetworkStatusProvider>
-  )
-}
+  );
+};
 
-export default App
+export default App;
