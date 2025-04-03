@@ -7,6 +7,9 @@ import type { Database } from './types';
 const SUPABASE_URL = "https://bjtipxxqabntdfynzokr.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJqdGlweHhxYWJudGRmeW56b2tyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzg1MDU3OTEsImV4cCI6MjA1NDA4MTc5MX0.xIHQY_Omf6E0qYXObN9sFF2mwVuwgAZHv0QVSCKdKqs";
 
+// Define a fallback response for offline mode
+const OFFLINE_ERROR = new Error('You are currently offline');
+
 // Create a more robust client with retries and extended timeouts
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: {
@@ -25,6 +28,11 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     },
     // Increase the timeout for better handling of slow connections
     fetch: (url, options: RequestInit = {}) => {
+      // First check if the device is online at all
+      if (!navigator.onLine) {
+        return Promise.reject(OFFLINE_ERROR);
+      }
+      
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
       
@@ -50,6 +58,11 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
 // Helper function to check if the Supabase service is online
 export const checkSupabaseConnection = async (): Promise<boolean> => {
   try {
+    if (!navigator.onLine) {
+      console.log('Device is offline, skipping connection check');
+      return false;
+    }
+    
     // Simple query to check if the connection works
     const { error } = await supabase
       .from('professionals')
@@ -57,7 +70,9 @@ export const checkSupabaseConnection = async (): Promise<boolean> => {
       .limit(1)
       .maybeSingle();
     
-    return !error;
+    const isConnected = !error;
+    console.log('Supabase connection check:', isConnected ? 'SUCCESS' : 'FAILED', error ? error.message : '');
+    return isConnected;
   } catch (err) {
     console.error('Supabase connection check failed:', err);
     return false;
@@ -70,13 +85,41 @@ export const retryOperation = async <T>(
   retries = 3,
   delay = 1000,
 ): Promise<T> => {
+  // First check if online
+  if (!navigator.onLine) {
+    console.log('Device is offline, not attempting operation');
+    return Promise.reject(OFFLINE_ERROR);
+  }
+
   try {
     return await operation();
   } catch (error) {
     if (retries <= 0) throw error;
     
+    // Don't retry if device is offline
+    if (!navigator.onLine) {
+      console.log('Device went offline during retry attempt');
+      throw OFFLINE_ERROR;
+    }
+    
     console.log(`Operation failed, retrying in ${delay}ms. Retries left: ${retries}`);
     await new Promise(resolve => setTimeout(resolve, delay));
     return retryOperation(operation, retries - 1, delay * 1.5);
   }
+};
+
+// Helper to determine if an error is due to being offline
+export const isOfflineError = (error: any): boolean => {
+  if (!error) return false;
+  
+  // Check various signals that might indicate an offline state
+  return (
+    error === OFFLINE_ERROR ||
+    error.message?.includes('Failed to fetch') ||
+    error.message?.includes('offline') ||
+    error.message?.includes('network') ||
+    error.message?.includes('connection') ||
+    error.name === 'AbortError' ||
+    !navigator.onLine
+  );
 };

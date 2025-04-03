@@ -4,9 +4,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { supabase, retryOperation } from "@/integrations/supabase/client";
+import { supabase, retryOperation, isOfflineError } from "@/integrations/supabase/client";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle, Wifi, WifiOff } from "lucide-react";
+import { AlertCircle, Wifi, WifiOff, RefreshCcw, Loader2, ServerOff } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
 
 interface AppointmentRequest {
   id: string;
@@ -23,6 +25,8 @@ export const ConsultaRequestsList = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
   const [isOffline, setIsOffline] = useState(false);
+  const [isRetrying, setIsRetrying] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     const handleOnline = () => {
@@ -54,13 +58,14 @@ export const ConsultaRequestsList = () => {
     try {
       setIsLoading(true);
       setHasError(false);
+      setIsRetrying(false);
       
       const { data, error } = await retryOperation(async () => {
         return supabase
           .from('appointments')
           .select('*')
           .order('created_at', { ascending: false });
-      });
+      }, 5, 800); // More retries with shorter initial delay
       
       if (error) throw error;
 
@@ -78,8 +83,16 @@ export const ConsultaRequestsList = () => {
     } catch (error) {
       console.error('Error fetching requests:', error);
       setHasError(true);
+      setIsOffline(isOfflineError(error) || !navigator.onLine);
       setIsLoading(false);
     }
+  };
+
+  const handleRetry = () => {
+    setIsRetrying(true);
+    fetchRequests().finally(() => {
+      setTimeout(() => setIsRetrying(false), 500);
+    });
   };
 
   useEffect(() => {
@@ -100,7 +113,9 @@ export const ConsultaRequestsList = () => {
             fetchRequests(); // Refetch data when changes occur
           }
         )
-        .subscribe();
+        .subscribe((status) => {
+          console.log('Realtime subscription status:', status);
+        });
 
       return () => {
         supabase.removeChannel(channel);
@@ -132,9 +147,12 @@ export const ConsultaRequestsList = () => {
           <CardTitle>Lista de Solicitações</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-center text-muted-foreground">
-            Carregando solicitações...
-          </p>
+          <div className="flex justify-center items-center py-8">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <span className="ml-2 text-muted-foreground">
+              Carregando solicitações...
+            </span>
+          </div>
         </CardContent>
       </Card>
     );
@@ -148,11 +166,25 @@ export const ConsultaRequestsList = () => {
         </CardHeader>
         <CardContent>
           <Alert variant="destructive">
-            <WifiOff className="h-4 w-4" />
+            <WifiOff className="h-4 w-4 mr-2" />
             <AlertTitle>Sem conexão</AlertTitle>
             <AlertDescription>
               Você está offline. Conecte-se à internet para ver as solicitações.
             </AlertDescription>
+            <Button 
+              onClick={handleRetry} 
+              variant="outline" 
+              size="sm" 
+              className="mt-2 border-red-300 text-red-700"
+              disabled={isRetrying}
+            >
+              {isRetrying ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <RefreshCcw className="h-4 w-4 mr-2" />
+              )}
+              Verificar conexão
+            </Button>
           </Alert>
         </CardContent>
       </Card>
@@ -167,11 +199,25 @@ export const ConsultaRequestsList = () => {
         </CardHeader>
         <CardContent>
           <Alert variant="destructive">
-            <AlertCircle className="h-4 w-4" />
+            <ServerOff className="h-4 w-4 mr-2" />
             <AlertTitle>Erro de conexão</AlertTitle>
             <AlertDescription>
-              Não foi possível carregar as solicitações. Verifique sua conexão e tente novamente.
+              Não foi possível carregar as solicitações. Verifique sua conexão com o servidor.
             </AlertDescription>
+            <Button 
+              onClick={handleRetry} 
+              variant="outline" 
+              size="sm" 
+              className="mt-2 border-red-300 text-red-700"
+              disabled={isRetrying}
+            >
+              {isRetrying ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <RefreshCcw className="h-4 w-4 mr-2" />
+              )}
+              Tentar novamente
+            </Button>
           </Alert>
         </CardContent>
       </Card>
@@ -195,8 +241,21 @@ export const ConsultaRequestsList = () => {
 
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="flex flex-row justify-between items-center">
         <CardTitle>Lista de Solicitações</CardTitle>
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          onClick={handleRetry}
+          disabled={isRetrying}
+        >
+          {isRetrying ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <RefreshCcw className="h-4 w-4" />
+          )}
+          <span className="ml-2">Atualizar</span>
+        </Button>
       </CardHeader>
       <CardContent className="space-y-4">
         {requests.map((request) => (

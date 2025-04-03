@@ -9,8 +9,9 @@ import { ProfessionalList } from "@/components/ProfessionalList";
 import { useProfessionals } from "@/hooks/useProfessionals";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
-import { RefreshCcw, Loader2 } from "lucide-react";
-import { checkSupabaseConnection } from "@/integrations/supabase/client";
+import { RefreshCcw, Loader2, WifiOff, ServerOff } from "lucide-react";
+import { checkSupabaseConnection, isOfflineError } from "@/integrations/supabase/client";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -19,6 +20,7 @@ const Index = () => {
   const [selectedProfessional, setSelectedProfessional] = useState<Professional | null>(null);
   const [modalMode, setModalMode] = useState<"add" | "edit">("add");
   const [isConnectionChecking, setIsConnectionChecking] = useState(false);
+  const [connectionStatus, setConnectionStatus] = useState<'checking' | 'online' | 'offline' | 'server-error'>('checking');
   
   const {
     professionals,
@@ -31,12 +33,24 @@ const Index = () => {
     refetch
   } = useProfessionals();
 
+  // Check connection status
   useEffect(() => {
-    // Try to establish connection when component mounts
     const checkConnection = async () => {
       try {
+        setConnectionStatus('checking');
         setIsConnectionChecking(true);
+        
+        // First check if device is online
+        if (!navigator.onLine) {
+          setConnectionStatus('offline');
+          setIsConnectionChecking(false);
+          return;
+        }
+        
+        // Then check if server is reachable
         const isConnected = await checkSupabaseConnection();
+        setConnectionStatus(isConnected ? 'online' : 'server-error');
+        
         if (isConnected) {
           console.log('Database connection successful, refreshing data');
           refetch();
@@ -45,23 +59,55 @@ const Index = () => {
         }
       } catch (err) {
         console.error('Connection check error:', err);
+        setConnectionStatus(isOfflineError(err) ? 'offline' : 'server-error');
       } finally {
         setIsConnectionChecking(false);
       }
     };
     
     checkConnection();
+    
+    // Setup listeners for online/offline events
+    const handleOnline = () => {
+      console.log('Device came online');
+      checkConnection();
+    };
+    
+    const handleOffline = () => {
+      console.log('Device went offline');
+      setConnectionStatus('offline');
+    };
+    
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
   }, []);
 
   const handleRefreshConnection = async () => {
     setIsConnectionChecking(true);
     try {
+      if (!navigator.onLine) {
+        toast({
+          title: "Sem conexão",
+          description: "Seu dispositivo está offline. Verifique sua conexão com a internet.",
+          variant: "destructive",
+        });
+        setConnectionStatus('offline');
+        setIsConnectionChecking(false);
+        return;
+      }
+      
       const isConnected = await checkSupabaseConnection();
       if (isConnected) {
         toast({
           title: "Conexão restabelecida",
           description: "A conexão com o servidor foi restabelecida com sucesso.",
         });
+        setConnectionStatus('online');
         refetch();
       } else {
         toast({
@@ -69,9 +115,11 @@ const Index = () => {
           description: "Ainda não foi possível conectar ao servidor. Tente novamente mais tarde.",
           variant: "destructive",
         });
+        setConnectionStatus('server-error');
       }
     } catch (err) {
       console.error('Connection check error:', err);
+      setConnectionStatus(isOfflineError(err) ? 'offline' : 'server-error');
     } finally {
       setIsConnectionChecking(false);
     }
@@ -118,6 +166,63 @@ const Index = () => {
     }
   };
 
+  // Render connection error message
+  const renderConnectionAlert = () => {
+    if (connectionStatus === 'offline') {
+      return (
+        <Alert variant="destructive" className="mb-6">
+          <WifiOff className="h-4 w-4 mr-2" />
+          <AlertTitle>Sem conexão</AlertTitle>
+          <AlertDescription>
+            Você está offline. Verifique sua conexão com a internet.
+          </AlertDescription>
+          <Button 
+            onClick={handleRefreshConnection} 
+            variant="outline" 
+            size="sm" 
+            className="mt-2 border-red-300 text-red-700"
+            disabled={isConnectionChecking}
+          >
+            {isConnectionChecking ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <RefreshCcw className="h-4 w-4 mr-2" />
+            )}
+            Verificar conexão
+          </Button>
+        </Alert>
+      );
+    }
+    
+    if (connectionStatus === 'server-error') {
+      return (
+        <Alert variant="destructive" className="mb-6">
+          <ServerOff className="h-4 w-4 mr-2" />
+          <AlertTitle>Erro de conexão</AlertTitle>
+          <AlertDescription>
+            Não foi possível conectar ao servidor. Verifique sua conexão com o servidor.
+          </AlertDescription>
+          <Button 
+            onClick={handleRefreshConnection} 
+            variant="outline" 
+            size="sm" 
+            className="mt-2 border-red-300 text-red-700"
+            disabled={isConnectionChecking}
+          >
+            {isConnectionChecking ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <RefreshCcw className="h-4 w-4 mr-2" />
+            )}
+            Verificar conexão
+          </Button>
+        </Alert>
+      );
+    }
+    
+    return null;
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Header 
@@ -138,34 +243,7 @@ const Index = () => {
       />
       
       <main className="container mx-auto px-4 py-6">
-        {hasError && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-md">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-red-800 font-medium">Erro de conexão</h3>
-                <p className="text-red-600 text-sm">
-                  {isOffline 
-                    ? "Você está offline. Verifique sua conexão com a internet." 
-                    : "Não foi possível conectar ao servidor. Verifique sua conexão com o servidor."}
-                </p>
-              </div>
-              <Button 
-                onClick={handleRefreshConnection} 
-                variant="outline" 
-                size="sm" 
-                className="border-red-300 text-red-700"
-                disabled={isConnectionChecking}
-              >
-                {isConnectionChecking ? (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                ) : (
-                  <RefreshCcw className="h-4 w-4 mr-2" />
-                )}
-                Verificar conexão
-              </Button>
-            </div>
-          </div>
-        )}
+        {renderConnectionAlert()}
 
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
           <DailyAnnouncements />
@@ -174,9 +252,9 @@ const Index = () => {
         <div className="mt-8">
           <ProfessionalList
             professionals={professionals}
-            isLoading={isLoading}
-            hasError={hasError}
-            onRefresh={refetch}
+            isLoading={isLoading || connectionStatus === 'checking'}
+            hasError={hasError || connectionStatus === 'server-error'}
+            onRefresh={handleRefreshConnection}
             onProfessionalClick={handleProfessionalClick}
             onEditClick={handleEditClick}
             onRemoveClick={handleRemoveClick}
