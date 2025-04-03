@@ -12,6 +12,42 @@ const OFFLINE_ERROR = new Error('You are currently offline');
 // Create a simple offline cache
 const offlineCache = new Map<string, any>();
 
+// Helper function for retrying operations with exponential backoff
+export const retryOperation = async <T>(
+  operation: () => Promise<T>,
+  maxRetries = 3,
+  initialDelay = 1000
+): Promise<T> => {
+  let lastError: any;
+  let delay = initialDelay;
+
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      if (!navigator.onLine) {
+        throw OFFLINE_ERROR;
+      }
+      
+      return await operation();
+    } catch (error) {
+      lastError = error;
+      
+      // If we're offline, no need to retry
+      if (isOfflineError(error) || !navigator.onLine) {
+        console.log(`Device is offline, aborting retry`);
+        break;
+      }
+      
+      if (attempt < maxRetries) {
+        console.log(`Operation failed, retrying in ${delay}ms (attempt ${attempt + 1}/${maxRetries})`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        delay *= 2; // Exponential backoff
+      }
+    }
+  }
+  
+  throw lastError;
+};
+
 // Create a more robust client with retries and extended timeouts
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: {
