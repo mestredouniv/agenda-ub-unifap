@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Card } from "@/components/ui/card";
 import { AppointmentApprovalList } from "./AppointmentApprovalList";
@@ -5,14 +6,10 @@ import { UnavailableDaysSelector } from "./UnavailableDaysSelector";
 
 interface ProfessionalAppointmentManagerProps {
   professionalId: string;
-  selectedDays: Date[];
-  onUnavailableDaysChange: (days: Date[]) => void;
 }
 
 export const ProfessionalAppointmentManager = ({
   professionalId,
-  selectedDays,
-  onUnavailableDaysChange,
 }: ProfessionalAppointmentManagerProps) => {
   return (
     <div className="space-y-8">
@@ -25,8 +22,9 @@ export const ProfessionalAppointmentManager = ({
         <h2 className="text-xl font-semibold mb-6">Gerenciar Disponibilidade</h2>
         <UnavailableDaysSelector
           professionalId={professionalId}
-          selectedDays={selectedDays}
-          onChange={onUnavailableDaysChange}
+          onSuccess={() => {
+            // Atualizar dados se necessário
+          }}
         />
       </Card>
     </div>

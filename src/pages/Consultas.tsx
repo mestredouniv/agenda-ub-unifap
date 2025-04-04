@@ -1,17 +1,5 @@
+
 import { useState, useEffect } from "react";
-import { useDisplayState } from "@/hooks/useDisplayState";
-import { Button } from "@/components/ui/button";
-import { useToast } from "@/components/ui/use-toast";
-import { BackToHomeButton } from "@/components/BackToHomeButton";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
@@ -21,148 +9,51 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { professionals } from "@/data/professionals";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Card } from "@/components/ui/card";
-
-interface Patient {
-  id: string;
-  name: string;
-  professional: string;
-  professionalId: string;
-  time: string;
-  status: 'waiting' | 'triage' | 'in_progress' | 'completed';
-  priority: 'normal' | 'priority';
-  responsible?: string;
-}
+import { Badge } from "@/components/ui/badge";
+import { supabase } from "@/integrations/supabase/client";
+import { BackToHomeButton } from "@/components/BackToHomeButton";
+import { AppointmentCard } from "@/components/appointments/AppointmentCard";
+import { AppointmentActions } from "@/components/appointments/AppointmentActions";
+import { useAppointments } from "@/hooks/useAppointments";
+import { getStatusBadge } from "@/utils/appointment";
+import { useToast } from "@/components/ui/use-toast";
 
 const Consultas = () => {
   const { toast } = useToast();
-  const setCurrentPatient = useDisplayState((state) => state.setCurrentPatient);
   const [selectedProfessional, setSelectedProfessional] = useState("all");
-  const [appointments, setAppointments] = useState<Patient[]>([]);
+  const [professionals, setProfessionals] = useState<any[]>([]);
+  const { appointments, fetchAppointments } = useAppointments(selectedProfessional);
 
   useEffect(() => {
-    const loadAppointments = () => {
-      const storedAppointments = JSON.parse(localStorage.getItem("appointments") || "[]");
-      const today = new Date().toISOString().split('T')[0];
+    const fetchProfessionals = async () => {
+      const { data, error } = await supabase
+        .from('professionals')
+        .select('*');
       
-      const activeAppointments = storedAppointments
-        .filter((app: any) => app.preferredDate?.split('T')[0] === today && app.status === "approved")
-        .map((app: any) => ({
-          id: app.id,
-          name: app.patientName,
-          professional: professionals.find(p => p.id === app.professionalId)?.name || "Não encontrado",
-          professionalId: app.professionalId,
-          time: app.preferredTime,
-          status: 'waiting' as const,
-          priority: 'normal' as const,
-          responsible: app.responsible,
-        }));
+      if (error) {
+        console.error('Erro ao buscar profissionais:', error);
+        toast({
+          title: "Erro",
+          description: "Não foi possível carregar a lista de profissionais",
+          variant: "destructive",
+        });
+        return;
+      }
 
-      setAppointments(activeAppointments);
+      setProfessionals(data || []);
     };
 
-    loadAppointments();
-    window.addEventListener("storage", loadAppointments);
-    return () => window.removeEventListener("storage", loadAppointments);
-  }, []);
-
-  const filteredAppointments = appointments.filter(appointment => 
-    selectedProfessional === "all" || appointment.professionalId === selectedProfessional
-  );
-
-  const handleCallNext = (patient: Patient) => {
-    setCurrentPatient({
-      name: patient.name,
-      status: 'waiting',
-      professional: patient.professional,
-    });
-    toast({
-      title: "Paciente chamado",
-      description: "O display foi atualizado com o próximo paciente.",
-    });
-    window.open('/display', '_blank');
-  };
-
-  const handleStartTriage = (patient: Patient) => {
-    setCurrentPatient({
-      name: patient.name,
-      status: 'triage',
-      professional: patient.professional,
-    });
-    toast({
-      title: "Triagem iniciada",
-      description: "Paciente encaminhado para triagem.",
-    });
-    window.open('/display', '_blank');
-  };
-
-  const handleStartAppointment = (patient: Patient) => {
-    setCurrentPatient({
-      name: patient.name,
-      status: 'in_progress',
-      professional: patient.professional,
-    });
-    toast({
-      title: "Consulta iniciada",
-      description: "Paciente em atendimento.",
-    });
-    window.open('/display', '_blank');
-  };
-
-  const getStatusBadge = (status: Patient['status']) => {
-    const statusConfig = {
-      waiting: { label: 'Aguardando', variant: 'secondary' as const },
-      triage: { label: 'Em Triagem', variant: 'outline' as const },
-      in_progress: { label: 'Em Atendimento', variant: 'default' as const },
-      completed: { label: 'Finalizado', variant: 'secondary' as const },
-    };
-
-    const config = statusConfig[status];
-    return <Badge variant={config.variant}>{config.label}</Badge>;
-  };
-
-  // Mobile card view component
-  const AppointmentCard = ({ patient }: { patient: Patient }) => (
-    <Card className="p-4 mb-4">
-      <div className="space-y-2">
-        <div className="flex justify-between items-start">
-          <div>
-            <h3 className="font-medium">{patient.name}</h3>
-            <p className="text-sm text-gray-500">{patient.time}</p>
-          </div>
-          {getStatusBadge(patient.status)}
-        </div>
-        <div className="text-sm text-gray-600">
-          <p>Profissional: {patient.professional}</p>
-          {patient.responsible && <p>Responsável: {patient.responsible}</p>}
-        </div>
-        <div className="flex flex-wrap gap-2 mt-2">
-          <Button
-            size="sm"
-            onClick={() => handleCallNext(patient)}
-            disabled={patient.status !== 'waiting'}
-          >
-            Chamar
-          </Button>
-          <Button
-            size="sm"
-            onClick={() => handleStartTriage(patient)}
-            disabled={patient.status !== 'waiting'}
-          >
-            Triagem
-          </Button>
-          <Button
-            size="sm"
-            onClick={() => handleStartAppointment(patient)}
-            disabled={patient.status !== 'triage'}
-          >
-            Iniciar
-          </Button>
-        </div>
-      </div>
-    </Card>
-  );
+    fetchProfessionals();
+  }, [toast]);
 
   return (
     <div className="container mx-auto p-4 md:p-8">
@@ -194,15 +85,19 @@ const Consultas = () => {
       
       {/* Mobile view */}
       <div className="md:hidden">
-        {filteredAppointments.length === 0 ? (
+        {appointments.length === 0 ? (
           <Card className="p-4">
             <p className="text-center text-muted-foreground">
               Não há consultas agendadas para hoje
             </p>
           </Card>
         ) : (
-          filteredAppointments.map((patient) => (
-            <AppointmentCard key={patient.id} patient={patient} />
+          appointments.map((appointment) => (
+            <AppointmentCard 
+              key={appointment.id} 
+              appointment={appointment} 
+              onSuccess={fetchAppointments}
+            />
           ))
         )}
       </div>
@@ -217,54 +112,33 @@ const Consultas = () => {
               <TableHead>Profissional</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Prioridade</TableHead>
-              <TableHead>Responsável</TableHead>
               <TableHead>Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredAppointments.length === 0 ? (
+            {appointments.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center text-muted-foreground">
+                <TableCell colSpan={6} className="text-center text-muted-foreground">
                   Não há consultas agendadas para hoje
                 </TableCell>
               </TableRow>
             ) : (
-              filteredAppointments.map((patient) => (
-                <TableRow key={patient.id}>
-                  <TableCell>{patient.time}</TableCell>
-                  <TableCell>{patient.name}</TableCell>
-                  <TableCell>{patient.professional}</TableCell>
-                  <TableCell>{getStatusBadge(patient.status)}</TableCell>
+              appointments.map((appointment) => (
+                <TableRow key={appointment.id}>
+                  <TableCell>{appointment.appointment_time}</TableCell>
+                  <TableCell>{appointment.patient_name}</TableCell>
+                  <TableCell>{appointment.professional.name}</TableCell>
+                  <TableCell>{getStatusBadge(appointment.display_status)}</TableCell>
                   <TableCell>
-                    <Badge variant={patient.priority === 'priority' ? "destructive" : "secondary"}>
-                      {patient.priority === 'priority' ? 'Prioritário' : 'Normal'}
+                    <Badge variant={appointment.priority === 'priority' ? "destructive" : "secondary"}>
+                      {appointment.priority === 'priority' ? 'Prioritário' : 'Normal'}
                     </Badge>
                   </TableCell>
-                  <TableCell>{patient.responsible || "-"}</TableCell>
                   <TableCell>
-                    <div className="flex space-x-2">
-                      <Button
-                        size="sm"
-                        onClick={() => handleCallNext(patient)}
-                        disabled={patient.status !== 'waiting'}
-                      >
-                        Chamar
-                      </Button>
-                      <Button
-                        size="sm"
-                        onClick={() => handleStartTriage(patient)}
-                        disabled={patient.status !== 'waiting'}
-                      >
-                        Triagem
-                      </Button>
-                      <Button
-                        size="sm"
-                        onClick={() => handleStartAppointment(patient)}
-                        disabled={patient.status !== 'triage'}
-                      >
-                        Iniciar
-                      </Button>
-                    </div>
+                    <AppointmentActions 
+                      appointment={appointment}
+                      onSuccess={fetchAppointments}
+                    />
                   </TableCell>
                 </TableRow>
               ))

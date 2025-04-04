@@ -1,88 +1,156 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+
+import { useState, useEffect } from "react";
+import { useToast } from "@/components/ui/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface TimeSlot {
-  time: string;
-  available: boolean;
-  maxAppointments?: number;
-  currentAppointments?: number;
+  time_slot: string;
+  max_appointments: number;
 }
 
-const DEFAULT_TIME_SLOTS = [
-  { time: "08:00", available: true, maxAppointments: 10, currentAppointments: 0 },
-  { time: "09:00", available: true, maxAppointments: 10, currentAppointments: 0 },
-  { time: "10:00", available: true, maxAppointments: 10, currentAppointments: 0 },
-  { time: "11:00", available: true, maxAppointments: 10, currentAppointments: 0 },
-  { time: "14:00", available: true, maxAppointments: 10, currentAppointments: 0 },
-  { time: "15:00", available: true, maxAppointments: 10, currentAppointments: 0 },
-];
+export const useAvailableSlots = (professionalId: string) => {
+  const { toast } = useToast();
+  const [timeSlots, setTimeSlots] = useState<TimeSlot[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
-export const useAvailableSlots = (professionalId: string, date: Date | undefined) => {
-  const queryClient = useQueryClient();
+  // Carregar slots iniciais
+  useEffect(() => {
+    const loadTimeSlots = async () => {
+      try {
+        console.log('[useAvailableSlots] Carregando horários para:', professionalId);
+        const { data, error } = await supabase
+          .from('professional_available_slots')
+          .select('time_slot, max_appointments')
+          .eq('professional_id', professionalId)
+          .order('time_slot');
 
-  const slotsQuery = useQuery({
-    queryKey: ['availableSlots', professionalId, date?.toISOString()],
-    queryFn: async () => {
-      if (!professionalId || !date) return DEFAULT_TIME_SLOTS;
+        if (error) throw error;
+        console.log('[useAvailableSlots] Horários carregados:', data);
+        setTimeSlots(data || []);
+      } catch (error) {
+        console.error('[useAvailableSlots] Erro ao carregar horários:', error);
+        toast({
+          title: "Erro",
+          description: "Não foi possível carregar os horários. Tente novamente.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-      const storedSlots = localStorage.getItem(`slots-${professionalId}`);
-      const slots = storedSlots ? JSON.parse(storedSlots) : DEFAULT_TIME_SLOTS;
+    loadTimeSlots();
+
+    // Configurar listener para mudanças em tempo real
+    const channel = supabase
+      .channel('available-slots-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'professional_available_slots',
+          filter: `professional_id=eq.${professionalId}`
+        },
+        (payload) => {
+          console.log('[useAvailableSlots] Mudança detectada:', payload);
+          loadTimeSlots();
+        }
+      )
+      .subscribe();
+
+    // Aviso antes de sair da página se houver mudanças não salvas
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasUnsavedChanges) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      supabase.removeChannel(channel);
+    };
+  }, [professionalId, toast, hasUnsavedChanges]);
+
+  const addTimeSlot = async (time: string): Promise<boolean> => {
+    try {
+      const formattedTime = time.length === 5 ? time : `${time}:00`;
       
-      const unavailableDays = JSON.parse(localStorage.getItem(`unavailableDays-${professionalId}`) || '[]');
-      
-      const isDateUnavailable = unavailableDays.some((unavailableDate: string) => 
-        new Date(unavailableDate).toDateString() === date.toDateString()
-      );
-
-      if (isDateUnavailable) {
-        return slots.map((slot: TimeSlot) => ({ ...slot, available: false }));
+      // Verificar se o horário já existe
+      const existingSlot = timeSlots.find(slot => slot.time_slot === formattedTime);
+      if (existingSlot) {
+        toast({
+          title: "Aviso",
+          description: "Este horário já está adicionado.",
+          variant: "destructive",
+        });
+        return false;
       }
 
-      const appointments = JSON.parse(localStorage.getItem("appointments") || "[]");
-      const dateStr = date.toISOString().split('T')[0];
-      
-      return slots.map((slot: TimeSlot) => {
-        const slotAppointments = appointments.filter((app: any) => 
-          app.professionalId === professionalId &&
-          app.preferredDate.split('T')[0] === dateStr &&
-          app.preferredTime === slot.time
-        ).length;
+      console.log('[useAvailableSlots] Adicionando horário:', formattedTime);
+      const { error } = await supabase
+        .from('professional_available_slots')
+        .insert({
+          professional_id: professionalId,
+          time_slot: formattedTime,
+          max_appointments: 1
+        });
 
-        return {
-          ...slot,
-          currentAppointments: slotAppointments,
-          available: slot.available && (slotAppointments < (slot.maxAppointments || 10))
-        };
+      if (error) throw error;
+
+      toast({
+        title: "Sucesso",
+        description: "Horário adicionado com sucesso",
       });
-    },
-    enabled: !!professionalId,
-  });
+      
+      return true;
+    } catch (error) {
+      console.error('[useAvailableSlots] Erro ao adicionar horário:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível adicionar o horário. Tente novamente.",
+        variant: "destructive",
+      });
+      return false;
+    }
+  };
 
-  const updateSlotsMutation = useMutation({
-    mutationFn: async (newSlots: TimeSlot[]) => {
-      if (!professionalId) return;
-      localStorage.setItem(`slots-${professionalId}`, JSON.stringify(newSlots));
-      return newSlots;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['availableSlots', professionalId] });
-    },
-  });
+  const removeTimeSlot = async (time: string): Promise<boolean> => {
+    try {
+      console.log('[useAvailableSlots] Removendo horário:', time);
+      const { error } = await supabase
+        .from('professional_available_slots')
+        .delete()
+        .match({ professional_id: professionalId, time_slot: time });
 
-  const updateUnavailableDays = useMutation({
-    mutationFn: async (days: Date[]) => {
-      if (!professionalId) return;
-      localStorage.setItem(`unavailableDays-${professionalId}`, JSON.stringify(days.map(d => d.toISOString())));
-      return days;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['availableSlots', professionalId] });
-    },
-  });
+      if (error) throw error;
+
+      toast({
+        title: "Sucesso",
+        description: "Horário removido com sucesso",
+      });
+      
+      return true;
+    } catch (error) {
+      console.error('[useAvailableSlots] Erro ao remover horário:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível remover o horário. Tente novamente.",
+        variant: "destructive",
+      });
+      return false;
+    }
+  };
 
   return {
-    slots: slotsQuery.data || DEFAULT_TIME_SLOTS,
-    isLoading: slotsQuery.isLoading,
-    updateSlots: updateSlotsMutation.mutate,
-    updateUnavailableDays: updateUnavailableDays.mutate,
+    timeSlots,
+    isLoading,
+    hasUnsavedChanges,
+    addTimeSlot,
+    removeTimeSlot,
   };
 };

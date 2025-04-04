@@ -13,6 +13,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Table,
   TableBody,
@@ -40,8 +41,9 @@ interface Appointment {
   time: string;
   appointmentType: string;
   birthDate: string;
-  hasRecord: boolean;
+  hasRecord: "yes" | "no" | "electronic";
   responsible: string;
+  phone: string;
 }
 
 interface AppointmentFormData {
@@ -49,8 +51,9 @@ interface AppointmentFormData {
   time: string;
   appointmentType: string;
   birthDate: string;
-  hasRecord: boolean;
+  hasRecord: "yes" | "no" | "electronic";
   responsible: string;
+  phone: string;
 }
 
 const ProfessionalSchedule = () => {
@@ -61,7 +64,6 @@ const ProfessionalSchedule = () => {
   const [isAddingAppointment, setIsAddingAppointment] = useState(false);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null);
-  const [unavailableDays, setUnavailableDays] = useState<Date[]>([]);
   const [isSelectingUnavailableDays, setIsSelectingUnavailableDays] = useState(false);
 
   const months = [
@@ -80,11 +82,10 @@ const ProfessionalSchedule = () => {
   ];
 
   const handleAddAppointment = (formData: AppointmentFormData) => {
-    // Check if the selected date is marked as unavailable
-    if (isDateUnavailable(selectedDate || new Date())) {
+    if (!selectedDate) {
       toast({
-        title: "Data Indisponível",
-        description: "O profissional não está disponível nesta data. Por favor, selecione outra data.",
+        title: "Data Inválida",
+        description: "Por favor, selecione uma data para a consulta.",
         variant: "destructive",
       });
       return;
@@ -92,7 +93,7 @@ const ProfessionalSchedule = () => {
 
     const newAppointment: Appointment = {
       id: appointments.length + 1,
-      date: selectedDate || new Date(),
+      date: selectedDate,
       ...formData,
     };
     setAppointments([...appointments, newAppointment]);
@@ -135,7 +136,7 @@ const ProfessionalSchedule = () => {
   };
 
   const handleUnavailableDaysChange = (days: Date[]) => {
-    setUnavailableDays(days);
+    
     toast({
       title: "Dias indisponíveis atualizados",
       description: "O calendário foi atualizado com os dias de ausência.",
@@ -143,10 +144,31 @@ const ProfessionalSchedule = () => {
   };
 
   const isDateUnavailable = (date: Date) => {
-    return unavailableDays.some(
-      (unavailableDate) =>
-        format(unavailableDate, "yyyy-MM-dd") === format(date, "yyyy-MM-dd")
-    );
+    
+      
+    
+    return false;
+  };
+
+  const getRecordStatus = (hasRecord: "yes" | "no" | "electronic") => {
+    switch (hasRecord) {
+      case "yes":
+        return "Sim";
+      case "no":
+        return "Não";
+      case "electronic":
+        return "Prontuário Eletrônico";
+      default:
+        return "Não";
+    }
+  };
+
+  const handleUnavailableDaysSuccess = () => {
+    toast({
+      title: "Dias indisponíveis atualizados",
+      description: "O calendário foi atualizado com os dias de ausência.",
+    });
+    setIsSelectingUnavailableDays(false);
   };
 
   return (
@@ -256,7 +278,7 @@ const ProfessionalSchedule = () => {
                     <TableCell>{appointment.appointmentType}</TableCell>
                     <TableCell>{appointment.birthDate}</TableCell>
                     <TableCell>
-                      {appointment.hasRecord ? "Sim" : "Não"}
+                      {getRecordStatus(appointment.hasRecord)}
                     </TableCell>
                     <TableCell>{appointment.responsible}</TableCell>
                     <TableCell>
@@ -295,14 +317,15 @@ const ProfessionalSchedule = () => {
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
-            <Calendar
-              mode="single"
-              selected={selectedDate}
-              onSelect={setSelectedDate}
-              className="rounded-md border"
-              locale={ptBR}
-              disabled={(date) => isDateUnavailable(date)}
-            />
+            <div className="grid gap-2">
+              <Label>Data da Consulta</Label>
+              <Input
+                type="date"
+                value={selectedDate ? format(selectedDate, 'yyyy-MM-dd') : ''}
+                onChange={(e) => setSelectedDate(e.target.value ? new Date(e.target.value) : undefined)}
+                required
+              />
+            </div>
             <AppointmentForm
               onSubmit={handleAddAppointment}
               initialData={null}
@@ -310,6 +333,8 @@ const ProfessionalSchedule = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      
 
       <Dialog open={isSelectingUnavailableDays} onOpenChange={setIsSelectingUnavailableDays}>
         <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
@@ -320,12 +345,13 @@ const ProfessionalSchedule = () => {
             </DialogDescription>
           </DialogHeader>
           <UnavailableDaysSelector
-            professionalId="1" // Você pode ajustar isso para usar o ID do profissional atual
-            selectedDays={unavailableDays}
-            onChange={handleUnavailableDaysChange}
+            professionalId="5f474147-572f-4c7c-ba4a-b8febb4ad0c5"
+            onSuccess={handleUnavailableDaysSuccess}
           />
         </DialogContent>
       </Dialog>
+
+      
 
       <Dialog open={!!editingAppointment} onOpenChange={() => setEditingAppointment(null)}>
         <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
@@ -336,17 +362,18 @@ const ProfessionalSchedule = () => {
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
-            <Calendar
-              mode="single"
-              selected={editingAppointment?.date}
-              onSelect={(date) =>
-                editingAppointment &&
-                setEditingAppointment({ ...editingAppointment, date: date || new Date() })
-              }
-              className="rounded-md border"
-              locale={ptBR}
-              disabled={(date) => isDateUnavailable(date)}
-            />
+            <div className="grid gap-2">
+              <Label>Data da Consulta</Label>
+              <Input
+                type="date"
+                value={editingAppointment?.date ? format(editingAppointment.date, 'yyyy-MM-dd') : ''}
+                onChange={(e) =>
+                  editingAppointment &&
+                  setEditingAppointment({ ...editingAppointment, date: e.target.value ? new Date(e.target.value) : undefined })
+                }
+                required
+              />
+            </div>
             {editingAppointment && (
               <AppointmentForm
                 onSubmit={(formData) =>
@@ -374,8 +401,9 @@ const AppointmentForm = ({
     time: initialData?.time || "",
     appointmentType: initialData?.appointmentType || "",
     birthDate: initialData?.birthDate || "",
-    hasRecord: initialData?.hasRecord || false,
+    hasRecord: initialData?.hasRecord || "no",
     responsible: initialData?.responsible || "",
+    phone: initialData?.phone || "",
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -410,12 +438,17 @@ const AppointmentForm = ({
           value={formData.birthDate}
           onChange={(e) => setFormData({ ...formData, birthDate: e.target.value })}
         />
+        <Input
+          placeholder="Telefone"
+          value={formData.phone}
+          onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+        />
         <div className="space-y-2">
           <label className="text-sm font-medium">Prontuário</label>
           <Select
-            value={formData.hasRecord ? "yes" : "no"}
-            onValueChange={(value) =>
-              setFormData({ ...formData, hasRecord: value === "yes" })
+            value={formData.hasRecord}
+            onValueChange={(value: "yes" | "no" | "electronic") =>
+              setFormData({ ...formData, hasRecord: value })
             }
           >
             <SelectTrigger>
@@ -424,6 +457,7 @@ const AppointmentForm = ({
             <SelectContent>
               <SelectItem value="yes">Sim</SelectItem>
               <SelectItem value="no">Não</SelectItem>
+              <SelectItem value="electronic">Prontuário Eletrônico</SelectItem>
             </SelectContent>
           </Select>
         </div>
