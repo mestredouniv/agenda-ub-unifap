@@ -1,27 +1,22 @@
-
 import React from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { PersonalDataFormProps } from "@/types/appointment";
+
+interface PersonalDataFormProps {
+  formData: {
+    patientName: string;
+    cpf: string;
+    sus: string;
+    age: string;
+    phone: string;
+    responsible?: string;
+  };
+  onChange: (field: string, value: string) => void;
+  errors?: Record<string, boolean>;
+}
 
 export const PersonalDataForm = ({ formData, onChange, errors = {} }: PersonalDataFormProps) => {
   const isMinor = parseInt(formData.age) < 18;
-
-  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    onChange("birth_date", e.target.value);
-    
-    // Calcular idade automaticamente quando a data de nascimento muda
-    if (e.target.value) {
-      const birthDate = new Date(e.target.value);
-      const today = new Date();
-      let age = today.getFullYear() - birthDate.getFullYear();
-      const m = today.getMonth() - birthDate.getMonth();
-      if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
-        age--;
-      }
-      onChange("age", age.toString());
-    }
-  };
 
   return (
     <div className="space-y-4">
@@ -38,18 +33,30 @@ export const PersonalDataForm = ({ formData, onChange, errors = {} }: PersonalDa
         </div>
 
         <div>
-          <Label htmlFor="birth_date">Data de Nascimento</Label>
+          <Label htmlFor="age">Idade</Label>
           <Input
-            id="birth_date"
-            type="date"
-            value={formData.birth_date || ""}
-            onChange={handleDateChange}
-            className={errors.birth_date ? "border-red-500" : ""}
-            max={new Date().toISOString().split('T')[0]}
+            id="age"
+            type="number"
+            value={formData.age}
+            onChange={(e) => onChange("age", e.target.value)}
+            className={errors.age ? "border-red-500" : ""}
             required
           />
         </div>
       </div>
+
+      {isMinor && (
+        <div>
+          <Label htmlFor="responsible">Nome do Responsável</Label>
+          <Input
+            id="responsible"
+            value={formData.responsible}
+            onChange={(e) => onChange("responsible", e.target.value)}
+            className={errors.responsible ? "border-red-500" : ""}
+            required
+          />
+        </div>
+      )}
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
@@ -75,41 +82,16 @@ export const PersonalDataForm = ({ formData, onChange, errors = {} }: PersonalDa
         </div>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div>
-          <Label htmlFor="phone">Telefone de Contato</Label>
-          <Input
-            id="phone"
-            value={formData.phone}
-            onChange={(e) => onChange("phone", e.target.value)}
-            className={errors.phone ? "border-red-500" : ""}
-            required
-          />
-        </div>
-
-        <div>
-          <Label htmlFor="age">Idade</Label>
-          <Input
-            id="age"
-            value={formData.age}
-            readOnly
-            className={errors.age ? "border-red-500" : "bg-gray-100"}
-          />
-        </div>
+      <div>
+        <Label htmlFor="phone">Telefone de Contato</Label>
+        <Input
+          id="phone"
+          value={formData.phone}
+          onChange={(e) => onChange("phone", e.target.value)}
+          className={errors.phone ? "border-red-500" : ""}
+          required
+        />
       </div>
-
-      {isMinor && (
-        <div>
-          <Label htmlFor="responsible">Nome do Responsável</Label>
-          <Input
-            id="responsible"
-            value={formData.responsible}
-            onChange={(e) => onChange("responsible", e.target.value)}
-            className={errors.responsible ? "border-red-500" : ""}
-            required
-          />
-        </div>
-      )}
     </div>
   );
 };

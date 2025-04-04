@@ -122,13 +122,7 @@ const AppointmentRequest = () => {
               />
 
               <PersonalDataForm
-                formData={{
-                  patientName: formData.patientName,
-                  cpf: formData.cpf,
-                  sus: formData.sus,
-                  age: formData.age,
-                  phone: formData.phone
-                }}
+                formData={formData}
                 onChange={handleFormChange}
               />
 

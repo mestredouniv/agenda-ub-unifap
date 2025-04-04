@@ -1,4 +1,3 @@
-
 import {
   NavigationMenu,
   NavigationMenuItem,
@@ -6,16 +5,18 @@ import {
   NavigationMenuTrigger,
   NavigationMenuContent,
 } from "@/components/ui/navigation-menu";
-import { Plus, Calendar, FileText, Volume2, Stethoscope, FileSignature, Heart, UserCog, Home } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { Plus, Trash2, Calendar, FileText, Volume2, Stethoscope, FileSignature, Heart } from "lucide-react";
+import { Link } from "react-router-dom";
 
 interface NavigationBarProps {
   onAddProfessional: () => void;
+  onRemoveProfessional: () => void;
 }
 
-export const NavigationBar = ({ onAddProfessional }: NavigationBarProps) => {
-  const navigate = useNavigate();
-  
+export const NavigationBar = ({
+  onAddProfessional,
+  onRemoveProfessional,
+}: NavigationBarProps) => {
   return (
     <NavigationMenu className="mb-4">
       <NavigationMenuList>
@@ -29,6 +30,13 @@ export const NavigationBar = ({ onAddProfessional }: NavigationBarProps) => {
               >
                 <Plus className="h-4 w-4" />
                 Adicionar Profissional
+              </button>
+              <button
+                onClick={onRemoveProfessional}
+                className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-accent"
+              >
+                <Trash2 className="h-4 w-4" />
+                Remover Profissional
               </button>
               <a
                 href="/display"
@@ -47,20 +55,20 @@ export const NavigationBar = ({ onAddProfessional }: NavigationBarProps) => {
           <NavigationMenuTrigger>Páginas</NavigationMenuTrigger>
           <NavigationMenuContent>
             <div className="w-48 p-2 space-y-2">
-              <button
-                onClick={() => navigate("/solicitar")}
+              <Link
+                to="/relatorios"
                 className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-accent"
               >
-                <UserCog className="h-4 w-4" />
-                Gerenciar Solicitações
-              </button>
-              <button
-                onClick={() => navigate("/")}
+                <FileText className="h-4 w-4" />
+                Relatórios
+              </Link>
+              <Link
+                to="/solicitar"
                 className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-accent"
               >
-                <Home className="h-4 w-4" />
-                Página Inicial
-              </button>
+                <FileSignature className="h-4 w-4" />
+                Solicitações
+              </Link>
             </div>
           </NavigationMenuContent>
         </NavigationMenuItem>
@@ -69,80 +77,60 @@ export const NavigationBar = ({ onAddProfessional }: NavigationBarProps) => {
           <NavigationMenuTrigger>Saúde</NavigationMenuTrigger>
           <NavigationMenuContent>
             <div className="w-48 p-2 space-y-2">
-              <button
-                onClick={() => navigate("/hanseniase")}
+              <Link
+                to="/hanseniase"
                 className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-accent"
               >
                 <Heart className="h-4 w-4" />
                 Hanseníase
-              </button>
-              <button
-                onClick={() => navigate("/pre-natal")}
+              </Link>
+              <Link
+                to="/pre-natal"
                 className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-accent"
               >
                 <Heart className="h-4 w-4" />
                 Pré-Natal
-              </button>
-              <button
-                onClick={() => navigate("/tuberculose")}
+              </Link>
+              <Link
+                to="/tuberculose"
                 className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-accent"
               >
                 <Heart className="h-4 w-4" />
                 Tuberculose
-              </button>
-              <button
-                onClick={() => navigate("/prep")}
+              </Link>
+              <Link
+                to="/prep"
                 className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-accent"
               >
                 <Heart className="h-4 w-4" />
                 PREP
-              </button>
-              <button
-                onClick={() => navigate("/doencas-cronicas")}
+              </Link>
+              <Link
+                to="/doencas-cronicas"
                 className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-accent"
               >
                 <Heart className="h-4 w-4" />
                 Doenças Crônicas
-              </button>
-              <button
-                onClick={() => navigate("/puericultura")}
+              </Link>
+              <Link
+                to="/puericultura"
                 className="w-full flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-accent"
               >
                 <Heart className="h-4 w-4" />
                 Puericultura
-              </button>
+              </Link>
             </div>
           </NavigationMenuContent>
         </NavigationMenuItem>
 
         <NavigationMenuItem>
-          <button
-            onClick={() => navigate("/consultas")}
+          <Link
+            to="/consultas"
             className="flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-accent"
           >
             <Stethoscope className="h-4 w-4" />
             Consultas
-          </button>
-        </NavigationMenuItem>
-        
-        <NavigationMenuItem>
-          <button
-            onClick={() => navigate("/reports")}
-            className="flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-accent"
-          >
-            <FileText className="h-4 w-4" />
-            Relatórios
-          </button>
-        </NavigationMenuItem>
-        
-        <NavigationMenuItem>
-          <button
-            onClick={() => navigate("/solicitar-agendamento")}
-            className="flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-accent"
-          >
-            <Calendar className="h-4 w-4" />
-            Solicitar Agendamento
-          </button>
+          </Link>
         </NavigationMenuItem>
       </NavigationMenuList>
     </NavigationMenu>

@@ -1,236 +1,150 @@
 
-import { useState, useEffect, useCallback } from "react";
-import { supabase, retryOperation, isOfflineError } from "@/integrations/supabase/client";
+import { useState, useEffect } from "react";
 import { Professional } from "@/types/professional";
+import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { useNetwork } from "@/contexts/NetworkContext";
-import { useOfflineCache } from "@/hooks/useOfflineCache";
 
-export function useProfessionals() {
+export const useProfessionals = () => {
   const [professionals, setProfessionals] = useState<Professional[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [hasError, setHasError] = useState(false);
-  const [isRetrying, setIsRetrying] = useState(false);
   const { toast } = useToast();
-  const { isOnline, serverReachable } = useNetwork();
-  const { fetchWithOfflineSupport, saveToCache, loadFromCache } = useOfflineCache<Professional[]>();
-  
-  const CACHE_KEY = 'professionals_list';
-  
-  const fetchProfessionals = useCallback(async () => {
-    if (!isOnline || serverReachable === false) {
-      console.log('Dispositivo offline ou servidor inacessível, usando cache');
-      const cached = loadFromCache<Professional[]>(CACHE_KEY);
-      if (cached) {
-        setProfessionals(cached);
-        setIsLoading(false);
-        return;
-      }
-      setHasError(true);
-      setIsLoading(false);
-      return;
-    }
-    
+
+  const fetchProfessionals = async () => {
     try {
-      setIsLoading(true);
-      setHasError(false);
-      setIsRetrying(false);
-      
-      const result = await fetchWithOfflineSupport<Professional[]>(
-        CACHE_KEY,
-        async () => {
-          const { data, error } = await retryOperation(async () => {
-            return supabase
-              .from('professionals')
-              .select('*')
-              .order('name');
-          });
-          
-          if (error) throw error;
-          
-          return data as Professional[];
-        }
-      );
-      
-      setProfessionals(result || []);
-    } catch (error) {
-      console.error('Erro ao buscar profissionais:', error);
-      setHasError(true);
-      
-      // Tenta usar o cache como fallback
-      const cached = loadFromCache<Professional[]>(CACHE_KEY);
-      if (cached) {
-        setProfessionals(cached);
-        toast({
-          title: "Usando dados em cache",
-          description: "Não foi possível atualizar os dados do servidor.",
-        });
-      } else if (isOnline && serverReachable !== false) {
-        toast({
-          title: "Erro ao carregar profissionais",
-          description: "Não foi possível carregar a lista de profissionais.",
-          variant: "destructive",
-        });
+      console.log("Fetching professionals...");
+      const { data, error } = await supabase
+        .from('professionals')
+        .select('*')
+        .order('name');
+
+      if (error) {
+        console.error('Error details:', error);
+        throw error;
       }
-    } finally {
-      setIsLoading(false);
-    }
-  }, [isOnline, serverReachable, toast, fetchWithOfflineSupport, saveToCache, loadFromCache]);
-  
-  useEffect(() => {
-    fetchProfessionals();
-  }, [fetchProfessionals, isOnline, serverReachable]);
-  
-  // Adicionar profissional
-  const addProfessional = async (professionalData: Omit<Professional, "id">) => {
-    if (!isOnline || serverReachable === false) {
+      
+      console.log("Fetched professionals:", data);
+      setProfessionals(data || []);
+    } catch (error) {
+      console.error('Error fetching professionals:', error);
       toast({
-        title: "Sem conexão",
-        description: "Você está offline. Não é possível adicionar profissionais.",
+        title: "Erro",
+        description: "Não foi possível carregar a lista de profissionais.",
         variant: "destructive",
       });
-      return false;
     }
-    
+  };
+
+  const addProfessional = async (name: string, profession: string) => {
     try {
-      setIsRetrying(true);
-      
-      const { data, error } = await retryOperation(async () => {
-        return supabase
-          .from('professionals')
-          .insert([professionalData])
-          .select()
-          .single();
-      });
-      
-      if (error) throw error;
-      
-      setProfessionals(prev => [...prev, data as Professional]);
-      saveToCache(CACHE_KEY, [...professionals, data as Professional]);
-      
+      console.log("Adding professional:", { name, profession });
+      const { data, error } = await supabase
+        .from('professionals')
+        .insert([{ 
+          name, 
+          profession,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }])
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Insert error details:', error);
+        throw error;
+      }
+
+      console.log("Added professional:", data);
+      setProfessionals(prev => [...prev, data]);
       toast({
-        title: "Profissional adicionado",
-        description: "O profissional foi adicionado com sucesso.",
+        title: "Sucesso",
+        description: "Profissional adicionado com sucesso.",
       });
-      
       return true;
     } catch (error) {
-      console.error('Erro ao adicionar profissional:', error);
+      console.error('Error adding professional:', error);
       toast({
         title: "Erro",
         description: "Não foi possível adicionar o profissional.",
         variant: "destructive",
       });
       return false;
-    } finally {
-      setIsRetrying(false);
     }
   };
-  
-  // Atualizar profissional
-  const updateProfessional = async (id: string, professionalData: Partial<Professional>) => {
-    if (!isOnline || serverReachable === false) {
-      toast({
-        title: "Sem conexão",
-        description: "Você está offline. Não é possível atualizar profissionais.",
-        variant: "destructive",
-      });
-      return false;
-    }
-    
+
+  const updateProfessional = async (id: string, name: string, profession: string) => {
     try {
-      setIsRetrying(true);
-      
-      const { data, error } = await retryOperation(async () => {
-        return supabase
-          .from('professionals')
-          .update(professionalData)
-          .eq('id', id)
-          .select()
-          .single();
-      });
-      
-      if (error) throw error;
-      
-      setProfessionals(prev => 
-        prev.map(p => p.id === id ? { ...p, ...data } as Professional : p)
-      );
-      saveToCache(CACHE_KEY, professionals.map(p => p.id === id ? { ...p, ...data } as Professional : p));
-      
+      console.log("Updating professional:", { id, name, profession });
+      const { error } = await supabase
+        .from('professionals')
+        .update({ 
+          name, 
+          profession,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', id);
+
+      if (error) {
+        console.error('Update error details:', error);
+        throw error;
+      }
+
+      setProfessionals(professionals.map(p => 
+        p.id === id ? { ...p, name, profession } : p
+      ));
       toast({
-        title: "Profissional atualizado",
-        description: "O profissional foi atualizado com sucesso.",
+        title: "Sucesso",
+        description: "Dados do profissional atualizados com sucesso.",
       });
-      
       return true;
     } catch (error) {
-      console.error('Erro ao atualizar profissional:', error);
+      console.error('Error updating professional:', error);
       toast({
         title: "Erro",
-        description: "Não foi possível atualizar o profissional.",
+        description: "Não foi possível atualizar os dados do profissional.",
         variant: "destructive",
       });
       return false;
-    } finally {
-      setIsRetrying(false);
     }
   };
-  
-  // Remover profissional
+
   const deleteProfessional = async (id: string) => {
-    if (!isOnline || serverReachable === false) {
-      toast({
-        title: "Sem conexão",
-        description: "Você está offline. Não é possível remover profissionais.",
-        variant: "destructive",
-      });
-      return false;
-    }
-    
     try {
-      setIsRetrying(true);
-      
-      const { error } = await retryOperation(async () => {
-        return supabase
-          .from('professionals')
-          .delete()
-          .eq('id', id);
-      });
-      
-      if (error) throw error;
-      
-      const updatedList = professionals.filter(p => p.id !== id);
-      setProfessionals(updatedList);
-      saveToCache(CACHE_KEY, updatedList);
-      
+      console.log("Deleting professional:", id);
+      const { error } = await supabase
+        .from('professionals')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        console.error('Delete error details:', error);
+        throw error;
+      }
+
+      setProfessionals(professionals.filter(p => p.id !== id));
       toast({
-        title: "Profissional removido",
-        description: "O profissional foi removido com sucesso.",
+        title: "Sucesso",
+        description: "Profissional removido com sucesso.",
       });
-      
       return true;
     } catch (error) {
-      console.error('Erro ao remover profissional:', error);
+      console.error('Error deleting professional:', error);
       toast({
         title: "Erro",
         description: "Não foi possível remover o profissional.",
         variant: "destructive",
       });
       return false;
-    } finally {
-      setIsRetrying(false);
     }
   };
 
+  useEffect(() => {
+    fetchProfessionals();
+  }, []);
+
   return {
     professionals,
-    isLoading,
-    hasError,
-    isOffline: !isOnline || serverReachable === false,
     addProfessional,
     updateProfessional,
     deleteProfessional,
-    refetch: fetchProfessionals,
-    isRetrying,
+    refetch: fetchProfessionals
   };
-}
+};

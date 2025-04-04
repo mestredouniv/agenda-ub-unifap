@@ -5,17 +5,14 @@ import { useDisplayState } from "@/hooks/useDisplayState";
 import { useDisplayContent, DisplayContent } from "@/hooks/useDisplayContent";
 import { Button } from "@/components/ui/button";
 import { Settings2 } from "lucide-react";
-import { DisplayEditPanel } from "@/components/DisplayEditPanel";
-import { supabase } from "@/integrations/supabase/client";
 
 const Display = () => {
   const currentPatient = useDisplayState((state) => state.currentPatient);
   const { contents, settings, loading, updateSettings } = useDisplayContent();
   const [currentContentIndex, setCurrentContentIndex] = useState(0);
   const [displayClass, setDisplayClass] = useState("");
-  const [isEditPanelOpen, setIsEditPanelOpen] = useState(false);
-  const [lastCalls, setLastCalls] = useState<any[]>([]);
 
+  // Function to get next content index based on rotation mode
   const getNextContentIndex = (current: number, total: number, mode: 'sequential' | 'random') => {
     if (mode === 'random') {
       let next = Math.floor(Math.random() * total);
@@ -26,43 +23,6 @@ const Display = () => {
     }
     return (current + 1) % total;
   };
-
-  useEffect(() => {
-    // Fetch initial last calls
-    const fetchLastCalls = async () => {
-      const { data, error } = await supabase
-        .from('last_calls')
-        .select('*')
-        .order('called_at', { ascending: false })
-        .limit(5);
-      
-      if (!error && data) {
-        setLastCalls(data);
-      }
-    };
-
-    fetchLastCalls();
-
-    // Subscribe to last_calls changes
-    const channel = supabase
-      .channel('last_calls_changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'last_calls'
-        },
-        (payload) => {
-          fetchLastCalls(); // Refetch last calls when changes occur
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, []);
 
   useEffect(() => {
     if (contents.length === 0) return;
@@ -84,30 +44,9 @@ const Display = () => {
   }, [currentPatient, currentContentIndex]);
 
   const toggleEditMode = () => {
-    setIsEditPanelOpen(!isEditPanelOpen);
     if (settings) {
       updateSettings({ is_edit_mode: !settings.is_edit_mode });
     }
-  };
-
-  const renderLastCalls = () => {
-    return (
-      <div className="space-y-4">
-        <h3 className="text-2xl font-bold mb-4">Últimas Chamadas</h3>
-        {lastCalls.map((call, index) => (
-          <div 
-            key={call.id} 
-            className={`p-4 rounded-lg border ${index === 0 ? 'bg-primary/10 border-primary' : 'bg-white border-gray-200'}`}
-          >
-            <p className="text-xl font-semibold">{call.patient_name}</p>
-            <p className="text-gray-600">{call.professional_name}</p>
-            <p className="text-sm text-gray-500">
-              {new Date(call.called_at).toLocaleTimeString('pt-BR')}
-            </p>
-          </div>
-        ))}
-      </div>
-    );
   };
 
   const renderContent = (content: DisplayContent) => {
@@ -127,7 +66,12 @@ const Display = () => {
           />
         );
       case 'last_calls':
-        return renderLastCalls();
+        return (
+          <div className="text-4xl font-bold">
+            Últimas Chamadas
+            {/* Add last calls content here */}
+          </div>
+        );
       default:
         return null;
     }
@@ -135,52 +79,56 @@ const Display = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white text-gray-900 flex items-center justify-center">
+      <div className="min-h-screen bg-black text-white flex items-center justify-center">
         <div className="text-4xl font-bold">Carregando...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-white text-gray-900 relative">
+    <div className="min-h-screen bg-black text-white">
       <DisplayHeader />
       
-      <Button
-        variant="outline"
-        size="icon"
-        className="fixed top-4 right-4 z-50 bg-white shadow-md hover:bg-gray-100"
-        onClick={toggleEditMode}
-      >
-        <Settings2 className="h-6 w-6" />
-      </Button>
-
-      {isEditPanelOpen && <DisplayEditPanel onClose={() => setIsEditPanelOpen(false)} />}
+      {settings?.is_edit_mode && (
+        <Button
+          variant="ghost"
+          size="icon"
+          className="fixed top-4 right-4 z-50"
+          onClick={toggleEditMode}
+        >
+          <Settings2 className="h-6 w-6" />
+        </Button>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4">
-        <div className="bg-white border border-gray-200 p-6 rounded-lg shadow-sm">
-          <h2 className="text-2xl font-semibold mb-2 text-gray-700">Paciente</h2>
-          <p className="text-3xl font-bold text-gray-900">
+        {/* Patient Name Box */}
+        <div className="bg-purple-900/50 p-6 rounded-lg shadow-lg">
+          <h2 className="text-2xl font-semibold mb-2">Paciente</h2>
+          <p className="text-3xl font-bold">
             {currentPatient?.name || "Aguardando..."}
           </p>
         </div>
 
-        <div className="bg-white border border-gray-200 p-6 rounded-lg shadow-sm">
-          <h2 className="text-2xl font-semibold mb-2 text-gray-700">Consultório</h2>
-          <p className="text-3xl font-bold text-gray-900">
+        {/* Room Number Box */}
+        <div className="bg-purple-900/50 p-6 rounded-lg shadow-lg">
+          <h2 className="text-2xl font-semibold mb-2">Consultório</h2>
+          <p className="text-3xl font-bold">
             {currentPatient?.professional || "Aguardando..."}
           </p>
         </div>
 
-        <div className="bg-white border border-gray-200 p-6 rounded-lg shadow-sm">
-          <h2 className="text-2xl font-semibold mb-2 text-gray-700">Status</h2>
-          <p className="text-3xl font-bold text-gray-900">
+        {/* Status Box */}
+        <div className="bg-purple-900/50 p-6 rounded-lg shadow-lg">
+          <h2 className="text-2xl font-semibold mb-2">Status</h2>
+          <p className="text-3xl font-bold">
             {currentPatient?.status === "waiting" && "Aguardando"}
             {currentPatient?.status === "triage" && "Em Triagem"}
             {currentPatient?.status === "in_progress" && "Em Atendimento"}
           </p>
         </div>
 
-        <div className={`col-span-1 md:col-span-3 bg-white border border-gray-200 p-6 rounded-lg shadow-sm min-h-[50vh] flex items-center justify-center ${displayClass}`}>
+        {/* Dynamic Content Box */}
+        <div className={`col-span-1 md:col-span-3 bg-purple-900/30 p-6 rounded-lg shadow-lg min-h-[50vh] flex items-center justify-center ${displayClass}`}>
           {contents.length > 0 ? (
             renderContent(contents[currentContentIndex])
           ) : (
