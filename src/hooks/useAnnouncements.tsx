@@ -2,8 +2,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase, retryOperation } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle } from "lucide-react";
 import { useNetworkStatus } from "@/contexts/NetworkStatusContext";
 
 export interface Announcement {
@@ -23,7 +21,7 @@ export const useAnnouncements = () => {
   const { status } = useNetworkStatus();
   
   const fetchAnnouncements = useCallback(async () => {
-    if (!status.isOnline || !status.serverReachable) {
+    if (!status.isOnline || status.serverReachable === false) {
       console.log('[useAnnouncements] Skipping fetch - device is offline or server unreachable');
       setHasError(true);
       setIsLoading(false);
@@ -60,7 +58,7 @@ export const useAnnouncements = () => {
       setHasError(true);
       
       // Only show toast if not already showing error UI and we're online
-      if (status.isOnline && status.serverReachable && !isRetrying) {
+      if (status.isOnline && status.serverReachable !== false && !isRetrying) {
         toast({
           title: "Erro ao carregar avisos",
           description: "Não foi possível carregar os avisos. Tente novamente mais tarde.",
@@ -73,7 +71,7 @@ export const useAnnouncements = () => {
   }, [status.isOnline, status.serverReachable, isRetrying, toast]);
 
   const addAnnouncement = async (content: string) => {
-    if (!status.isOnline || !status.serverReachable) {
+    if (!status.isOnline || status.serverReachable === false) {
       toast({
         title: "Erro de conexão",
         description: "Você está offline. Não é possível adicionar avisos.",
@@ -122,7 +120,7 @@ export const useAnnouncements = () => {
   };
 
   const removeAnnouncement = async (id: string) => {
-    if (!status.isOnline || !status.serverReachable) {
+    if (!status.isOnline || status.serverReachable === false) {
       toast({
         title: "Erro de conexão",
         description: "Você está offline. Não é possível remover avisos.",
@@ -179,7 +177,7 @@ export const useAnnouncements = () => {
     announcements,
     isLoading,
     hasError,
-    isOffline: !status.isOnline || !status.serverReachable,
+    isOffline: !status.isOnline || status.serverReachable === false,
     isRetrying,
     addAnnouncement,
     removeAnnouncement,

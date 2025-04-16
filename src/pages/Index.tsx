@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { RefreshCcw, Loader2, WifiOff, ServerOff } from "lucide-react";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { useNetworkStatus } from "@/contexts/NetworkStatusContext";
+import { NetworkStatus } from "@/components/NetworkStatus";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -22,7 +23,7 @@ const Index = () => {
   const [retryCount, setRetryCount] = useState(0);
   
   // Use the network context instead of local state
-  const { status, checkConnection, isLoading: isConnectionChecking } = useNetworkStatus();
+  const { status, checkConnection } = useNetworkStatus();
   
   const {
     professionals,
@@ -75,7 +76,7 @@ const Index = () => {
   };
 
   const handleEditClick = (professional: Professional) => {
-    if (!status.isOnline || !status.serverReachable) {
+    if (!status.isOnline || status.serverReachable === false) {
       toast({
         title: "Sem conexão",
         description: "Você está offline. Não é possível editar profissionais.",
@@ -90,7 +91,7 @@ const Index = () => {
   };
 
   const handleAddClick = () => {
-    if (!status.isOnline || !status.serverReachable) {
+    if (!status.isOnline || status.serverReachable === false) {
       toast({
         title: "Sem conexão",
         description: "Você está offline. Não é possível adicionar profissionais.",
@@ -105,7 +106,7 @@ const Index = () => {
   };
 
   const handleRemoveClick = async (professional: Professional) => {
-    if (!status.isOnline || !status.serverReachable) {
+    if (!status.isOnline || status.serverReachable === false) {
       toast({
         title: "Sem conexão",
         description: "Você está offline. Não é possível remover profissionais.",
@@ -138,63 +139,6 @@ const Index = () => {
     }
   };
 
-  // Render connection error message
-  const renderConnectionAlert = () => {
-    if (!status.isOnline) {
-      return (
-        <Alert variant="destructive" className="mb-6">
-          <WifiOff className="h-4 w-4 mr-2" />
-          <AlertTitle>Sem conexão</AlertTitle>
-          <AlertDescription>
-            Você está offline. Verifique sua conexão com a internet.
-          </AlertDescription>
-          <Button 
-            onClick={handleRefreshConnection} 
-            variant="outline" 
-            size="sm" 
-            className="mt-2 border-red-300 text-red-700"
-            disabled={isConnectionChecking}
-          >
-            {isConnectionChecking ? (
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-            ) : (
-              <RefreshCcw className="h-4 w-4 mr-2" />
-            )}
-            Verificar conexão
-          </Button>
-        </Alert>
-      );
-    }
-    
-    if (!status.serverReachable) {
-      return (
-        <Alert variant="destructive" className="mb-6">
-          <ServerOff className="h-4 w-4 mr-2" />
-          <AlertTitle>Erro de conexão</AlertTitle>
-          <AlertDescription>
-            Não foi possível conectar ao servidor. Verifique sua conexão com o servidor.
-          </AlertDescription>
-          <Button 
-            onClick={handleRefreshConnection} 
-            variant="outline" 
-            size="sm" 
-            className="mt-2 border-red-300 text-red-700"
-            disabled={isConnectionChecking}
-          >
-            {isConnectionChecking ? (
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-            ) : (
-              <RefreshCcw className="h-4 w-4 mr-2" />
-            )}
-            Verificar conexão
-          </Button>
-        </Alert>
-      );
-    }
-    
-    return null;
-  };
-
   return (
     <div className="min-h-screen bg-gray-50">
       <Header 
@@ -213,7 +157,7 @@ const Index = () => {
       />
       
       <main className="container mx-auto px-4 py-6">
-        {renderConnectionAlert()}
+        <NetworkStatus onRefresh={handleRefreshConnection} />
 
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
           <DailyAnnouncements />
@@ -222,8 +166,8 @@ const Index = () => {
         <div className="mt-8">
           <ProfessionalList
             professionals={professionals}
-            isLoading={isLoading || isConnectionChecking}
-            hasError={hasError || (!status.isOnline || !status.serverReachable)}
+            isLoading={isLoading}
+            hasError={hasError || (!status.isOnline || status.serverReachable === false)}
             onRefresh={handleRefreshConnection}
             onProfessionalClick={handleProfessionalClick}
             onEditClick={handleEditClick}

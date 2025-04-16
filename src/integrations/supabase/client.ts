@@ -70,6 +70,32 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
   },
 });
 
+// Helper for retrying operations
+export const retryOperation = async <T>(
+  operation: () => Promise<T>,
+  maxRetries = 3,
+  delayMs = 1000
+): Promise<T> => {
+  let lastError: any;
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await operation();
+    } catch (error) {
+      console.log(`Operation failed (attempt ${attempt+1}/${maxRetries+1}):`, error);
+      lastError = error;
+      
+      // Don't wait on the last attempt
+      if (attempt < maxRetries) {
+        // Exponential backoff with jitter
+        const jitter = Math.random() * 0.3 + 0.85; // 0.85-1.15
+        const delay = delayMs * Math.pow(1.5, attempt) * jitter;
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+  }
+  throw lastError;
+};
+
 // Helper function to check if the Supabase service is online
 export const checkSupabaseConnection = async (): Promise<boolean> => {
   try {

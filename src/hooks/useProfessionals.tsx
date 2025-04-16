@@ -3,36 +3,17 @@ import { useState, useEffect } from "react";
 import { Professional } from "@/types/professional";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useNetworkStatus } from "@/contexts/NetworkStatusContext";
 
 export const useProfessionals = () => {
   const [professionals, setProfessionals] = useState<Professional[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
-  const [isOffline, setIsOffline] = useState(false);
   const { toast } = useToast();
-
-  // Track online/offline status
-  useEffect(() => {
-    const handleOnline = () => {
-      setIsOffline(false);
-      fetchProfessionals(); // Refetch when we come back online
-    };
-    const handleOffline = () => setIsOffline(true);
-    
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-    
-    // Set initial state
-    setIsOffline(!navigator.onLine);
-    
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    };
-  }, []);
+  const { status } = useNetworkStatus();
 
   const fetchProfessionals = async () => {
-    if (isOffline) {
+    if (!status.isOnline || status.serverReachable === false) {
       setHasError(true);
       setIsLoading(false);
       return;
@@ -64,7 +45,7 @@ export const useProfessionals = () => {
   };
 
   const addProfessional = async (name: string, profession: string) => {
-    if (isOffline) {
+    if (!status.isOnline || status.serverReachable === false) {
       toast({
         title: "Erro de conexão",
         description: "Você está offline. Não é possível adicionar profissionais.",
@@ -115,7 +96,7 @@ export const useProfessionals = () => {
   };
 
   const updateProfessional = async (id: string, name: string, profession: string) => {
-    if (isOffline) {
+    if (!status.isOnline || status.serverReachable === false) {
       toast({
         title: "Erro de conexão",
         description: "Você está offline. Não é possível atualizar profissionais.",
@@ -165,7 +146,7 @@ export const useProfessionals = () => {
   };
 
   const deleteProfessional = async (id: string) => {
-    if (isOffline) {
+    if (!status.isOnline || status.serverReachable === false) {
       toast({
         title: "Erro de conexão",
         description: "Você está offline. Não é possível remover profissionais.",
@@ -208,15 +189,16 @@ export const useProfessionals = () => {
     }
   };
 
+  // Fetch professionals when component mounts or network status changes
   useEffect(() => {
     fetchProfessionals();
-  }, [isOffline]); // Re-fetch when online status changes
+  }, [status.isOnline, status.serverReachable]); 
 
   return {
     professionals,
     isLoading,
     hasError,
-    isOffline,
+    isOffline: !status.isOnline || status.serverReachable === false,
     addProfessional,
     updateProfessional,
     deleteProfessional,

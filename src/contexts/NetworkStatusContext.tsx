@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { setupNetworkMonitoring } from '@/integrations/supabase/client';
+import { setupNetworkMonitoring, checkSupabaseConnection } from '@/integrations/supabase/client';
 
 interface NetworkStatus {
   isOnline: boolean;
@@ -61,11 +61,20 @@ export const NetworkStatusProvider: React.FC<{ children: React.ReactNode }> = ({
     
     setIsLoading(true);
     try {
-      // Trigger a check and wait for it
-      const currentStatus = networkMonitor.getStatus();
-      setStatus(currentStatus);
+      // Check server connection directly
+      const isServerReachable = await checkSupabaseConnection();
+      
+      // Update the status
+      const updatedStatus = {
+        isOnline: navigator.onLine,
+        serverReachable: isServerReachable,
+        lastCheck: Date.now()
+      };
+      
+      setStatus(updatedStatus);
       setIsLoading(false);
-      return currentStatus.isOnline && currentStatus.serverReachable;
+      
+      return updatedStatus.isOnline && updatedStatus.serverReachable;
     } catch (error) {
       console.error('Error checking connection:', error);
       setIsLoading(false);
