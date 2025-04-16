@@ -1,129 +1,195 @@
 
 import { useState, useEffect, useCallback } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/components/ui/use-toast";
-import { Appointment } from "@/types/appointment";
-import { 
-  fetchDailyAppointments, 
-  createNewAppointment, 
-  updateExistingAppointment 
-} from "@/services/appointmentService";
-import { formatAppointmentData } from "@/utils/appointmentUtils";
+import { format } from "date-fns";
+import { supabase, retryOperation } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { Appointment, DisplayStatus } from "@/types/appointment";
 
-export const useAppointments = (professionalId: string) => {
+const isValidDisplayStatus = (status: string): status is DisplayStatus => {
+  return ['waiting', 'triage', 'triage_completed', 'in_progress', 'completed', 'missed', 'rescheduled'].includes(status);
+};
+
+export const useAppointments = (professionalId: string, selectedDate: Date) => {
   const { toast } = useToast();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+  const [hasConnectionError, setHasConnectionError] = useState(false);
+  const [isOffline, setIsOffline] = useState(false);
+
+  // Track online/offline status
+  useEffect(() => {
+    const handleOnline = () => {
+      setIsOffline(false);
+      if (error) fetchAppointments();
+    };
+    const handleOffline = () => setIsOffline(true);
+    
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    
+    // Set initial state
+    setIsOffline(!navigator.onLine);
+    
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, [error]);
 
   const fetchAppointments = useCallback(async () => {
-    try {
-      console.log('[Agenda] Iniciando busca de consultas para profissional:', professionalId);
-      setIsLoading(true);
-      
-      const data = await fetchDailyAppointments(professionalId);
-      console.log('[Agenda] Dados recebidos do banco:', data);
+    if (!professionalId || !selectedDate || isOffline) {
+      console.log('[Agenda] Parâmetros inválidos ou offline:', { professionalId, selectedDate, isOffline });
+      setIsLoading(false);
+      if (isOffline) setError(new Error("Você está offline"));
+      return;
+    }
 
-      const formattedAppointments = formatAppointmentData(data || []);
-      console.log('[Agenda] Appointments formatados:', formattedAppointments);
+    try {
+      setIsLoading(true);
+      setError(null);
+      setHasConnectionError(false);
       
-      setAppointments(formattedAppointments);
-    } catch (err) {
-      console.error('[Agenda] Erro inesperado ao buscar consultas:', err);
-      toast({
-        title: "Erro",
-        description: "Ocorreu um erro inesperado. Por favor, tente novamente.",
-        variant: "destructive",
+      const formattedDate = format(selectedDate, 'yyyy-MM-dd');
+      console.log('[Agenda] Buscando agendamentos para:', { professionalId, formattedDate });
+      
+      const { data, error: fetchError } = await retryOperation(async () => {
+        return supabase
+          .from('appointments')
+          .select(`
+            id,
+            patient_name,
+            birth_date,
+            professional_id,
+            appointment_date,
+            appointment_time,
+            display_status,
+            priority,
+            notes,
+            actual_start_time,
+            actual_end_time,
+            updated_at,
+            deleted_at,
+            is_minor,
+            responsible_name,
+            has_record,
+            phone,
+            room,
+            block,
+            ticket_number,
+            professionals:professional_id(name)
+          `)
+          .eq('professional_id', professionalId)
+          .eq('appointment_date', formattedDate)
+          .is('deleted_at', null)
+          .order('priority', { ascending: false })
+          .order('appointment_time', { ascending: true });
       });
+
+      if (fetchError) {
+        if (fetchError.message.includes('connect error')) {
+          setHasConnectionError(true);
+        }
+        throw fetchError;
+      }
+      
+      console.log('[Agenda] Dados recebidos:', data);
+
+      const transformedData: Appointment[] = (data || []).map((rawItem: any) => {
+        console.log('[Agenda] Transformando item:', rawItem);
+        
+        let displayStatus: DisplayStatus = 'waiting';
+        
+        if (rawItem.display_status) {
+          if (isValidDisplayStatus(rawItem.display_status)) {
+            displayStatus = rawItem.display_status as DisplayStatus;
+          }
+        }
+
+        const item: Appointment = {
+          id: rawItem.id,
+          patient_name: rawItem.patient_name,
+          birth_date: rawItem.birth_date,
+          professional_id: rawItem.professional_id,
+          appointment_date: rawItem.appointment_date,
+          appointment_time: rawItem.appointment_time,
+          display_status: displayStatus,
+          priority: rawItem.priority === 'priority' ? 'priority' : 'normal',
+          professionals: { 
+            name: rawItem.professionals?.name || '' 
+          },
+          is_minor: Boolean(rawItem.is_minor),
+          responsible_name: rawItem.responsible_name || null,
+          has_record: rawItem.has_record || null,
+          notes: rawItem.notes || null,
+          actual_start_time: rawItem.actual_start_time || null,
+          actual_end_time: rawItem.actual_end_time || null,
+          updated_at: rawItem.updated_at || null,
+          deleted_at: rawItem.deleted_at || null,
+          phone: rawItem.phone || '',
+          room: rawItem.room || null,
+          block: rawItem.block || null,
+          ticket_number: rawItem.ticket_number || null
+        };
+
+        return item;
+      });
+      
+      console.log('[Agenda] Dados transformados:', transformedData);
+      setAppointments(transformedData);
+    } catch (err) {
+      const error = err instanceof Error ? err : new Error('Erro desconhecido');
+      console.error('[Agenda] Erro ao buscar consultas:', error);
+      setError(error);
+      
+      if (!hasConnectionError && !isOffline) {
+        toast({
+          title: "Erro ao carregar agenda",
+          description: "Não foi possível carregar os agendamentos. Verifique sua conexão.",
+          variant: "destructive",
+        });
+      }
     } finally {
       setIsLoading(false);
     }
-  }, [professionalId, toast]);
-
-  const createAppointment = useCallback(async (appointmentData: Omit<Appointment, 'id' | 'professional'>) => {
-    console.log('[Agenda] Criando nova consulta:', appointmentData);
-    
-    try {
-      const data = await createNewAppointment(appointmentData);
-      console.log('[Agenda] Consulta criada com sucesso:', data);
-      
-      toast({
-        title: "Consulta agendada",
-        description: "A consulta foi agendada com sucesso!",
-      });
-
-      await fetchAppointments();
-      return data;
-    } catch (error) {
-      console.error('[Agenda] Erro inesperado ao criar consulta:', error);
-      toast({
-        title: "Erro",
-        description: "Ocorreu um erro ao agendar a consulta.",
-        variant: "destructive",
-      });
-      return null;
-    }
-  }, [fetchAppointments, toast]);
-
-  const updateAppointment = useCallback(async (id: string, updateData: Partial<Appointment>) => {
-    console.log('[Agenda] Iniciando atualização de consulta:', { id, updateData });
-    
-    try {
-      await updateExistingAppointment(id, updateData);
-      console.log('[Agenda] Consulta atualizada com sucesso');
-      
-      toast({
-        title: "Alterações salvas",
-        description: "As alterações foram salvas automaticamente.",
-      });
-
-      await fetchAppointments();
-      return true;
-    } catch (error) {
-      console.error('[Agenda] Erro inesperado ao atualizar consulta:', error);
-      toast({
-        title: "Erro",
-        description: "Ocorreu um erro ao salvar as alterações.",
-        variant: "destructive",
-      });
-      return false;
-    }
-  }, [fetchAppointments, toast]);
+  }, [professionalId, selectedDate, toast, hasConnectionError, isOffline]);
 
   useEffect(() => {
-    console.log('[Agenda] Configurando sincronização em tempo real para profissional:', professionalId);
-    
-    const channel = supabase
-      .channel('agenda-realtime')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'appointments',
-          filter: professionalId !== "all" ? `professional_id=eq.${professionalId}` : undefined
-        },
-        (payload) => {
-          console.log('[Agenda] Mudança detectada:', payload);
-          fetchAppointments();
-        }
-      )
-      .subscribe((status) => {
-        console.log('[Agenda] Status da sincronização:', status);
-      });
-
     fetchAppointments();
 
-    return () => {
-      console.log('[Agenda] Limpando subscription');
-      supabase.removeChannel(channel);
-    };
-  }, [professionalId, fetchAppointments]);
+    // Only set up subscription if we're online
+    if (!isOffline) {
+      const channel = supabase
+        .channel(`appointments-${professionalId}`)
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'appointments',
+            filter: `professional_id=eq.${professionalId}`
+          },
+          (payload) => {
+            console.log('[Agenda] Mudança detectada:', payload);
+            fetchAppointments();
+          }
+        )
+        .subscribe((status) => {
+          console.log('[Agenda] Status da subscription:', status);
+        });
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    }
+  }, [professionalId, fetchAppointments, isOffline]);
 
   return { 
     appointments,
     isLoading,
-    fetchAppointments,
-    createAppointment,
-    updateAppointment
+    error,
+    hasConnectionError,
+    isOffline,
+    fetchAppointments
   };
 };

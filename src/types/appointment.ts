@@ -1,21 +1,29 @@
+export type DisplayStatus = 'waiting' | 'triage' | 'triage_completed' | 'in_progress' | 'completed' | 'missed' | 'rescheduled';
 
 export interface Appointment {
   id: string;
   patient_name: string;
   birth_date: string;
   professional_id: string;
-  professional: {
+  professionals: {
     name: string;
   };
   appointment_date: string;
   appointment_time: string;
-  display_status: 'waiting' | 'triage' | 'in_progress' | 'completed';
+  display_status: DisplayStatus;
   priority: 'priority' | 'normal';
-  notes?: string;
+  notes?: string | null;
   actual_start_time?: string | null;
   actual_end_time?: string | null;
-  updated_at?: string;
+  updated_at?: string | null;
   deleted_at?: string | null;
+  is_minor: boolean;
+  responsible_name: string | null;
+  has_record: string | null;
+  phone: string;
+  room?: string | null;
+  block?: string | null;
+  ticket_number?: string | null;
 }
 
 export interface PersonalDataFormProps {

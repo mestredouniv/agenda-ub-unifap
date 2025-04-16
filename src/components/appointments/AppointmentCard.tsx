@@ -38,14 +38,19 @@ export const AppointmentCard = ({ appointment, onSuccess }: AppointmentCardProps
           {getStatusBadge(appointment.display_status)}
         </div>
         <div className="text-sm text-gray-600">
-          <p>Profissional: {appointment.professional.name}</p>
+          <p>Profissional: {appointment.professionals?.name}</p>
           {appointment.notes && (
             <p className="mt-2 text-gray-700">
               Observações: {appointment.notes}
             </p>
           )}
+          {(appointment.room || appointment.block) && (
+            <p className="mt-1 text-gray-700">
+              Localização: {appointment.block && `Bloco ${appointment.block}`} {appointment.room && `Sala ${appointment.room}`}
+            </p>
+          )}
         </div>
-        <div className="flex flex-wrap gap-2 mt-2">
+        <div className="mt-3">
           <AppointmentActions appointment={appointment} onSuccess={onSuccess} />
         </div>
       </div>

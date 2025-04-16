@@ -1,9 +1,16 @@
 
+import { useState } from "react";
+import { Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 import { Appointment } from "@/types/appointment";
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
-import { useDisplayState } from "@/hooks/useDisplayState";
+import { supabase } from "@/integrations/supabase/client";
+import { LocationInputs } from "./LocationInputs";
+import { DeleteAppointmentDialog } from "./DeleteAppointmentDialog";
+import { TriageActions } from "./TriageActions";
+import { ConsultActions } from "./ConsultActions";
+import { FinishActions } from "./FinishActions";
 
 interface AppointmentActionsProps {
   appointment: Appointment;
@@ -12,199 +19,91 @@ interface AppointmentActionsProps {
 
 export const AppointmentActions = ({ appointment, onSuccess }: AppointmentActionsProps) => {
   const { toast } = useToast();
-  const setCurrentPatient = useDisplayState((state) => state.setCurrentPatient);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [room, setRoom] = useState(appointment.room || '');
+  const [block, setBlock] = useState(appointment.block || '');
 
-  const handleCallNext = async () => {
-    try {
-      const { error: updateError } = await supabase
-        .from('appointments')
-        .update({ 
-          display_status: 'waiting',
-          actual_start_time: new Date().toLocaleTimeString()
-        })
-        .eq('id', appointment.id);
-
-      if (updateError) throw updateError;
-
-      const { error: lastCallError } = await supabase
-        .from('last_calls')
-        .insert([{
-          patient_name: appointment.patient_name,
-          professional_name: appointment.professional.name,
-          status: 'called'
-        }]);
-
-      if (lastCallError) throw lastCallError;
-
-      setCurrentPatient({
-        name: appointment.patient_name,
-        status: 'waiting',
-        professional: appointment.professional.name,
-      });
-
-      toast({
-        title: "Paciente chamado",
-        description: "O display foi atualizado com o próximo paciente.",
-      });
-
-      onSuccess?.();
-    } catch (error) {
-      console.error('Erro ao chamar próximo paciente:', error);
-      toast({
-        title: "Erro",
-        description: "Não foi possível chamar o próximo paciente.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleStartTriage = async () => {
-    try {
-      const { error: updateError } = await supabase
-        .from('appointments')
-        .update({ 
-          display_status: 'triage',
-          actual_start_time: new Date().toLocaleTimeString()
-        })
-        .eq('id', appointment.id);
-
-      if (updateError) throw updateError;
-
-      const { error: lastCallError } = await supabase
-        .from('last_calls')
-        .insert([{
-          patient_name: appointment.patient_name,
-          professional_name: appointment.professional.name,
-          status: 'triage'
-        }]);
-
-      if (lastCallError) throw lastCallError;
-
-      setCurrentPatient({
-        name: appointment.patient_name,
-        status: 'triage',
-        professional: appointment.professional.name,
-      });
-
-      toast({
-        title: "Triagem iniciada",
-        description: "Paciente encaminhado para triagem.",
-      });
-
-      onSuccess?.();
-    } catch (error) {
-      console.error('Erro ao iniciar triagem:', error);
-      toast({
-        title: "Erro",
-        description: "Não foi possível iniciar a triagem.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleStartAppointment = async () => {
-    try {
-      const { error: updateError } = await supabase
-        .from('appointments')
-        .update({ 
-          display_status: 'in_progress',
-          actual_start_time: new Date().toLocaleTimeString()
-        })
-        .eq('id', appointment.id);
-
-      if (updateError) throw updateError;
-
-      const { error: lastCallError } = await supabase
-        .from('last_calls')
-        .insert([{
-          patient_name: appointment.patient_name,
-          professional_name: appointment.professional.name,
-          status: 'in_progress'
-        }]);
-
-      if (lastCallError) throw lastCallError;
-
-      setCurrentPatient({
-        name: appointment.patient_name,
-        status: 'in_progress',
-        professional: appointment.professional.name,
-      });
-
-      toast({
-        title: "Consulta iniciada",
-        description: "Paciente em atendimento.",
-      });
-
-      onSuccess?.();
-    } catch (error) {
-      console.error('Erro ao iniciar consulta:', error);
-      toast({
-        title: "Erro",
-        description: "Não foi possível iniciar a consulta.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleCompleteAppointment = async () => {
+  const handleDeleteAppointment = async () => {
     try {
       const { error } = await supabase
         .from('appointments')
-        .update({ 
-          display_status: 'completed',
-          actual_end_time: new Date().toLocaleTimeString()
-        })
+        .delete()
         .eq('id', appointment.id);
 
       if (error) throw error;
 
       toast({
-        title: "Consulta finalizada",
-        description: "O atendimento foi concluído com sucesso.",
+        title: "Agendamento removido",
+        description: "O agendamento foi removido com sucesso.",
       });
 
       onSuccess?.();
+      setShowDeleteDialog(false);
     } catch (error) {
-      console.error('Erro ao finalizar consulta:', error);
+      console.error('Erro ao remover agendamento:', error);
       toast({
         title: "Erro",
-        description: "Não foi possível finalizar a consulta.",
+        description: "Não foi possível remover o agendamento.",
         variant: "destructive",
       });
     }
   };
 
+  const isAppointmentFinished = appointment.display_status === 'completed' || 
+                               appointment.display_status === 'missed' ||
+                               appointment.display_status === 'rescheduled';
+
+  const showLocationInputs = !isAppointmentFinished && appointment.display_status === 'waiting';
+
   return (
-    <div className="flex space-x-2">
-      <Button
-        size="sm"
-        onClick={handleCallNext}
-        disabled={appointment.display_status !== 'waiting'}
-      >
-        Chamar
-      </Button>
-      <Button
-        size="sm"
-        onClick={handleStartTriage}
-        disabled={appointment.display_status !== 'waiting'}
-      >
-        Triagem
-      </Button>
-      <Button
-        size="sm"
-        onClick={handleStartAppointment}
-        disabled={appointment.display_status !== 'triage'}
-      >
-        Iniciar
-      </Button>
-      <Button
-        size="sm"
-        variant="outline"
-        onClick={handleCompleteAppointment}
-        disabled={appointment.display_status !== 'in_progress'}
-      >
-        Finalizar
-      </Button>
+    <div className="space-y-4">
+      {showLocationInputs && (
+        <LocationInputs
+          room={room}
+          block={block}
+          onRoomChange={setRoom}
+          onBlockChange={setBlock}
+        />
+      )}
+
+      {appointment.ticket_number && (
+        <div className="mb-4 p-2 bg-gray-100 rounded-md">
+          <Label>Senha: {appointment.ticket_number}</Label>
+        </div>
+      )}
+
+      <div className="flex flex-wrap gap-2">
+        <TriageActions 
+          appointment={appointment}
+          room={room}
+          block={block}
+          onUpdateRequired={onSuccess}
+        />
+
+        <ConsultActions 
+          appointment={appointment}
+          onUpdateRequired={onSuccess}
+        />
+
+        <FinishActions 
+          appointment={appointment}
+          onUpdateRequired={onSuccess}
+        />
+
+        <Button
+          size="sm"
+          variant="destructive"
+          onClick={() => setShowDeleteDialog(true)}
+        >
+          <Trash2 className="h-4 w-4" />
+        </Button>
+
+        <DeleteAppointmentDialog
+          open={showDeleteDialog}
+          onOpenChange={setShowDeleteDialog}
+          onConfirm={handleDeleteAppointment}
+        />
+      </div>
     </div>
   );
 };
