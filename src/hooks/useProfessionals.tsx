@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Professional } from "@/types/professional";
 import { useListProfessionals } from "./useListProfessionals";
 import { useCreateProfessional } from "./useCreateProfessional";
@@ -22,9 +22,9 @@ export const useProfessionals = () => {
     setProfessionals(prev => [...prev, newProfessional]);
   });
 
-  const { updateProfessional } = useUpdateProfessional((id, name, profession) => {
+  const { updateProfessional } = useUpdateProfessional((updatedProfessional) => {
     setProfessionals(prev => prev.map(p => 
-      p.id === id ? { ...p, name, profession } : p
+      p.id === updatedProfessional.id ? updatedProfessional : p
     ));
   });
 
@@ -33,8 +33,10 @@ export const useProfessionals = () => {
   });
 
   // Update local state when fetched professionals change
-  useState(() => {
-    setProfessionals(fetchedProfessionals);
+  useEffect(() => {
+    if (fetchedProfessionals) {
+      setProfessionals(fetchedProfessionals);
+    }
   }, [fetchedProfessionals]);
 
   return {
