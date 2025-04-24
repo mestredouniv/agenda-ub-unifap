@@ -1,8 +1,9 @@
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { supabase, retryOperation } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { useNetworkStatus } from "@/contexts/NetworkStatusContext";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
 
 export interface Announcement {
   id: string;
@@ -16,13 +17,32 @@ export const useAnnouncements = () => {
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
+  const [isOffline, setIsOffline] = useState(false);
   const [isRetrying, setIsRetrying] = useState(false);
   const { toast } = useToast();
-  const { status } = useNetworkStatus();
-  
-  const fetchAnnouncements = useCallback(async () => {
-    if (!status.isOnline || status.serverReachable === false) {
-      console.log('[useAnnouncements] Skipping fetch - device is offline or server unreachable');
+
+  // Track online/offline status
+  useEffect(() => {
+    const handleOnline = () => {
+      setIsOffline(false);
+      fetchAnnouncements(); // Refetch when we come back online
+    };
+    const handleOffline = () => setIsOffline(true);
+    
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    
+    // Set initial state
+    setIsOffline(!navigator.onLine);
+    
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
+  const fetchAnnouncements = async () => {
+    if (isOffline) {
       setHasError(true);
       setIsLoading(false);
       return;
@@ -34,9 +54,8 @@ export const useAnnouncements = () => {
       setIsRetrying(false);
       
       const now = new Date().toISOString();
-      console.log('[useAnnouncements] Fetching announcements');
       
-      // More aggressive retry strategy
+      // Using the retry utility
       const { data, error } = await retryOperation(async () => {
         return supabase
           .from('announcements')
@@ -44,21 +63,16 @@ export const useAnnouncements = () => {
           .eq('active', true)
           .gte('expires_at', now)
           .order('created_at', { ascending: false });
-      }, 3, 1000); // 3 retries, starting with 1 second delay
+      });
 
-      if (error) {
-        console.error('[useAnnouncements] Error fetching announcements:', error);
-        throw error;
-      }
-
-      console.log('[useAnnouncements] Announcements fetched successfully:', data?.length || 0);
+      if (error) throw error;
       setAnnouncements(data || []);
     } catch (error) {
-      console.error('[useAnnouncements] Error fetching announcements:', error);
+      console.error('Error fetching announcements:', error);
       setHasError(true);
       
-      // Only show toast if not already showing error UI and we're online
-      if (status.isOnline && status.serverReachable !== false && !isRetrying) {
+      // Only show toast if not already showing error UI
+      if (navigator.onLine && !isRetrying) {
         toast({
           title: "Erro ao carregar avisos",
           description: "Não foi possível carregar os avisos. Tente novamente mais tarde.",
@@ -68,10 +82,10 @@ export const useAnnouncements = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [status.isOnline, status.serverReachable, isRetrying, toast]);
+  };
 
   const addAnnouncement = async (content: string) => {
-    if (!status.isOnline || status.serverReachable === false) {
+    if (isOffline) {
       toast({
         title: "Erro de conexão",
         description: "Você está offline. Não é possível adicionar avisos.",
@@ -86,18 +100,17 @@ export const useAnnouncements = () => {
       const expiresAt = new Date();
       expiresAt.setHours(expiresAt.getHours() + 12);
 
-      // Using the retry utility with more aggressive settings
+      // Using the retry utility
       const { data, error } = await retryOperation(async () => {
         return supabase
           .from('announcements')
           .insert([{
             content,
             expires_at: expiresAt.toISOString(),
-            active: true
           }])
           .select()
           .single();
-      }, 3, 1000);
+      });
 
       if (error) throw error;
       setAnnouncements(prev => [data, ...prev]);
@@ -108,7 +121,7 @@ export const useAnnouncements = () => {
       setIsRetrying(false);
       return true;
     } catch (error) {
-      console.error('[useAnnouncements] Error adding announcement:', error);
+      console.error('Error adding announcement:', error);
       toast({
         title: "Erro",
         description: "Não foi possível adicionar o aviso. Verifique sua conexão com o servidor.",
@@ -120,7 +133,7 @@ export const useAnnouncements = () => {
   };
 
   const removeAnnouncement = async (id: string) => {
-    if (!status.isOnline || status.serverReachable === false) {
+    if (isOffline) {
       toast({
         title: "Erro de conexão",
         description: "Você está offline. Não é possível remover avisos.",
@@ -132,13 +145,13 @@ export const useAnnouncements = () => {
     try {
       setIsRetrying(true);
       
-      // Using the retry utility with more aggressive settings
+      // Using the retry utility
       const { error } = await retryOperation(async () => {
         return supabase
           .from('announcements')
           .update({ active: false })
           .eq('id', id);
-      }, 3, 1000);
+      });
 
       if (error) throw error;
       setAnnouncements(prev => prev.filter(a => a.id !== id));
@@ -149,7 +162,7 @@ export const useAnnouncements = () => {
       setIsRetrying(false);
       return true;
     } catch (error) {
-      console.error('[useAnnouncements] Error removing announcement:', error);
+      console.error('Error removing announcement:', error);
       toast({
         title: "Erro",
         description: "Não foi possível remover o aviso. Verifique sua conexão com o servidor.",
@@ -160,27 +173,24 @@ export const useAnnouncements = () => {
     }
   };
 
-  const manualRefetch = useCallback(() => {
-    console.log('[useAnnouncements] Manually refreshing announcements');
-    return fetchAnnouncements();
-  }, [fetchAnnouncements]);
-
-  // Fetch announcements when network status changes or component mounts
   useEffect(() => {
-    // Only fetch if we're online and server is reachable
-    if (status.isOnline && status.serverReachable !== false) {
-      fetchAnnouncements();
+    fetchAnnouncements();
+    
+    // Only set up interval if we're online
+    if (!isOffline) {
+      const interval = setInterval(fetchAnnouncements, 60000);
+      return () => clearInterval(interval);
     }
-  }, [status.isOnline, status.serverReachable, fetchAnnouncements]);
+  }, [isOffline]);
 
   return {
     announcements,
     isLoading,
     hasError,
-    isOffline: !status.isOnline || status.serverReachable === false,
+    isOffline,
     isRetrying,
     addAnnouncement,
     removeAnnouncement,
-    refetch: manualRefetch,
+    refetch: fetchAnnouncements,
   };
 };

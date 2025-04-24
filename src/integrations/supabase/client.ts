@@ -3,148 +3,65 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
-const SUPABASE_URL = "https://kttdqktzsaalrlgiasqc.supabase.co";
-const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt0dGRxa3R6c2FhbHJsZ2lhc3FjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDU1MDU4MjMsImV4cCI6MjA2MTA4MTgyM30.kLqI9J-8N_d4nMcahlW5mv3zIBi7mvBLqBpp04syh0g";
+const SUPABASE_URL = "https://bjtipxxqabntdfynzokr.supabase.co";
+const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJqdGlweHhxYWJudGRmeW56b2tyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzg1MDU3OTEsImV4cCI6MjA1NDA4MTc5MX0.xIHQY_Omf6E0qYXObN9sFF2mwVuwgAZHv0QVSCKdKqs";
 
-// Import the supabase client like this:
-// import { supabase } from "@/integrations/supabase/client";
-
-export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
-
-/**
- * Network monitoring utility to track online/offline status and server reachability
- */
-export const setupNetworkMonitoring = () => {
-  let listeners: Array<() => void> = [];
-  let status = {
-    isOnline: navigator.onLine,
-    serverReachable: null as boolean | null,
-    lastCheck: 0
-  };
-
-  // Set up online/offline event listeners
-  window.addEventListener('online', () => {
-    status.isOnline = true;
-    notifyListeners();
-    // Check server connection when coming back online
-    checkSupabaseConnection().then(reachable => {
-      status.serverReachable = reachable;
-      status.lastCheck = Date.now();
-      notifyListeners();
-    });
-  });
-
-  window.addEventListener('offline', () => {
-    status.isOnline = false;
-    status.serverReachable = false;
-    status.lastCheck = Date.now();
-    notifyListeners();
-  });
-
-  function notifyListeners() {
-    listeners.forEach(listener => listener());
-  }
-
-  return {
-    addListener: (callback: () => void) => {
-      listeners.push(callback);
+// Create a more robust client with retries and extended timeouts
+export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+  auth: {
+    autoRefreshToken: true,
+    persistSession: true,
+  },
+  global: {
+    headers: { 
+      'x-application-name': 'unifap-app',
     },
-    removeListener: (callback: () => void) => {
-      listeners = listeners.filter(listener => listener !== callback);
-    },
-    getStatus: () => ({ ...status })
-  };
-};
+    // Increase the timeout for better handling of slow connections
+    fetch: (url, options) => {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+      
+      const fetchPromise = fetch(url, {
+        ...options,
+        signal: controller.signal,
+      });
+      
+      fetchPromise.finally(() => clearTimeout(timeoutId));
+      return fetchPromise;
+    }
+  },
+});
 
-/**
- * Check if the Supabase server is reachable by making a lightweight query
- * @returns Promise<boolean> Whether the server is reachable
- */
+// Helper function to check if the Supabase service is online
 export const checkSupabaseConnection = async (): Promise<boolean> => {
   try {
-    // Make a lightweight query to check server connectivity
-    const start = Date.now();
-    const { error } = await supabase.from('health_check').select('count').maybeSingle();
+    // Simple query to check if the connection works
+    const { error } = await supabase
+      .from('professionals')
+      .select('id')
+      .limit(1)
+      .maybeSingle();
     
-    // If there's no error with the health check table, try a system time query
-    if (error) {
-      // Try a system time query as fallback
-      const { error: timeError } = await supabase.rpc('get_server_time');
-      if (timeError) {
-        // Both checks failed, likely server is unreachable
-        console.log('Server connectivity check failed:', error);
-        return false;
-      }
-    }
-    
-    const end = Date.now();
-    console.log(`Server response time: ${end - start}ms`);
-    return true;
-  } catch (error) {
-    console.error('Error checking Supabase connection:', error);
+    return !error;
+  } catch (err) {
+    console.error('Supabase connection check failed:', err);
     return false;
   }
 };
 
-/**
- * Check if an error is related to network connectivity issues
- * @param error Error to check
- * @returns boolean Whether the error is likely due to network issues
- */
-export const isOfflineError = (error: any): boolean => {
-  if (!error) return false;
-  
-  // Check for common offline error patterns
-  const errorString = String(error);
-  const message = error.message || errorString;
-  
-  return (
-    message.includes('Failed to fetch') ||
-    message.includes('NetworkError') ||
-    message.includes('Network request failed') ||
-    message.includes('network error') ||
-    message.includes('Network Error') ||
-    message.includes('Failed to execute fetch') ||
-    message.includes('TypeError: Failed to fetch') ||
-    message.includes('AbortError') ||
-    errorString.includes('could not connect to server')
-  );
-};
-
-/**
- * Retry an operation with exponential backoff
- * @param operation Function that returns a promise
- * @param maxRetries Maximum number of retries
- * @param initialDelay Initial delay in milliseconds
- * @returns Promise with the operation result
- */
+// Retry mechanism for Supabase queries
 export const retryOperation = async <T>(
-  operation: () => Promise<T>,
-  maxRetries = 3,
-  initialDelay = 1000
+  operation: () => Promise<T>, 
+  retries = 3,
+  delay = 1000,
 ): Promise<T> => {
-  let lastError: any;
-  let delay = initialDelay;
-
-  for (let attempt = 0; attempt <= maxRetries; attempt++) {
-    try {
-      if (attempt > 0) {
-        console.log(`Retry attempt ${attempt}/${maxRetries}...`);
-      }
-      return await operation();
-    } catch (error) {
-      console.error(`Attempt ${attempt + 1}/${maxRetries + 1} failed:`, error);
-      lastError = error;
-      
-      if (attempt >= maxRetries || isOfflineError(error)) {
-        break; // Don't retry network errors or if max retries reached
-      }
-      
-      // Wait with exponential backoff
-      await new Promise(resolve => setTimeout(resolve, delay));
-      delay *= 2; // Exponential backoff
-    }
+  try {
+    return await operation();
+  } catch (error) {
+    if (retries <= 0) throw error;
+    
+    console.log(`Operation failed, retrying in ${delay}ms. Retries left: ${retries}`);
+    await new Promise(resolve => setTimeout(resolve, delay));
+    return retryOperation(operation, retries - 1, delay * 1.5);
   }
-
-  throw lastError;
 };

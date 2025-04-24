@@ -1,5 +1,5 @@
 
-import { supabase, retryOperation } from "@/integrations/supabase/client";
+import { supabase } from "@/integrations/supabase/client";
 import { Appointment } from "@/types/appointment";
 import { Database } from "@/integrations/supabase/types";
 import { validateAppointmentData } from "./validateAppointment";
@@ -16,14 +16,12 @@ export const createNewAppointment = async (appointmentData: Omit<Appointment, 'i
     validateAppointmentData(appointmentData);
 
     // Verificar se o profissional está disponível naquele dia
-    const { data: unavailableDay, error: unavailableError } = await retryOperation(async () => {
-      return supabase
-        .from('professional_unavailable_days')
-        .select('id')
-        .eq('professional_id', appointmentData.professional_id)
-        .eq('date', appointmentData.appointment_date)
-        .single();
-    });
+    const { data: unavailableDay, error: unavailableError } = await supabase
+      .from('professional_unavailable_days')
+      .select('id')
+      .eq('professional_id', appointmentData.professional_id)
+      .eq('date', appointmentData.appointment_date)
+      .single();
 
     if (unavailableError && unavailableError.code !== 'PGRST116') { // PGRST116 é "No rows returned"
       console.error('[Agenda] Erro ao verificar disponibilidade do dia:', unavailableError);
@@ -35,14 +33,12 @@ export const createNewAppointment = async (appointmentData: Omit<Appointment, 'i
     }
 
     // Verificar se existe o slot disponível
-    const { data: availableSlot, error: slotError } = await retryOperation(async () => {
-      return supabase
-        .from('professional_available_slots')
-        .select('max_appointments')
-        .eq('professional_id', appointmentData.professional_id)
-        .eq('time_slot', appointmentData.appointment_time)
-        .single();
-    });
+    const { data: availableSlot, error: slotError } = await supabase
+      .from('professional_available_slots')
+      .select('max_appointments')
+      .eq('professional_id', appointmentData.professional_id)
+      .eq('time_slot', appointmentData.appointment_time)
+      .single();
 
     if (slotError) {
       console.error('[Agenda] Erro ao verificar slot disponível:', slotError);
@@ -53,15 +49,13 @@ export const createNewAppointment = async (appointmentData: Omit<Appointment, 'i
     }
 
     // Verificar se o número de agendamentos não excede o máximo permitido
-    const { count, error: countError } = await retryOperation(async () => {
-      return supabase
-        .from('appointments')
-        .select('id', { count: 'exact', head: true })
-        .eq('professional_id', appointmentData.professional_id)
-        .eq('appointment_date', appointmentData.appointment_date)
-        .eq('appointment_time', appointmentData.appointment_time)
-        .is('deleted_at', null);
-    });
+    const { count, error: countError } = await supabase
+      .from('appointments')
+      .select('id', { count: 'exact', head: true })
+      .eq('professional_id', appointmentData.professional_id)
+      .eq('appointment_date', appointmentData.appointment_date)
+      .eq('appointment_time', appointmentData.appointment_time)
+      .is('deleted_at', null);
 
     if (countError) {
       console.error('[Agenda] Erro ao contar agendamentos:', countError);
@@ -93,13 +87,11 @@ export const createNewAppointment = async (appointmentData: Omit<Appointment, 'i
 
     console.log('[Agenda] Dados preparados:', appointment);
 
-    const { data, error } = await retryOperation(async () => {
-      return supabase
-        .from(APPOINTMENTS_TABLE)
-        .insert([appointment])
-        .select('*, professionals:professional_id(name)')
-        .single();
-    });
+    const { data, error } = await supabase
+      .from(APPOINTMENTS_TABLE)
+      .insert([appointment])
+      .select('*, professionals:professional_id(name)')
+      .single();
 
     if (error) {
       console.error('[Agenda] Erro na criação:', error);

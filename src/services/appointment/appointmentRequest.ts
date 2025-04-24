@@ -1,28 +1,26 @@
 
-import { supabase, retryOperation } from "@/integrations/supabase/client";
+import { supabase } from "@/integrations/supabase/client";
 import { AppointmentRequest, AppointmentRequestFormData } from "@/types/appointmentRequest";
 
 export const createAppointmentRequest = async (data: AppointmentRequestFormData): Promise<{ success: boolean; error?: string; id?: string }> => {
   try {
     console.log("Creating appointment request with data:", data);
-    const { data: result, error } = await retryOperation(async () => {
-      return supabase
-        .from('appointment_requests')
-        .insert([
-          {
-            beneficiary_name: data.beneficiary_name,
-            cpf: data.cpf,
-            sus_number: data.sus_number,
-            phone: data.phone,
-            address: data.address,
-            birth_date: data.birth_date,
-            age: data.age,
-            status: 'pending'
-          }
-        ])
-        .select('id')
-        .single();
-    });
+    const { data: result, error } = await supabase
+      .from('appointment_requests')
+      .insert([
+        {
+          beneficiary_name: data.beneficiary_name,
+          cpf: data.cpf,
+          sus_number: data.sus_number,
+          phone: data.phone,
+          address: data.address,
+          birth_date: data.birth_date,
+          age: data.age,
+          status: 'pending'
+        }
+      ])
+      .select('id')
+      .single();
 
     if (error) throw error;
     return { success: true, id: result.id };
@@ -35,15 +33,13 @@ export const createAppointmentRequest = async (data: AppointmentRequestFormData)
 export const fetchAppointmentRequests = async (): Promise<AppointmentRequest[]> => {
   try {
     console.log("Fetching all appointment requests");
-    const { data, error } = await retryOperation(async () => {
-      return supabase
-        .from('appointment_requests')
-        .select(`
-          *,
-          professionals:professional_id (name)
-        `)
-        .order('created_at', { ascending: false });
-    });
+    const { data, error } = await supabase
+      .from('appointment_requests')
+      .select(`
+        *,
+        professionals:professional_id (name)
+      `)
+      .order('created_at', { ascending: false });
 
     if (error) throw error;
     
@@ -79,18 +75,16 @@ export const approveAppointmentRequest = async (
 ): Promise<boolean> => {
   try {
     console.log("Approving request:", requestId, appointmentDate, appointmentTime, professionalId);
-    const { error } = await retryOperation(async () => {
-      return supabase
-        .from('appointment_requests')
-        .update({
-          status: 'approved',
-          approved_at: new Date().toISOString(),
-          appointment_date: appointmentDate,
-          appointment_time: appointmentTime,
-          professional_id: professionalId
-        })
-        .eq('id', requestId);
-    });
+    const { error } = await supabase
+      .from('appointment_requests')
+      .update({
+        status: 'approved',
+        approved_at: new Date().toISOString(),
+        appointment_date: appointmentDate,
+        appointment_time: appointmentTime,
+        professional_id: professionalId
+      })
+      .eq('id', requestId);
 
     if (error) throw error;
     return true;
@@ -103,14 +97,12 @@ export const approveAppointmentRequest = async (
 export const rejectAppointmentRequest = async (requestId: string): Promise<boolean> => {
   try {
     console.log("Rejecting request:", requestId);
-    const { error } = await retryOperation(async () => {
-      return supabase
-        .from('appointment_requests')
-        .update({
-          status: 'rejected'
-        })
-        .eq('id', requestId);
-    });
+    const { error } = await supabase
+      .from('appointment_requests')
+      .update({
+        status: 'rejected'
+      })
+      .eq('id', requestId);
 
     if (error) throw error;
     return true;
@@ -123,26 +115,24 @@ export const rejectAppointmentRequest = async (requestId: string): Promise<boole
 export const fetchPublicAppointmentRequests = async (): Promise<AppointmentRequest[]> => {
   try {
     console.log("Fetching public appointment requests");
-    const { data, error } = await retryOperation(async () => {
-      return supabase
-        .from('appointment_requests')
-        .select(`
-          id,
-          beneficiary_name,
-          cpf,
-          sus_number,
-          status,
-          phone,
-          address,
-          birth_date,
-          age,
-          created_at,
-          appointment_date,
-          appointment_time,
-          professionals:professional_id (name)
-        `)
-        .order('created_at', { ascending: false });
-    });
+    const { data, error } = await supabase
+      .from('appointment_requests')
+      .select(`
+        id,
+        beneficiary_name,
+        cpf,
+        sus_number,
+        status,
+        phone,
+        address,
+        birth_date,
+        age,
+        created_at,
+        appointment_date,
+        appointment_time,
+        professionals:professional_id (name)
+      `)
+      .order('created_at', { ascending: false });
 
     if (error) throw error;
     

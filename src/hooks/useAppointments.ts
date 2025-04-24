@@ -1,7 +1,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { format } from "date-fns";
-import { supabase, retryOperation } from "@/integrations/supabase/client";
+import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Appointment, DisplayStatus } from "@/types/appointment";
 
@@ -15,33 +15,10 @@ export const useAppointments = (professionalId: string, selectedDate: Date) => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [hasConnectionError, setHasConnectionError] = useState(false);
-  const [isOffline, setIsOffline] = useState(false);
-
-  // Track online/offline status
-  useEffect(() => {
-    const handleOnline = () => {
-      setIsOffline(false);
-      if (error) fetchAppointments();
-    };
-    const handleOffline = () => setIsOffline(true);
-    
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-    
-    // Set initial state
-    setIsOffline(!navigator.onLine);
-    
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    };
-  }, [error]);
 
   const fetchAppointments = useCallback(async () => {
-    if (!professionalId || !selectedDate || isOffline) {
-      console.log('[Agenda] Parâmetros inválidos ou offline:', { professionalId, selectedDate, isOffline });
-      setIsLoading(false);
-      if (isOffline) setError(new Error("Você está offline"));
+    if (!professionalId || !selectedDate) {
+      console.log('[Agenda] Parâmetros inválidos:', { professionalId, selectedDate });
       return;
     }
 
@@ -53,38 +30,36 @@ export const useAppointments = (professionalId: string, selectedDate: Date) => {
       const formattedDate = format(selectedDate, 'yyyy-MM-dd');
       console.log('[Agenda] Buscando agendamentos para:', { professionalId, formattedDate });
       
-      const { data, error: fetchError } = await retryOperation(async () => {
-        return supabase
-          .from('appointments')
-          .select(`
-            id,
-            patient_name,
-            birth_date,
-            professional_id,
-            appointment_date,
-            appointment_time,
-            display_status,
-            priority,
-            notes,
-            actual_start_time,
-            actual_end_time,
-            updated_at,
-            deleted_at,
-            is_minor,
-            responsible_name,
-            has_record,
-            phone,
-            room,
-            block,
-            ticket_number,
-            professionals:professional_id(name)
-          `)
-          .eq('professional_id', professionalId)
-          .eq('appointment_date', formattedDate)
-          .is('deleted_at', null)
-          .order('priority', { ascending: false })
-          .order('appointment_time', { ascending: true });
-      });
+      const { data, error: fetchError } = await supabase
+        .from('appointments')
+        .select(`
+          id,
+          patient_name,
+          birth_date,
+          professional_id,
+          appointment_date,
+          appointment_time,
+          display_status,
+          priority,
+          notes,
+          actual_start_time,
+          actual_end_time,
+          updated_at,
+          deleted_at,
+          is_minor,
+          responsible_name,
+          has_record,
+          phone,
+          room,
+          block,
+          ticket_number,
+          professionals:professional_id(name)
+        `)
+        .eq('professional_id', professionalId)
+        .eq('appointment_date', formattedDate)
+        .is('deleted_at', null)
+        .order('priority', { ascending: false })
+        .order('appointment_time', { ascending: true });
 
       if (fetchError) {
         if (fetchError.message.includes('connect error')) {
@@ -142,7 +117,7 @@ export const useAppointments = (professionalId: string, selectedDate: Date) => {
       console.error('[Agenda] Erro ao buscar consultas:', error);
       setError(error);
       
-      if (!hasConnectionError && !isOffline) {
+      if (!hasConnectionError) {
         toast({
           title: "Erro ao carregar agenda",
           description: "Não foi possível carregar os agendamentos. Verifique sua conexão.",
@@ -152,44 +127,45 @@ export const useAppointments = (professionalId: string, selectedDate: Date) => {
     } finally {
       setIsLoading(false);
     }
-  }, [professionalId, selectedDate, toast, hasConnectionError, isOffline]);
+  }, [professionalId, selectedDate, toast, hasConnectionError]);
 
   useEffect(() => {
-    fetchAppointments();
+    let mounted = true;
 
-    // Only set up subscription if we're online
-    if (!isOffline) {
-      const channel = supabase
-        .channel(`appointments-${professionalId}`)
-        .on(
-          'postgres_changes',
-          {
-            event: '*',
-            schema: 'public',
-            table: 'appointments',
-            filter: `professional_id=eq.${professionalId}`
-          },
-          (payload) => {
-            console.log('[Agenda] Mudança detectada:', payload);
+    const channel = supabase
+      .channel(`appointments-${professionalId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'appointments',
+          filter: `professional_id=eq.${professionalId}`
+        },
+        (payload) => {
+          console.log('[Agenda] Mudança detectada:', payload);
+          if (mounted) {
             fetchAppointments();
           }
-        )
-        .subscribe((status) => {
-          console.log('[Agenda] Status da subscription:', status);
-        });
+        }
+      )
+      .subscribe((status) => {
+        console.log('[Agenda] Status da subscription:', status);
+      });
 
-      return () => {
-        supabase.removeChannel(channel);
-      };
-    }
-  }, [professionalId, fetchAppointments, isOffline]);
+    fetchAppointments();
+
+    return () => {
+      mounted = false;
+      supabase.removeChannel(channel);
+    };
+  }, [professionalId, fetchAppointments]);
 
   return { 
     appointments,
     isLoading,
     error,
     hasConnectionError,
-    isOffline,
     fetchAppointments
   };
 };
