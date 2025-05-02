@@ -76,6 +76,7 @@ export const FinishActions = ({ appointment, onUpdateRequired }: FinishActionsPr
         size="sm" 
         variant="outline"
         onClick={() => handleCompleteAppointment('rescheduled')}
+        type="button"
       >
         <Calendar className="mr-2 h-4 w-4" />
         Reagendar

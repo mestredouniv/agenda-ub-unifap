@@ -139,6 +139,7 @@ export const TriageActions = ({ appointment, room, block, onUpdateRequired }: Tr
       className={`text-white ${buttonStyle}`}
       onClick={handleTriageAction}
       disabled={isDisabled}
+      type="button"
     >
       {buttonText}
     </Button>
